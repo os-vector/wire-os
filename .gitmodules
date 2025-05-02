@@ -1,6 +1,3 @@
-[submodule "anki/victor"]
-	path = anki/victor
-	url = https://github.com/os-vector/wire-os-victor
 [submodule "poky/poky"]
 	path = poky/poky
 	url = https://github.com/yoctoproject/poky
@@ -12,3 +9,6 @@
 [submodule "anki/wired"]
 	path = anki/wired
 	url = https://github.com/os-vector/wired
+[submodule "anki/victor"]
+	path = anki/victor
+	url = https://github.com/Switch-modder/Viccyware
