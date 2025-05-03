@@ -6,7 +6,7 @@ The main repo for building Viccyware otas.
 
 - /poky/poky -> [yoctoproject/poky](https://github.com/yoctoproject/poky) (walnascar)
 - /poky/meta-openembedded -> [openembedded/meta-openembedded](https://github.com/openembedded/meta-openembedded) (walnascar)
-- /anki/victor -> [wire-os-victor](https://github.com/Switch-modder/Viccyware) (Viccyware-tester)
+- /anki/victor -> [Viccyware](https://github.com/Switch-modder/Viccyware) (Viccyware-tester)
 - /anki/wired -> [wired](https://github.com/os-vector/wired) (main)
 
 ## Build
