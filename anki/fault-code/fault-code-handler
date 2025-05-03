@@ -116,7 +116,7 @@ fi
 /anki/bin/vic-log-event fault-code-handler robot.fault_code '' '' '' '' ${FAULT_CODE}
 
 STOP_DASMGR_ONLY=0
-KILL_CAMERA_AFTER_STOPPING_ROBOT=0
+KILL_CAMERA_AFTER_STOPPING_ROBOT=1
 DONT_DISPLAY_FAULT_CODE=0
 
 # handle error-code specific actions
@@ -145,11 +145,13 @@ case ${FAULT_CODE} in
     log "kill -ILL vic-engine"
     PID=$(pidof vic-engine)
     [ $? -eq 0 ] && kill -ILL $PID
+    KILL_CAMERA_AFTER_STOPPING_ROBOT=1
     ;;
 917)
     log "kill -ILL vic-anim"
     PID=$(pidof vic-anim)
     [ $? -eq 0 ] && kill -ILL $PID
+    KILL_CAMERA_AFTER_STOPPING_ROBOT=1
     ;;
 98[0-1])
     # These codes indicate issues with the camera
@@ -239,6 +241,7 @@ if [ $STOP_DASMGR_ONLY -eq 1 ]; then
 else
     log "systemctl kill -s SIGTERM ${ANKI_SERVICES[@]}"
     systemctl kill -s SIGTERM ${ANKI_SERVICES[@]}
+    KILL_CAMERA_AFTER_STOPPING_ROBOT=1
     wait_until_services_stopped
 
     # Have we reached restart limit?
@@ -345,6 +348,8 @@ fi
 if [ $KILL_CAMERA_AFTER_STOPPING_ROBOT -eq 1 ]; then
   log "Kill and restart mm-anki-camera"
   systemctl kill -s 9 mm-anki-camera
+  systemctl kill -s 9 mm-qcamera-daemon
+  systemctl start mm-qcamera-daemon
   systemctl start mm-anki-camera
 fi
 
