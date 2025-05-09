@@ -38,7 +38,7 @@ endif
 
 UPDATE_VERSION ?= $(shell cat $(OS_VERSION_FILE))
 
-OTA_FILE=$(BUILD)/vicos-$(UPDATE_VERSION).ota
+OTA_FILE=$(BUILD)/Viccyware-$(UPDATE_VERSION).ota
 
 ifeq ($(DO_SIGN),1)
   ota_file_target := $(OTA_FILE)-sign
