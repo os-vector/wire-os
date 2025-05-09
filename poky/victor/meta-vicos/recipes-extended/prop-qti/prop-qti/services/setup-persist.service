@@ -1,0 +1,12 @@
+[Unit]
+SourcePath=/etc/initscripts/setup-persist
+Description=setup our stupid persist partition because it is zeroed out on the Anki Vector previously Victor robot
+
+[Service]
+Type=oneshot
+Restart=no
+RemainAfterExit=yes
+ExecStart=/etc/initscripts/setup-persist start
+
+[Install]
+WantedBy=multi-user.target

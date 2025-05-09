@@ -119,7 +119,19 @@ docker run -it \
     -v $(pwd)/anki-deps:/home/$USER/.anki \
     -v $(pwd):$(pwd) \
     -v $(pwd)/build/cache:/home/$USER/.ccache \
-    vic-yocto-builder-2 bash -c "cd $(pwd)/poky && source build/conf/set_bb_env.sh && export ANKI_BUILD_VERSION=$BUILD_INCREMENT && ${YOCTO_BUILD_COMMAND} && cd ${DIRPATH}/ota && rm -rf ../_build/*.img ../_build/*.stats ../_build/*.ini ../_build/*.enc && export DO_SIGN=${DO_SIGN} && export OTA_MANIFEST_SIGNING_KEY=${OTA_SIGNING_KEY_PASSWORD} && export BOOT_IMAGE_SIGNING_PASSWORD=${BOOT_PASSWORD} && ${BOOT_MAKE_COMMAND} && make"
+    vic-yocto-builder-2 bash -c \
+    "cd $(pwd)/poky && \
+    source build/conf/set_bb_env.sh && \
+    export ANKI_BUILD_VERSION=$BUILD_INCREMENT && \
+    ${YOCTO_BUILD_COMMAND} && \
+    cd ${DIRPATH}/ota && \
+    rm -rf ../_build/*.img ../_build/*.stats ../_build/*.ini ../_build/*.enc && \
+    export DO_SIGN=${DO_SIGN} && \
+    export OTA_MANIFEST_SIGNING_KEY=${OTA_SIGNING_KEY_PASSWORD} && \
+    export BOOT_IMAGE_SIGNING_PASSWORD=${BOOT_PASSWORD} && \
+    ${BOOT_MAKE_COMMAND} && \
+    make"
 
 echo
-echo "$BOT_TYPE OTA built!!!!!!!!!!!!!!!!!"
+echo -e "\033[1;32mCompleted successfully. Output is in ./_build.\033[0m"
+echo

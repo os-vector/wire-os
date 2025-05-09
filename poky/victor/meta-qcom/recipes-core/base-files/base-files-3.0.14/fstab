@@ -16,3 +16,4 @@ PARTLABEL=persist    /persist        ext4      defaults,noexec,nosuid,nodev,noat
 PARTLABEL=oem        /factory        ext4      defaults,noexec,nosuid,nodev,noatime,ro,nofail 0  0
 
 # /data is mounted exclusively by mount-data.service on boot up
+# /persist is managed by setup-persist.service as it is zeroed out by default and we need to create it

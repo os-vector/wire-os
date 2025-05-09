@@ -24,6 +24,7 @@ do_install () {
 	install -d ${D}/data/misc/bluetooth
 	cp -r ${S}/other/export-gpio ${D}/usr/sbin/export-gpio
 	cp -r ${S}/initscripts/* ${D}/etc/initscripts/
+	chmod 0777 ${D}/etc/initscripts/*
 	cp -r ${S}/qtiroot ${D}/usr/qtiroot
 	ln -sf /usr/qtiroot/qtirun ${D}/usr/bin/qtirun
 	cp -r ${S}/services/* ${D}/lib/systemd/system/
@@ -43,6 +44,7 @@ do_install () {
 	ln -sf /lib/systemd/system/leprop.service ${D}/lib/systemd/system/multi-user.target.wants/
 	ln -sf /lib/systemd/system/mount-data.service ${D}/lib/systemd/system/local-fs.target.requires/
 	ln -sf /lib/systemd/system/setup-qtiroot.service ${D}/lib/systemd/system/multi-user.target.wants/
+	ln -sf /lib/systemd/system/setup-persist.service ${D}/lib/systemd/system/multi-user.target.wants/
 }
 
 FILES:${PN} = "/usr/qtiroot \

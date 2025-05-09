@@ -1,0 +1,32 @@
+#!/bin/bash
+
+case "$1" in
+  start )
+    if [[ -f /persist/.made ]]; then
+        echo "persist already made"
+        exit 0
+    fi
+    mount -o defaults,noexec,nosuid,nodev,noatime,noauto /dev/block/bootdevice/by-name/persist /persist
+    mounted=$?
+    if [ ! $mounted -eq 0 ]; then
+        blkdiscard -s /dev/block/bootdevice/by-name/persist
+        # our silly kernel doesn't support these features
+        mkfs.ext4 -O ^metadata_csum,^64bit /dev/block/bootdevice/by-name/persist
+        mount -o defaults,noexec,nosuid,nodev,noatime,noauto /dev/block/bootdevice/by-name/persist /persist
+        touch /persist/.made
+        sync
+    fi
+    ;;
+
+  stop )
+    echo "Unmounting /persist"
+    sync
+    umount /persist
+    ;;
+
+  * )
+    echo "Usage: setup-persist { start | stop }"
+    ;;
+esac
+
+exit 0
