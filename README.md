@@ -14,8 +14,8 @@ The main repo for building Viccyware otas.
 Make sure you have Docker installed, and configured so a regular user can use it.
 
 ```
-git clone https://github.com/Switch-modder/Viccyware-oelinux/ --recurse-submodules --shallow-submodules --depth=1
-cd wire-os
+git clone https://github.com/The-Viccyware-Group/Viccyware-oelinux/ --recurse-submodules --shallow-submodules --depth=1
+cd Viccyware-oelinux
 ./build/build.sh -bt <dev/oskr> -bp <boot-passwd> -v <build-increment>
 # boot password not required for dev
 # example: ./build/build.sh -bt dev -v 1
