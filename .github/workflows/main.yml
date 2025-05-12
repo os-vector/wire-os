@@ -1,27 +1,36 @@
 # Is this a bad idea?
-name: Build Viccyware DEV ota
+name: Yocto Linux Build
 
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch to build'
+        description: 'Branch or Tag to build'
         required: true
         default: 'Viccyware-tester'
   push:
     tags:
-      - 'v*'  
-
+      - 'v*'
 jobs:
   build:
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
     
     steps:
+    - name: Determine Checkout Ref
+      id: get-ref
+      run: |
+        if [ -n "${{ github.event.inputs.ref }}" ]; then
+          echo "ref=${{ github.event.inputs.ref }}" >> $GITHUB_OUTPUT
+        elif [ -n "${{ github.ref_name }}" ]; then
+          echo "ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "ref=Viccyware-tester" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref }}
+        ref: ${{ steps.get-ref.outputs.ref }}
         submodules: recursive
         fetch-depth: 0
     
@@ -29,10 +38,10 @@ jobs:
       run: |
         ./build/build.sh -bt dev -v 5
     
-    - name: Upload ota
+    - name: Find and Upload OTA Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ota-artifacts-${{ github.ref_name }}
+        name: ota-artifacts-${{ steps.get-ref.outputs.ref }}
         path: _build/*.ota
         retention-days: 30
         if-no-files-found: warn
