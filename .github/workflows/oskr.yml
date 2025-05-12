@@ -31,6 +31,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        clean: false
         ref: ${{ steps.get-ref.outputs.ref }}
         submodules: recursive
         fetch-depth: 0
