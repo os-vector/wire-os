@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, linux]
     
     steps:
     - name: Determine Checkout Ref
