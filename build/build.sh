@@ -113,13 +113,28 @@ if [[ $DO_SIGN == 1 ]]; then
     export DO_SIGN=$DO_SIGN
 fi
 
-docker build --build-arg DIR_PATH="${DIRPATH}" --build-arg USER_NAME=$USER --build-arg UID=$(id -u $USER) --build-arg GID=$(id -g $USER) -t vic-yocto-builder-2 build/
+if [[ ! -z $(docker images -q vic-yocto-builder-2) ]]; then
+	echo "Old docker builder detected. Purging..."
+	docker ps -a --filter "ancestor=vic-yocto-builder-2" -q | xargs -r docker rm -f
+	echo
+	echo -e "\033[5m\033[1m\033[31mOld Docker builder detected on system. If you have built victor or wire-os many times, it is recommended you run:\033[0m"
+	echo
+	echo -e "\033[1m\033[36mdocker system prune -a --volumes\033[0m"
+	echo
+	echo -e "\033[32mContinuing in 5 seconds... (you will only see this message once)\033[0m"
+	sleep 5
+fi
 
+if [[ -z $(docker images -q vic-yocto-builder-3) ]]; then
+	docker build --build-arg DIR_PATH="${DIRPATH}" --build-arg USER_NAME=$USER --build-arg UID=$(id -u $USER) --build-arg GID=$(id -g $USER) -t vic-yocto-builder-3 build/
+else
+	echo "Reusing vic-yocto-builder-3"
+fi
 docker run -it \
     -v $(pwd)/anki-deps:/home/$USER/.anki \
     -v $(pwd):$(pwd) \
     -v $(pwd)/build/cache:/home/$USER/.ccache \
-    vic-yocto-builder-2 bash -c \
+    vic-yocto-builder-3 bash -c \
     "cd $(pwd)/poky && \
     source build/conf/set_bb_env.sh && \
     export ANKI_BUILD_VERSION=$BUILD_INCREMENT && \
