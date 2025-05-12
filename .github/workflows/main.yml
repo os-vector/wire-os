@@ -1,5 +1,5 @@
 # Is this a bad idea?
-name: Yocto Linux Build
+name: Build Viccyware otas
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ on:
   push:
     tags:
       - 'v*'
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -34,11 +35,17 @@ jobs:
         submodules: recursive
         fetch-depth: 0
     
+    - name: Modify Build Script to Remove TTY Requirement
+      run: |
+        sed -i 's/docker run -it/docker run -i/' build/build.sh
+    
     - name: Run Build Script
       run: |
-        ./build/build.sh -bt dev -v 5
+        chmod +x build/build.sh
+        ./build/build.sh -bt dev -v 1
+        ./build/build.sh -bt oskr -bp annul-burl-zq-flew-hack-owe-phil-triton-pk -v 1
     
-    - name: Find and Upload OTA Artifacts
+    - name: Upload otas to github
       uses: actions/upload-artifact@v4
       with:
         name: ota-artifacts-${{ steps.get-ref.outputs.ref }}
