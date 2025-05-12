@@ -1,5 +1,5 @@
 # Is this a bad idea?
-name: Build Viccyware otas
+name: Build Viccyware dev otas
 
 on:
   workflow_dispatch:
