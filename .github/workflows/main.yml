@@ -1,5 +1,5 @@
 # Is this a bad idea?
-name: Build Viccyware otas
+name: Build Viccyware ota
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         default: 'Viccyware-tester'
   push:
     tags:
-      - 'v*'
+      - 'v*' 
 
 jobs:
   build:
@@ -35,17 +35,25 @@ jobs:
         submodules: recursive
         fetch-depth: 0
     
-    - name: Modify Build Script to Remove TTY Requirement
+    - name: Modify Build Script for CI Environment
       run: |
-        sed -i 's/docker run -it/docker run -i/' build/build.sh
+        cat build/build.sh | sed 's/docker run -it/docker run --progress=plain -i/' > build/build_ci.sh
+        chmod +x build/build_ci.sh
+        
+        sed -i '/^set -e/a\\n# Enable more verbose output\nset -x' build/build_ci.sh
+        
+        sed -i '/echo "All checks passed. Building."/a\\necho "::group::Building Docker image"' build/build_ci.sh
+        sed -i '/echo "Reusing vic-yocto-builder-3"/a\\necho "::endgroup::"' build/build_ci.sh
+        sed -i '/echo -e "\\033\[1;32mCompleted successfully/i\\necho "::endgroup::"' build/build_ci.sh
     
     - name: Run Build Script
       run: |
-        chmod +x build/build.sh
-        ./build/build.sh -bt dev -v 1
-        ./build/build.sh -bt oskr -bp annul-burl-zq-flew-hack-owe-phil-triton-pk -v 1
+        ./build/build_ci.sh -bt dev -v 1
+        ./build/build_ci.sh -bt oskr -bp annul-burl-zq-flew-hack-owe-phil-triton-pk -v 1
+      env:
+        DOCKER_BUILDKIT: 1
     
-    - name: Upload otas to github
+    - name: Upload Viccyware otas
       uses: actions/upload-artifact@v4
       with:
         name: ota-artifacts-${{ steps.get-ref.outputs.ref }}
