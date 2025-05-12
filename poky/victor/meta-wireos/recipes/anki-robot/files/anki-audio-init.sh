@@ -28,4 +28,4 @@ amixer cset numid=1633 "RX1"
 amixer cset numid=1641 1
 
 # tinymix set "RX3 Digital Volume" 74
-amixer cset numid=33 74
+amixer cset numid=33 71
