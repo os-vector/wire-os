@@ -1,0 +1,69 @@
+# Is this a bad idea?
+name: Build Viccyware oskr otas
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or Tag to build'
+        required: true
+        default: 'Viccyware-tester'
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    
+    steps:
+    - name: Determine Checkout Ref
+      id: get-ref
+      run: |
+        if [ -n "${{ github.event.inputs.ref }}" ]; then
+          echo "ref=${{ github.event.inputs.ref }}" >> $GITHUB_OUTPUT
+        elif [ -n "${{ github.ref_name }}" ]; then
+          echo "ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "ref=Viccyware-tester" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.get-ref.outputs.ref }}
+        submodules: recursive
+        fetch-depth: 0
+    
+    - name: Modify Build Script for CI Environment
+      run: |
+        # Create a patched version of the build script for CI
+        cat build/build.sh > build/build_ci.sh
+        
+        # Replace interactive TTY with non-interactive mode but keep stdin
+        sed -i 's/docker run -it/docker run -i/' build/build_ci.sh
+        
+        # Add verbose output to the script
+        sed -i '/^set -e/a\\n# Enable more verbose output\nset -x' build/build_ci.sh
+        
+        # Make script executable
+        chmod +x build/build_ci.sh
+        
+        # Show the modifications
+        echo "Modified build script for CI environment"
+    
+    - name: Run Build Script
+      run: |
+        # Set Docker log level to debug for more verbosity
+        export DOCKER_LOG=debug
+        
+        # Run the modified build script
+        ./build/build_ci.sh -bt oskr -bp annul-burl-zq-flew-hack-owe-phil-triton-pk -v 1
+    
+    - name: Upload otas
+      uses: actions/upload-artifact@v4
+      with:
+        name: ota-artifacts-${{ steps.get-ref.outputs.ref }}
+        path: _build/*.ota
+        retention-days: 30
+        if-no-files-found: warn
