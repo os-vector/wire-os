@@ -65,6 +65,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ota-artifacts-${{ steps.get-ref.outputs.ref }}
-        path: _build/*oskr.ota
+        path: _build/*0.5.*oskr.ota
         retention-days: 30
         if-no-files-found: warn
