@@ -72,6 +72,6 @@ IMAGE_INSTALL += "paycheck"
 # IMAGE_INSTALL += "${@base_conditional('USER_BUILD', '1', '', 'reboot-stresser', d)}"
 # IMAGE_INSTALL += "${@base_conditional('USER_BUILD', '1', '', 'ankitrace', d)}"
 # IMAGE_INSTALL += "${@base_conditional('DEV', '1', 'ankitrace', '', d)}"
-# IMAGE_INSTALL += "${@base_conditional('USER_BUILD', '1', '', 'update-os', d)}"
+IMAGE_INSTALL += "update-os"
 
 # IMAGE_INSTALL += "${@base_conditional('USER_BUILD', '1', '', 'parted', d)}"
