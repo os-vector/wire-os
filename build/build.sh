@@ -15,8 +15,8 @@ OLD_CONTAINER_NAME="vic-yocto-builder-5"
 
 function usage() {
     echo "$1"
-    echo "Usage: ./build/build.sh -bt <dev/oskr/devcloudless> -s -op <OTA-pw> -bp <boot-passwd> -v <build-increment>"
-    echo "Usage (no signing): ./build/build.sh -bt <dev/oskr/devcloudless> -bp <boot-passwd> -v <build-increment>"
+    echo "Usage: ./build/build.sh -bt <dev/oskr/devcloudless/oskrcloudless> -s -op <OTA-pw> -bp <boot-passwd> -v <build-increment>"
+    echo "Usage (no signing): ./build/build.sh -bt <dev/oskr/devcloudless/oskrcloudless> -bp <boot-passwd> -v <build-increment>"
     exit 1
 }
 
@@ -117,7 +117,7 @@ fi
 is_victor_there_and_compatible
 
 if [[ "$BOT_TYPE" != "oskr" && "$BOT_TYPE" != "dev" && "$BOT_TYPE" != "prod" && "$BOT_TYPE" != "devcloudless" ]]; then
-    usage "BOT_TYPE (-bt) should be 'oskr' or 'dev', got: $BOT_TYPE"
+    usage "BOT_TYPE (-bt) should be 'oskr', 'dev', 'devcloudless', or 'oskrcloudless', got: $BOT_TYPE"
 fi
 
 if [[ "$DO_SIGN" == 1 && "$OTA_SIGNING_KEY_PASSWORD" == "" ]]; then
@@ -128,7 +128,7 @@ if [[ "$DO_SIGN" == 1 ]]; then
     check_sign_ota
 fi
 
-if [[ "$BOT_TYPE" == "oskr" ]]; then
+if [[ "$BOT_TYPE" == "oskr" && "$BOT_TYPE" == "oskrcloudless" ]]; then
     check_sign_oskr
 fi
 
@@ -182,6 +182,9 @@ elif [[ $BOT_TYPE == "prod" ]]; then
 	ANKIDEV=0
 elif [[ $BOT_TYPE == "devcloudless" ]]; then
         BOOT_MAKE_COMMAND="make devsign"
+elif [[ $BOT_TYPE == "oskrcloudless" ]]; then
+        export BOOT_IMAGE_SIGNING_PASSWORD="${BOOT_PASSWORD}"
+        BOOT_MAKE_COMMAND="make oskrsign"
 else
 	BOOT_MAKE_COMMAND="make devsign"
 fi

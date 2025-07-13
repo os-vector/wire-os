@@ -98,13 +98,25 @@ function build-8009-robot-perf-image() {
   cdbitbake machine-robot-image
 }
 
-function build-8009-robot-perf-cloudless-image() {
+function build-8009-robot-perf-devcloudless-image() {
   unset_bb_env
   export MACHINE=apq8009-robot
   export DISTRO=msm-perf
   export VARIANT=perf
   export PRODUCT=robot
   export CLOUDLESS=1
+  cdbitbake machine-robot-image
+}
+
+
+function build-8009-robot-perf-devcloudless-image() {
+  unset_bb_env
+  export MACHINE=apq8009-robot
+  export DISTRO=msm-perf
+  export VARIANT=perf
+  export PRODUCT=robot
+  export CLOUDLESS=1
+  export OSKR=1
   cdbitbake machine-robot-image
 }
 
@@ -211,7 +223,11 @@ function build-dev() {
 }
 
 function build-devcloudless() {
-  build-8009-robot-perf-cloudless-image
+  build-8009-robot-perf-devcloudless-image
+}
+
+function build-oskrcloudless() {
+  build-8009-robot-perf-oskrcloudless-image
 }
 
 function build-prod() {
@@ -252,6 +268,19 @@ function clean-devcloudless() {
   wire-clean
   cdbitbake -c cleanall ${cleanList[@]} vic-cloudless
 }
+
+function clean-oskrcloudless() {
+  unset_bb_env
+  export MACHINE=apq8009-robot
+  export DISTRO=msm-perf
+  export VARIANT=perf
+  export PRODUCT=robot
+  export CLOUDLESS=1
+  export OSKR=1
+  wire-clean
+  cdbitbake -c cleanall ${cleanList[@]} vic-cloudless
+}
+
 
 function clean-prod() {
   unset_bb_env
