@@ -116,7 +116,7 @@ fi
 
 is_victor_there_and_compatible
 
-if [[ "$BOT_TYPE" != "oskr" && "$BOT_TYPE" != "dev" && "$BOT_TYPE" != "prod" && "$BOT_TYPE" != "devcloudless" ]]; then
+if [[ "$BOT_TYPE" != "oskr" && "$BOT_TYPE" != "dev" && "$BOT_TYPE" != "prod" && "$BOT_TYPE" != "devcloudless" && "$BOT_TYPE" != "oskrcloudless" ]]; then
     usage "BOT_TYPE (-bt) should be 'oskr', 'dev', 'devcloudless', or 'oskrcloudless', got: $BOT_TYPE"
 fi
 
