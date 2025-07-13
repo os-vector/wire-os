@@ -109,7 +109,7 @@ function build-8009-robot-perf-devcloudless-image() {
 }
 
 
-function build-8009-robot-perf-devcloudless-image() {
+function build-8009-robot-perf-oskrcloudless-image() {
   unset_bb_env
   export MACHINE=apq8009-robot
   export DISTRO=msm-perf
