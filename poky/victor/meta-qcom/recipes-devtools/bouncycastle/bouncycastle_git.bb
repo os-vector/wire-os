@@ -31,7 +31,7 @@ SRC_URI +=  "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=
 SRC_URI[verity.md5sum] = "ea0bac9d21dcae611ea6bdde97ed4125"
 SRC_URI[verity.sha256sum] = "baa2967bbf0977150265ff878439c55bbd3b2095d7918146f6f9635268fc951e"
 
-S_VERITY="${WORKDIR}/verity"
+S_VERITY = "${WORKDIR}/verity"
 
 #######################################
 #  keys/certificates git repo
@@ -41,7 +41,7 @@ SRC_URI +=  "${CLO_LA_GIT}/platform/build_repo;protocol=https;nobranch=1;rev=26b
 SRC_URI[security.md5sum] = "1ba8f1041c6f81834450aefc80e78ba8"
 SRC_URI[security.sha256sum] = "2174c4c82d24ec91e94949a3d1eb4fac29cc657b3e35c662c3e80042576fb6b6"
 
-S_SECURITY="${WORKDIR}/security"
+S_SECURITY = "${WORKDIR}/security"
 SECURITY_TOOLS_DIR = "${TMPDIR}/work-shared/security_tools"
 
 # Move the scripts to a shared directory as described by SECURITY_TOOLS_DIR
@@ -66,7 +66,7 @@ base_do_unpack:append () {
 #    - classes
 #    - libs
 #######################################
-BC_BUILD="${WORKDIR}/build"
+BC_BUILD = "${WORKDIR}/build"
 
 do_precompile() {
     rm -fr ${BC_BUILD}/classes

@@ -8,8 +8,8 @@ SERVICE_FILE = "vic-engine.service"
 SRC_URI = "file://${SERVICE_FILE}"
 SRC_URI += "file://engine.sudoers"
 SRC_URI += "file://export-gpio.sh"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 inherit systemd
 

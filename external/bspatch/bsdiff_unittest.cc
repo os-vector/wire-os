@@ -3,12 +3,17 @@
 // found in the LICENSE file.
 
 #include "bsdiff/bsdiff.h"
+#include <cstdint>
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <string>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "test_utils.h"
+#include <cstdint>
 
 using std::string;
 using std::vector;

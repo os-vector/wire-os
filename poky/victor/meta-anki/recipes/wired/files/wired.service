@@ -1,11 +1,15 @@
 [Unit]
 Description=Silly wire daemon
 SourcePath=/usr/bin/wired
+Requires=ankiinit.service
+After=ankiinit.service
 
 ConditionFileIsExecutable=/usr/bin/logwrapper
 ConditionFileIsExecutable=/usr/bin/wired
 
 [Service]
+# give ankiinit time to do its thing
+ExecStartPre=/usr/bin/sleep 3
 ExecStart=/usr/bin/logwrapper /usr/bin/wired
 Restart=no
 

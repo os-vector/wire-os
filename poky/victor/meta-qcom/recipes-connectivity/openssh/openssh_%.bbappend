@@ -16,7 +16,7 @@ SRC_URI += "file://sshdgenkeys.service \
 
 # EXTRA_OECONF += " --sysconfdir=/data/ssh"
 
-EXTRA_OECONF:append=" ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', '--with-selinux', '', d)}"
+EXTRA_OECONF:append = " ${@bb.utils.contains('DISTRO_FEATURES', 'selinux', '--with-selinux', '', d)}"
 BASEPRODUCT = "${@d.getVar('PRODUCT', False)}"
 do_install:append () {
     sed -i -e 's:#PermitRootLogin yes:PermitRootLogin yes:' ${UNPACKDIR}/sshd_config ${D}${sysconfdir}/ssh/sshd_config

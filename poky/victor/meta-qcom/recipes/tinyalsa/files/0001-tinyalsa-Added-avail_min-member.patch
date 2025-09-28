@@ -8,10 +8,10 @@ Added Avail_min member in pcm_config structure
  git/include/tinyalsa/pcm.h | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/git/include/tinyalsa/pcm.h b/git/include/tinyalsa/pcm.h
+diff --git a/tinyalsa-git/include/tinyalsa/pcm.h b/tinyalsa-git/include/tinyalsa/pcm.h
 index 69544a1..5fcb7d8 100644
---- a/git/include/tinyalsa/pcm.h
-+++ b/git/include/tinyalsa/pcm.h
+--- a/tinyalsa-git/include/tinyalsa/pcm.h
++++ b/tinyalsa-git/include/tinyalsa/pcm.h
 @@ -181,6 +181,7 @@ struct pcm_config {
      unsigned int stop_threshold;
      /** The minimum number of frames to silence the PCM */

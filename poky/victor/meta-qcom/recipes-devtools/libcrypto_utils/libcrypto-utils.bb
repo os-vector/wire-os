@@ -12,7 +12,7 @@ SRC_URI = "${CLO_LA_GIT}/platform/system/core;protocol=https;nobranch=1;rev=fb09
 SRC_URI += "file://Add-autotool-make-files-for-libcrypto_utils.patch"
 SRC_URI += "file://0001-openssl-1.1.1-compatibility.patch"
 
-S = "${WORKDIR}/libcrypto_utils"
+S = "${UNPACKDIR}/libcrypto_utils"
 
 EXTRA_OECONF_class-native = "--with-header-includes=${S}/include"
 

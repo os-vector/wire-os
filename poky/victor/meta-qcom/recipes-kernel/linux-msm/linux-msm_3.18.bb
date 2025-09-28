@@ -7,7 +7,7 @@ COMPATIBLE_MACHINE = "(mdm9607|mdm9650|apq8009|apq8096|apq8053|apq8017|msm8909w|
 KERNEL_IMAGEDEST_apq8096 = "boot"
 
 SRC_DIR   =  "${WORKSPACE}/kernel/msm-3.18"
-S         =  "${WORKDIR}/kernel/msm-3.18"
+S         =  "${UNPACKDIR}/kernel/msm-3.18"
 PR = "r6"
 
 SRC_URI += "file://defconfig"
@@ -82,7 +82,7 @@ do_install:append() {
 }
 
 do_shared_workdir[dirs] = "${DEPLOY_DIR_IMAGE}"
-KERNEL_VERSION_SANITY_SKIP="1"
+KERNEL_VERSION_SANITY_SKIP = "1"
 INSANE_SKIP:${PN} += " installed-vs-shipped"
 INSANE_SKIP:${PN} += " debug-files"
 do_package_qa[noexec] = "1"

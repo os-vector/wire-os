@@ -4,19 +4,23 @@
         "${workspaceFolder}/sources/poky/bitbake/lib",
         "${workspaceFolder}/sources/poky/meta/lib",
         "${workspaceFolder}/poky/bitbake/lib",
-        "${workspaceFolder}/poky/meta/lib"
+        "${workspaceFolder}/poky/meta/lib",
+        "${workspaceFolder}/poky/poky/bitbake/lib",
+        "${workspaceFolder}/poky/poky/meta/lib"
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/sources/poky/bitbake/lib",
         "${workspaceFolder}/sources/poky/meta/lib",
         "${workspaceFolder}/poky/bitbake/lib",
-        "${workspaceFolder}/poky/meta/lib"
+        "${workspaceFolder}/poky/meta/lib",
+        "${workspaceFolder}/poky/poky/bitbake/lib",
+        "${workspaceFolder}/poky/poky/meta/lib"
     ],
     "files.associations": {
         "*.conf": "bitbake",
         "*.inc": "bitbake"
     },
-    "bitbake.pathToBitbakeFolder": "${workspaceFolder}/poky/bitbake",
+    "bitbake.pathToBitbakeFolder": "${workspaceFolder}/poky/poky/bitbake",
     "bitbake.pathToBuildFolder": "${workspaceFolder}/poky/build",
     "bitbake.pathToEnvScript": "${workspaceFolder}/poky/build/conf/set_bb_env.sh",
     "bitbake.sdkImage": "machine-robot-image",

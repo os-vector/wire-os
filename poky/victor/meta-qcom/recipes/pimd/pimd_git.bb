@@ -24,7 +24,7 @@ SRC_URI:append_9615-cdp = " \
            file://pimd.conf \
            file://config_fix_multicast_subnetmask_on_rmnet.patch "
 
-S = "${WORKDIR}/git"
+S = "${UNPACKDIR}/git"
 
 do_compile() {
   make

@@ -13,7 +13,7 @@ DEPENDS = "libpagemap libcutils"
 FILESPATH =+ "${WORKSPACE}/system/extras/:"
 SRC_URI = "file://procrank"
 
-S = "${WORKDIR}/procrank"
+S = "${UNPACKDIR}/procrank"
 
 CFLAGS = "-I${STAGING_INCDIR}/pagemap"
 CFLAGS += "-I${STAGING_INCDIR}/cutils"

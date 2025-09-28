@@ -14,7 +14,7 @@ SRC_URI  += "file://mdsprpcd.service"
 
 SRC_DIR   = "${WORKSPACE}/adsprpc"
 
-S  = "${WORKDIR}/adsprpc"
+S  = "${UNPACKDIR}/adsprpc"
 PR = "r1"
 
 EXTRA_OECONF += "--enable-mdsprpc"

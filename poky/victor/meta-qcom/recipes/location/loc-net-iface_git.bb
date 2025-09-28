@@ -8,7 +8,7 @@ ${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
 
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://qcom-opensource/location/loc_net_iface/"
-S = "${WORKDIR}/qcom-opensource/location/loc_net_iface"
+S = "${UNPACKDIR}/qcom-opensource/location/loc_net_iface"
 DEPENDS = "glib-2.0 gps-utils qmi qmi-framework loc-pla data data-items loc-hal"
 EXTRA_OECONF = "--with-glib"
 

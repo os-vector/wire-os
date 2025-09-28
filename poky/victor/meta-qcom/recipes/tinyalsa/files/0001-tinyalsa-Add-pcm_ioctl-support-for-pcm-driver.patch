@@ -8,10 +8,10 @@ Subject: [PATCH] tinyalsa: Add pcm_ioctl support for pcm driver
  git/src/pcm.c              | 14 ++++++++++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/git/include/tinyalsa/pcm.h b/git/include/tinyalsa/pcm.h
+diff --git a/tinyalsa-git/include/tinyalsa/pcm.h b/tinyalsa-git/include/tinyalsa/pcm.h
 index 33ea55a..04c13a5 100644
---- a/git/include/tinyalsa/pcm.h
-+++ b/git/include/tinyalsa/pcm.h
+--- a/tinyalsa-git/include/tinyalsa/pcm.h
++++ b/tinyalsa-git/include/tinyalsa/pcm.h
 @@ -299,6 +299,8 @@ int pcm_wait(struct pcm *pcm, int timeout);
 
  long pcm_get_delay(struct pcm *pcm);
@@ -21,10 +21,10 @@ index 33ea55a..04c13a5 100644
  #if defined(__cplusplus)
  }  /* extern "C" */
  #endif
-diff --git a/git/src/pcm.c b/git/src/pcm.c
+diff --git a/tinyalsa-git/src/pcm.c b/tinyalsa-git/src/pcm.c
 index 840e36e..289ac3e 100644
---- a/git/src/pcm.c
-+++ b/git/src/pcm.c
+--- a/tinyalsa-git/src/pcm.c
++++ b/tinyalsa-git/src/pcm.c
 @@ -194,6 +194,20 @@ struct pcm {
      unsigned int subdevice;
  };

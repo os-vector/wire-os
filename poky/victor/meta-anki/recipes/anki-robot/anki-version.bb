@@ -8,8 +8,8 @@ FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://ANKI_VERSION"
 SRC_URI += "file://VICTOR_COMPAT_VERSION"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_install:append () {
     install -d ${D}/etc

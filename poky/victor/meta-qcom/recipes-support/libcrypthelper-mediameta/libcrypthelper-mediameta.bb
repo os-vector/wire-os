@@ -13,7 +13,7 @@ PR = "r0"
 SRC_URI   = "file://crypthelper-mediameta"
 SRC_URI  += "file://media-encryption.conf"
 
-S = "${WORKDIR}/crypthelper-mediameta"
+S = "${UNPACKDIR}/crypthelper-mediameta"
 
 CFLAGS += "-I${S}/libs"
 

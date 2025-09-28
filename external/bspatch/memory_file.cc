@@ -3,9 +3,12 @@
 // found in the LICENSE file.
 
 #include "memory_file.h"
+#include <cstdint>
 
 #include <algorithm>
+#include <cstdint>
 #include <string.h>
+#include <cstdint>
 
 namespace bsdiff {
 

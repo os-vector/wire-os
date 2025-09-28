@@ -17,10 +17,10 @@ DEPENDS = "virtual/kernel iw"
 FILESPATH =+ "${WORKSPACE}:"
 #SRC_URI = "file://wlan"
 
-S = "${WORKDIR}/wlan/host"
+S = "${UNPACKDIR}/wlan/host"
 
-ATH_BUILD_TYPE="mdm9x15"
-ATH_BUS_TYPE="SDIO"
+ATH_BUILD_TYPE = "mdm9x15"
+ATH_BUS_TYPE = "SDIO"
 
 EXTRA_OEMAKE = "\
     ATH_LINUXPATH=${STAGING_DIR_HOST}${base_libdir}/modules/${KERNEL_VERSION}/build \

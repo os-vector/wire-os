@@ -8,6 +8,6 @@ ${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
 
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://hardware/qcom/gps/utils/platform_lib_abstractions/loc_stub/"
-S = "${WORKDIR}/hardware/qcom/gps/utils/platform_lib_abstractions/loc_stub"
+S = "${UNPACKDIR}/hardware/qcom/gps/utils/platform_lib_abstractions/loc_stub"
 DEPENDS = "glib-2.0 liblog"
 EXTRA_OECONF = "--with-glib"

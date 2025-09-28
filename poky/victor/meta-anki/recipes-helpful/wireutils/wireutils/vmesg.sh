@@ -21,7 +21,7 @@ fi
 if [[ $1 == "-c" ]]; then
 	GRABCOMMAND="cat"
 elif [[ $1 == "-t" ]]; then
-	GRABCOMMAND="tail"
+	GRABCOMMAND="tail -f"
 fi
 
 if [[ ! $2 == "" ]]; then

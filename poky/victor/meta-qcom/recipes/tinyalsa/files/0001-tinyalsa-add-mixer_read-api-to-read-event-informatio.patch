@@ -8,10 +8,10 @@ Add mixer_read() API to get the event information.
  git/src/mixer.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
-diff --git a/git/src/mixer.c b/git/src/mixer.c
+diff --git a/tinyalsa-git/src/mixer.c b/tinyalsa-git/src/mixer.c
 index 0e48c6f..f1b5a30 100644
---- a/git/src/mixer.c
-+++ b/git/src/mixer.c
+--- a/tinyalsa-git/src/mixer.c
++++ b/tinyalsa-git/src/mixer.c
 @@ -963,3 +963,23 @@ int mixer_ctl_set_enum_by_string(struct mixer_ctl *ctl, const char *string)
      return -EINVAL;
  }

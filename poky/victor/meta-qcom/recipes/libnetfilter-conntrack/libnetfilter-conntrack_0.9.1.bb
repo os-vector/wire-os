@@ -9,7 +9,7 @@ PR = "r0"
 SRC_URI = \
 "http://www.netfilter.org/projects/libnetfilter_conntrack/files/libnetfilter_conntrack-${PV}.tar.bz2"
 
-S = "${WORKDIR}/libnetfilter_conntrack-${PV}"
+S = "${UNPACKDIR}/libnetfilter_conntrack-${PV}"
  
 inherit autotools pkgconfig
 

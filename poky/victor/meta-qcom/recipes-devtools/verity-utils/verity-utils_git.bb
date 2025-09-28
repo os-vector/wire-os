@@ -15,7 +15,7 @@ DEPENDS = "libgcc libmincrypt libsparse zlib openssl bouncycastle"
 FILESPATH =+ "${WORKSPACE}/system/extras/:"
 SRC_URI = "file://verity"
 
-S = "${WORKDIR}/verity"
+S = "${UNPACKDIR}/verity"
 
 EXTRA_OECONF =  "--with-coreheader-includes=${WORKSPACE}/system/core/include"
 EXTRA_OECONF += "--with-mkbootimgheader-includes=${WORKSPACE}/system/core/mkbootimg"

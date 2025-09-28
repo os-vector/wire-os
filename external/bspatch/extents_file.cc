@@ -3,10 +3,13 @@
 // found in the LICENSE file.
 
 #include "bsdiff/extents_file.h"
+#include <cstdint>
 
 #include <string.h>
+#include <cstdint>
 
 #include <algorithm>
+#include <cstdint>
 
 // Extent files implementation extending FileInterface.
 //

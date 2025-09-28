@@ -4,7 +4,7 @@ DESCRIPTION = "acdb-fts Library"
 PR = "r0"
 
 SRC_DIR = "${WORKSPACE}/audio/mm-audio/audio-acdb-util/acdb-fts/"
-S = "${WORKDIR}/audio/mm-audio/audio-acdb-util/acdb-fts"
+S = "${UNPACKDIR}/audio/mm-audio/audio-acdb-util/acdb-fts"
 
 DEPENDS = "audcal"
 

@@ -8,7 +8,7 @@ PR = "r0"
 
 SRC_URI = "file://${WORKSPACE}/diag"
 
-S = "${WORKDIR}/diag"
+S = "${UNPACKDIR}/diag"
 
 do_install() {
 	mkdir -p ${D}/usr/include

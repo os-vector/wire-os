@@ -13,8 +13,8 @@ FILESPATH =+ "${WORKSPACE}:"
 
 RULES_TAG = "${@bb.utils.contains('USER_BUILD','1','user','eng',d)}${@bb.utils.contains('DEV','1','dev','',d)}${@bb.utils.contains('OSKR','1','oskr','',d)}"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 SRC_URI += "file://ip6tables.service"
 SRC_URI += "file://ip6tables-user.rules"

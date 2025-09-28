@@ -11,7 +11,7 @@ PR = "r0"
 SRC_URI = "${CLO_LA_GIT}/platform/external/fec;protocol=https;nobranch=1;rev=4342555427f5bb0788dfacd1eb07d2876afab733"
 SRC_URI += "file://0001-Add-gnu-autotools-make-files-to-build-libfec_rs.patch"
 
-S = "${WORKDIR}/git"
+S = "${UNPACKDIR}/git"
 
 BBCLASSEXTEND += "native"
 

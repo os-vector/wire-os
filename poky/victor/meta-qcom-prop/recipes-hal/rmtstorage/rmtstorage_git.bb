@@ -10,7 +10,7 @@ SRC_URI += "file://rmt_storage.service"
 
 SRC_DIR = "${WORKSPACE}/remotefs"
 
-S = "${WORKDIR}/remotefs"
+S = "${UNPACKDIR}/remotefs"
 
 DEPENDS += "glib-2.0 qmi qmi-framework virtual/kernel libcutils"
 

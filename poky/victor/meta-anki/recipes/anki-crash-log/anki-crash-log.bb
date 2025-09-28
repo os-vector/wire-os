@@ -10,7 +10,7 @@ SRC_URI += "file://anki/anki-crash-log/"
 SRC_URI += "file://anki-crash-log.service"
 SRC_URI += "file://anki-crash-log.socket"
 
-S = "${WORKDIR}/anki/anki-crash-log"
+S = "${UNPACKDIR}/anki/anki-crash-log"
 SYSTEM_DIR = "${D}${sysconfdir}/systemd/system"
 
 do_install() {

@@ -10,7 +10,7 @@ DEPENDS = "bspatch"
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://external/paycheck"
 
-S = "${WORKDIR}/external/paycheck"
+S = "${UNPACKDIR}/external/paycheck"
 
 do_compile() {
 }

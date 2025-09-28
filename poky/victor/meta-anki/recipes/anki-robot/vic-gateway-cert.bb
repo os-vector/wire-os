@@ -7,8 +7,8 @@ Anki-Inc.-Proprietary;md5=4b03b8ffef1b70b13d869dbce43e8f09"
 SRC_URI += "file://vic-gateway-cert.service"
 SRC_URI += "file://vic-gateway-cert"
 SRC_URI += "file://vic-gateway-cert.conf.in"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 inherit systemd
 

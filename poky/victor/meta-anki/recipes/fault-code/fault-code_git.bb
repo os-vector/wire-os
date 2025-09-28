@@ -8,9 +8,9 @@ FILESPATH =+ "${WORKSPACE}:"
 
 SRC_URI = "file://anki/fault-code/ file://fault-code.service file://fault-code.socket"
 
-S = "${WORKDIR}/anki/fault-code"
+S = "${UNPACKDIR}/anki/fault-code"
 
-UNPACKDIR = "${WORKDIR}/sources"
+#UNPACKDIR = "${WORKDIR}/sources"
 SYSTEM_DIR = "${D}${sysconfdir}/systemd/system"
 
 do_install() {

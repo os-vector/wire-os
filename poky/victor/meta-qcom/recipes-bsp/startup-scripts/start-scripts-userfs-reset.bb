@@ -5,8 +5,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5
 
 SRC_URI  = "file://userfs-reset"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 PR = "r1"
 

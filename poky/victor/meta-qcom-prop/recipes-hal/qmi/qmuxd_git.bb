@@ -13,7 +13,7 @@ EXTRA_OECONF = "--with-lib-path=${STAGING_LIBDIR} \
 
 EXTRA_OECONF:append_msm8960 = " --enable-auto-answer=yes"
 
-S       = "${WORKDIR}/qmuxd"
+S       = "${UNPACKDIR}/qmuxd"
 SRC_DIR = "${WORKSPACE}/qmi/qmuxd"
 
 CFLAGS += "${CFLAGS_EXTRA}"
@@ -23,8 +23,8 @@ INITSCRIPT_NAME = "qmuxd"
 INITSCRIPT_PARAMS = "start 40 2 3 4 5 . stop 80 0 1 6 ."
 
 do_install:append() {
-       install -m 0755 ${WORKDIR}/qmuxd/start_qmuxd_le -D ${D}${sysconfdir}/init.d/qmuxd
-       install -m 0755 ${WORKDIR}/qmuxd/qmi_config.xml -D ${D}${sysconfdir}/data/qmi_config.xml
+       install -m 0755 ${S}/start_qmuxd_le -D ${D}${sysconfdir}/init.d/qmuxd
+       install -m 0755 ${S}/qmi_config.xml -D ${D}${sysconfdir}/data/qmi_config.xml
 }
 
 INITSCRIPT_PARAMS_MSM8226 = "start 40 2 3 4 5 ."

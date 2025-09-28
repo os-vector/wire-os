@@ -17,7 +17,7 @@ FILESPATH =+ "${WORKSPACE}:"
 SRC_URI   = "file://frameworks/av/"
 SRC_URI += "file://automtp.sh"
 
-S = "${WORKDIR}/frameworks/av"
+S = "${UNPACKDIR}/frameworks/av"
 
 EXTRA_OECONF += " --with-kernel-headers=${STAGING_KERNEL_DIR}/include/uapi"
 

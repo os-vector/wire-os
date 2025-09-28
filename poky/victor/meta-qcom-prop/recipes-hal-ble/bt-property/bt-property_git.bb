@@ -15,7 +15,7 @@ SRC_URI += "file://btproperty.service"
 EXTRA_OECONF = " \
                 --with-glib \
                "
-S = "${WORKDIR}/qcom-opensource/bt/property-ops"
+S = "${UNPACKDIR}/qcom-opensource/bt/property-ops"
 
 CFLAGS:append = " -DUSE_ANDROID_LOGGING -fno-strict-aliasing -fno-tree-vectorize "
 LDFLAGS:append = " -llog "

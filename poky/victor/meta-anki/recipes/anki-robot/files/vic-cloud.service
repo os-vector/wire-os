@@ -27,7 +27,7 @@ UMask=0002
 # we instead just allow vic-cloud to bypass the read-search restriction on dirs.
 # We need to fix the permissions in the next Factory OS and can alse re-visit this
 # decision post 1.0
-AmbientCapabilities=CAP_DAC_READ_SEARCH
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_DAC_READ_SEARCH CAP_SYS_BOOT
 
 [Install]
 WantedBy=anki-robot.target

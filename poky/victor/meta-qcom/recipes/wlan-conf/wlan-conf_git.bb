@@ -10,7 +10,7 @@ SRC_URI = "file://mdm-init"
 SRC_URI += "file://wlan_daemon.service"
 
 # Update for each machine
-S = "${WORKDIR}/mdm-init"
+S = "${UNPACKDIR}/mdm-init"
 
 do_install:append(){
   if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then

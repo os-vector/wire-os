@@ -39,7 +39,7 @@ SRC_URI[sha256sum] = "b4936d34c4e6cdd44954beba74296d964bc2c9668ecaa5255e499636fe
 
 CVE_PRODUCT = "wpa_supplicant"
 
-S = "${WORKDIR}/wpa_supplicant-${PV}"
+S = "${UNPACKDIR}/wpa_supplicant-${PV}"
 
 PACKAGES:prepend = "wpa-supplicant-passphrase wpa-supplicant-cli "
 FILES:wpa-supplicant-passphrase = "${bindir}/wpa_passphrase"

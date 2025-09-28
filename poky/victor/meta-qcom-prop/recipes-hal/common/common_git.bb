@@ -10,7 +10,7 @@ FILESPATH =+ "${WORKSPACE}:"
 SRC_DIR = "${WORKSPACE}/android_compat/common/inc/"
 SRC_URI = "file://${@d.getVar('SRC_DIR', True).replace('${WORKSPACE}/', '')}"
 
-S = "${WORKDIR}/android_compat/common/inc"
+S = "${UNPACKDIR}/android_compat/common/inc"
 
 do_install () {
         install -d ${D}${includedir}

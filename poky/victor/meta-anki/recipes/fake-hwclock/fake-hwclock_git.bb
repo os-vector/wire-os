@@ -7,7 +7,7 @@ DEPENDS = "bash"
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://external/fake-hwclock"
 
-S = "${WORKDIR}/external/fake-hwclock"
+S = "${UNPACKDIR}/external/fake-hwclock"
 SYSTEM_DIR = "${D}${sysconfdir}/systemd/system"
 
 do_compile() {

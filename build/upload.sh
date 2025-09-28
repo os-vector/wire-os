@@ -19,8 +19,6 @@ function usage() {
 trap ctrl_c INT
 
 function ctrl_c() {
-    echo -e "\n\nStopping OS update and exiting..."
-    systemctl -q stop update-engine
     exit 1
 }
 
@@ -38,7 +36,7 @@ if [[ "${SERVER_IP}" == "" ]]; then
 fi
 
 if [[ "${INCREMENT}" == "" ]]; then
-	echo "incremenet is null"
+	echo "increment is null"
 	usage
 	exit 1
 fi

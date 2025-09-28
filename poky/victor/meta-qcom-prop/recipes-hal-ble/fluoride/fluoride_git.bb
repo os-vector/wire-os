@@ -12,7 +12,7 @@ DEPENDS = "common zlib btvendorhal libbt-vendor system-media libhardware"
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://system/bt/"
 
-S = "${WORKDIR}/system/bt"
+S = "${UNPACKDIR}/system/bt"
 
 FILES_SOLIBSDEV = ""
 FILES:${PN} += "${libdir}"

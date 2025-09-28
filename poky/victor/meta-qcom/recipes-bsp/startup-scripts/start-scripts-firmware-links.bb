@@ -3,11 +3,11 @@ HOMEPAGE = "http://codeaurora.org"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/BSD-3-Clause;md5=550794465ba0ec5312d6919e203a55f9"
 LICENSE = "BSD-3-Clause"
 
-SRC_URI +="file://${BASEMACHINE}/firmware-links.sh"
-SRC_URI +="file://firmware-links.service"
+SRC_URI += "file://${BASEMACHINE}/firmware-links.sh"
+SRC_URI += "file://firmware-links.service"
 
-S = "${WORKDIR}/${BASEMACHINE}"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}/${BASEMACHINE}"
+#UNPACKDIR = "${S}"
 PR = "r5"
 
 inherit systemd
@@ -15,7 +15,7 @@ inherit systemd
 do_install() {
     if ${@bb.utils.contains('DISTRO_FEATURES', 'ro-rootfs', 'false', 'true', d)}; then
         if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
-           install -m 0755 ${S}/${BASEMACHINE}/firmware-links.sh -D ${D}${sysconfdir}/initscripts/firmware-links.sh
+           install -m 0755 ${S}/firmware-links.sh -D ${D}${sysconfdir}/initscripts/firmware-links.sh
            install -d ${D}${systemd_unitdir}/system/
            install -m 0644 ${S}/firmware-links.service -D ${D}${systemd_unitdir}/system/firmware-links.service
            install -d ${D}${systemd_unitdir}/system/sysinit.target.wants/
@@ -23,7 +23,7 @@ do_install() {
            ln -sf ${systemd_unitdir}/system/firmware-links.service \
                 ${D}${systemd_unitdir}/system/sysinit.target.wants/firmware-links.service
         else
-           install -m 0755 ${S}/${BASEMACHINE}/firmware-links.sh -D ${D}${sysconfdir}/init.d/firmware-links.sh
+           install -m 0755 ${S}/firmware-links.sh -D ${D}${sysconfdir}/init.d/firmware-links.sh
         fi
     fi
 }

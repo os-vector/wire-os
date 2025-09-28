@@ -16,8 +16,8 @@ SRC_URI += "file://smd23.rules"
 
 SRC_DIR   = "${WORKSPACE}/ankibluetoothd"
 
-S = "${WORKDIR}/ankibluetoothd"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}/ankibluetoothd"
+#UNPACKDIR = "${S}"
 
 DEPENDS += "btvendorhal libhardware bt-property"
 

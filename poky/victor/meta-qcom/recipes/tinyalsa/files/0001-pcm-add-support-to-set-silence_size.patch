@@ -10,10 +10,10 @@ pcm software parameter as required.
  git/src/pcm.c              | 1 +
  2 files changed, 2 insertions(+)
 
-diff --git a/git/include/tinyalsa/pcm.h b/git/include/tinyalsa/pcm.h
+diff --git a/tinyalsa-git/include/tinyalsa/pcm.h b/tinyalsa-git/include/tinyalsa/pcm.h
 index 58a7f56..74a871b 100644
---- a/git/include/tinyalsa/pcm.h
-+++ b/git/include/tinyalsa/pcm.h
+--- a/tinyalsa-git/include/tinyalsa/pcm.h
++++ b/tinyalsa-git/include/tinyalsa/pcm.h
 @@ -182,6 +182,7 @@ struct pcm_config {
      unsigned int stop_threshold;
      /** The minimum number of frames to silence the PCM */
@@ -22,10 +22,10 @@ index 58a7f56..74a871b 100644
      int avail_min;
  };
  
-diff --git a/git/src/pcm.c b/git/src/pcm.c
+diff --git a/tinyalsa-git/src/pcm.c b/tinyalsa-git/src/pcm.c
 index 75fc85c..1051a3b 100644
---- a/git/src/pcm.c
-+++ b/git/src/pcm.c
+--- a/tinyalsa-git/src/pcm.c
++++ b/tinyalsa-git/src/pcm.c
 @@ -1039,6 +1039,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device,
      sparams.xfer_align = config->period_size / 2; /* needed for old kernels */
      sparams.silence_size = 0;

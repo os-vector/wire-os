@@ -9,10 +9,10 @@ definition for audio.
  src/pcm.c | 34 ++++++++++++++++++++++++++++++++++
  1 file changed, 34 insertions(+)
 
-diff --git a/git/src/pcm.c b/git/src/pcm.c
+diff --git a/tinyalsa-git/src/pcm.c b/tinyalsa-git/src/pcm.c
 index 75fc85c..fed1fce 100644
---- a/git/src/pcm.c
-+++ b/git/src/pcm.c
+--- a/tinyalsa-git/src/pcm.c
++++ b/tinyalsa-git/src/pcm.c
 @@ -518,6 +518,35 @@ int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail,
      return 0;
  }

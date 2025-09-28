@@ -6,10 +6,14 @@
 #define _BSDIFF_BSPATCH_H_
 
 #include <functional>
+#include <cstdint>
 #include <memory>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "bsdiff/extents_file.h"
+#include <cstdint>
 
 namespace bsdiff {
 

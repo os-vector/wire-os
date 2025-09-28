@@ -7,4 +7,4 @@ SRC_DIR = "${WORKSPACE}/time-services/time-genoff"
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://time-services/time-genoff"
 
-S = "${WORKDIR}/time-services/time-genoff"
+S = "${UNPACKDIR}/time-services/time-genoff"

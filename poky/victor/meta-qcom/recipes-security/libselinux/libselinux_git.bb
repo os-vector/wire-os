@@ -10,6 +10,6 @@ DEPENDS = "libpcre libmincrypt liblog libcutils"
 
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://external/libselinux/"
-S = "${WORKDIR}/external/libselinux"
+S = "${UNPACKDIR}/external/libselinux"
 
 EXTRA_OECONF = " --with-pcre --with-core-includes=${WORKSPACE}/system/core/include"

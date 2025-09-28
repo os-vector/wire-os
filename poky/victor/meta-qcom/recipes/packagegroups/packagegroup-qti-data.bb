@@ -20,10 +20,8 @@ RDEPENDS:packagegroup-qti-data = ' \
 RDEPENDS:packagegroup-qti-network-tools = " \
     iproute2 \
     iptables \
-    dnsmasq \
     ebtables \
     ethtool \
-    dhcpcd \
     tcpdump \
     conntrack-tools \
     "

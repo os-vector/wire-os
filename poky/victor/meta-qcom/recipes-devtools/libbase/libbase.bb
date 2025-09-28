@@ -15,7 +15,7 @@ BBCLASSEXTEND = "native"
 FILESPATH =+ "${WORKSPACE}/system/core/:"
 SRC_URI   = "file://base"
 
-S = "${WORKDIR}/base"
+S = "${UNPACKDIR}/base"
 
 EXTRA_OECONF += "--with-core-sourcedir=${WORKSPACE}/system/core"
 

@@ -3,26 +3,38 @@
 // found in the LICENSE file.
 
 #include "file.h"
+#include <cstdint>
 
 #include <errno.h>
+#include <cstdint>
 #include <fcntl.h>
+#include <cstdint>
 #ifdef __linux__
 #include <linux/fs.h>
+#include <cstdint>
 #endif  // __linux__
 #include <string.h>
+#include <cstdint>
 #include <sys/ioctl.h>
+#include <cstdint>
 #include <sys/stat.h>
+#include <cstdint>
 #include <sys/types.h>
+#include <cstdint>
 #include <unistd.h>
+#include <cstdint>
 
 // TEMP_FAILURE_RETRY is defined by some versions of <unistd.h>.
 #ifndef TEMP_FAILURE_RETRY
 #include <utils/Compat.h>
+#include <cstdint>
 #endif
 
 #include <algorithm>
+#include <cstdint>
 
 #include <limits>
+#include <cstdint>
 
 
 namespace bsdiff {

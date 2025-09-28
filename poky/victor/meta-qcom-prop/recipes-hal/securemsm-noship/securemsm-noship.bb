@@ -3,7 +3,7 @@ DESCRIPTION = "securemsmnoship with QseecomAPI user space library to interact wi
 DEPENDS = "virtual/kernel glib-2.0 linux-libc-headers securemsm-initial time-services"
 
 SRC_DIR = "${WORKSPACE}/security/securemsm-noship/"
-S = "${WORKDIR}/security/securemsm-noship"
+S = "${UNPACKDIR}/security/securemsm-noship"
 
 PR = "1"
 

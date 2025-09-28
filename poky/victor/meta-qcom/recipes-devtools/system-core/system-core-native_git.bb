@@ -13,7 +13,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'nad-prod', 'libutils-native
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI   = "file://system/core/"
 
-S = "${WORKDIR}/system/core"
+S = "${UNPACKDIR}/system/core"
 
 EXTRA_OECONF = " --with-host-os=${HOST_OS}"
 EXTRA_OECONF += " ${@bb.utils.contains('DISTRO_FEATURES', 'nad-stream-update', '--disable-fastboot', '', d)}"

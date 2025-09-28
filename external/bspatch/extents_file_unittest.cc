@@ -3,13 +3,19 @@
 // found in the LICENSE file.
 
 #include "bsdiff/extents_file.h"
+#include <cstdint>
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <gmock/gmock.h>
+#include <cstdint>
 #include <string>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "bsdiff/file_interface.h"
+#include <cstdint>
 
 using std::string;
 using std::vector;

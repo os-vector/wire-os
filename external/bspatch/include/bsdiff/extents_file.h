@@ -6,11 +6,15 @@
 #define _BSDIFF_EXTENTS_FILE_H_
 
 #include <stdio.h>
+#include <cstdint>
 
 #include <memory>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "bsdiff/file_interface.h"
+#include <cstdint>
 
 /*
  * Extent files.

@@ -5,7 +5,7 @@ DESCRIPTION = "QMI Framework Library"
 PR = "r8"
 
 SRC_DIR = "${WORKSPACE}/qmi-framework"
-S = "${WORKDIR}/qmi-framework"
+S = "${UNPACKDIR}/qmi-framework"
 SRC_URI += "file://irsc_util.service"
 
 DEPENDS = "qmi"

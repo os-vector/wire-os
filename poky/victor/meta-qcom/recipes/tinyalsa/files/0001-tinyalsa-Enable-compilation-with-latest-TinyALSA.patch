@@ -13,10 +13,10 @@ definitions which conflict with old definitions.
  git/src/pcm.c                | 12 ++++++------
  4 files changed, 35 insertions(+), 45 deletions(-)
 
-diff --git a/git/include/tinyalsa/mixer.h b/git/include/tinyalsa/mixer.h
+diff --git a/tinyalsa-git/include/tinyalsa/mixer.h b/tinyalsa-git/include/tinyalsa/mixer.h
 index faeb957..f35f321 100644
---- a/git/include/tinyalsa/mixer.h
-+++ b/git/include/tinyalsa/mixer.h
+--- a/tinyalsa-git/include/tinyalsa/mixer.h
++++ b/tinyalsa-git/include/tinyalsa/mixer.h
 @@ -74,9 +74,9 @@ void mixer_close(struct mixer *mixer);
  
  int mixer_add_new_ctls(struct mixer *mixer);
@@ -79,10 +79,10 @@ index faeb957..f35f321 100644
  
  #if defined(__cplusplus)
  }  /* extern "C" */
-diff --git a/git/include/tinyalsa/pcm.h b/git/include/tinyalsa/pcm.h
+diff --git a/tinyalsa-git/include/tinyalsa/pcm.h b/tinyalsa-git/include/tinyalsa/pcm.h
 index 74a871b..33ea55a 100644
---- a/git/include/tinyalsa/pcm.h
-+++ b/git/include/tinyalsa/pcm.h
+--- a/tinyalsa-git/include/tinyalsa/pcm.h
++++ b/tinyalsa-git/include/tinyalsa/pcm.h
 @@ -226,18 +226,18 @@ struct pcm_params *pcm_params_get(unsigned int card, unsigned int device,
  
  void pcm_params_free(struct pcm_params *pcm_params);
@@ -136,10 +136,10 @@ index 74a871b..33ea55a 100644
  int pcm_mmap_write(struct pcm *pcm, const void *data, unsigned int count);
  
  int pcm_mmap_read(struct pcm *pcm, void *data, unsigned int count);
-diff --git a/git/src/mixer.c b/git/src/mixer.c
+diff --git a/tinyalsa-git/src/mixer.c b/tinyalsa-git/src/mixer.c
 index d07797a..0e48c6f 100644
---- a/git/src/mixer.c
-+++ b/git/src/mixer.c
+--- a/tinyalsa-git/src/mixer.c
++++ b/tinyalsa-git/src/mixer.c
 @@ -261,7 +261,7 @@ int mixer_add_new_ctls(struct mixer *mixer)
   * @returns The name of the mixer's card.
   * @ingroup libtinyalsa-mixer
@@ -248,10 +248,10 @@ index d07797a..0e48c6f 100644
  {
      if (!ctl)
          return 0;
-diff --git a/git/src/pcm.c b/git/src/pcm.c
+diff --git a/tinyalsa-git/src/pcm.c b/tinyalsa-git/src/pcm.c
 index 1051a3b..3fdad53 100644
---- a/git/src/pcm.c
-+++ b/git/src/pcm.c
+--- a/tinyalsa-git/src/pcm.c
++++ b/tinyalsa-git/src/pcm.c
 @@ -772,7 +772,7 @@ static int pcm_param_to_alsa(enum pcm_param param)
   *  Otherwise, the mask associated with @p param is returned.
   * @ingroup libtinyalsa-pcm

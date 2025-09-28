@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "buffer_file.h"
+#include <cstdint>
 
 #include "bsdiff/bspatch.h"
+#include <cstdint>
 
 namespace bsdiff {
 

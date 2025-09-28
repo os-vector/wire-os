@@ -1,3 +1,7 @@
+ifndef VERBOSE
+.SILENT:
+endif
+
 IMG_DIR ?= ../poky/build/tmp-glibc/deploy/images/apq8009-robot-robot-perf
 OS_VERSION_FILE=../poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/machine-robot-image/1.0/rootfs/etc/os-version
 BUILD=../_build
@@ -64,13 +68,14 @@ $(BUILD):
 $(BUILD)/%.img: $(IMG_DIR)/%.img
 	cp $< $@
 	# Pad image to a multiple of 4096 bytes.  Needed for later delta updates
-	dd if=/dev/zero of=$@ bs=1 count=$(shell echo $$(( 4096 - `stat -c %s $<` % 4096 ))) conv=notrunc oflag=append
+	dd if=/dev/zero of=$@ bs=1 count=$(shell echo $$(( 4096 - `stat -c %s $<` % 4096 ))) conv=notrunc oflag=append > /dev/null 2> /dev/null
 
 %.img.gz: %.img
+	echo "Compressing $<..."
 	./pigz/amd64/pigz $(GZIP_MODE) --force --keep $<
 
 %.img.gz.enc: %.img.gz
-	openssl aes-256-ctr -pass $(OTAPASS) -md md5 -in $< -out $@
+	openssl aes-256-ctr -pass $(OTAPASS) -md md5 -in $< -out $@ > /dev/null 2> /dev/null
 
 $(IMG_DIR)/apq8009-robot-sysfs.ext4:
 	img2simg $(IMG_DIR)/apq8009-robot-raw-sysfs.ext4 $@
@@ -156,20 +161,22 @@ prodsign: $(NON_SECURE_KERNEL)
 	cat $(NON_SECURE_KERNEL) $(NON_SECURE_KERNEL).sig.padded > $(PROD_KERNEL)
 
 oskrsign: $(NON_SECURE_KERNEL)
+	echo "OSKR-signing OTA..."
 	openssl dgst -sha256 -binary $(NON_SECURE_KERNEL) > $(NON_SECURE_KERNEL).sha256
 	openssl pkeyutl -sign -in $(NON_SECURE_KERNEL).sha256 -passin env:BOOT_IMAGE_SIGNING_PASSWORD -inkey $(OSKR_BOOT_KEY) -out $(NON_SECURE_KERNEL).sig -pkeyopt digest:sha256 -pkeyopt rsa_padding_mode:pkcs1
-	dd if=/dev/zero of=$(NON_SECURE_KERNEL).sig.padded bs=2048 count=1
-	dd if=$(NON_SECURE_KERNEL).sig of=$(NON_SECURE_KERNEL).sig.padded conv=notrunc
+	dd if=/dev/zero of=$(NON_SECURE_KERNEL).sig.padded bs=2048 count=1 > /dev/null 2> /dev/null
+	dd if=$(NON_SECURE_KERNEL).sig of=$(NON_SECURE_KERNEL).sig.padded conv=notrunc > /dev/null 2> /dev/null
 	cat $(NON_SECURE_KERNEL) $(NON_SECURE_KERNEL).sig.padded > $(PROD_KERNEL)
 
 orangejuice: $(BOOT_GZ_ENC) $(BOOT_STATS)
 	scp $(BOOT_GZ_ENC) $(BOOT_STATS) vmosAlpha.ankicore.com:/var/www/html/
 
 devsign: $(NON_SECURE_KERNEL)
+	echo "Dev-signing OTA..."
 	openssl dgst -sha256 -binary $(NON_SECURE_KERNEL) > $(NON_SECURE_KERNEL).sha256
 	openssl pkeyutl -sign -in $(NON_SECURE_KERNEL).sha256 -inkey $(DEV_BOOT_KEY) -out $(NON_SECURE_KERNEL).sig -pkeyopt digest:sha256 -pkeyopt rsa_padding_mode:pkcs1
-	dd if=/dev/zero of=$(NON_SECURE_KERNEL).sig.padded bs=2048 count=1
-	dd if=$(NON_SECURE_KERNEL).sig of=$(NON_SECURE_KERNEL).sig.padded conv=notrunc
+	dd if=/dev/zero of=$(NON_SECURE_KERNEL).sig.padded bs=2048 count=1 > /dev/null 2> /dev/null
+	dd if=$(NON_SECURE_KERNEL).sig of=$(NON_SECURE_KERNEL).sig.padded conv=notrunc > /dev/null 2> /dev/null
 	cat $(NON_SECURE_KERNEL) $(NON_SECURE_KERNEL).sig.padded > $(PROD_KERNEL)
 
 

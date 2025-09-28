@@ -13,7 +13,7 @@ SRC_URI = "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=d7
 SRC_URI += "file://GNUAutotoolsProper.patch"
 SRC_URI += "file://Including-file.h-from-LE-base-instead-of-Android-s-a.patch"
 
-S = "${WORKDIR}/fec"
+S = "${UNPACKDIR}/fec"
 
 DEPENDS += "ext4-utils libsparse libfec-rs libcrypto-utils libbase zlib libfec libsquashfs-utils"
 

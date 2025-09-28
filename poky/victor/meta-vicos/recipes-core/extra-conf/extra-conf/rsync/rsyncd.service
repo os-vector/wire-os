@@ -1,0 +1,8 @@
+[Unit]
+Description=rsync daemon
+SourcePath=/usr/bin/rsync
+
+[Service]
+Restart=no
+Type=forking
+ExecStart=/usr/bin/rsync --daemon --config=/etc/rsyncd-victor.conf

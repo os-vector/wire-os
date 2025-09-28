@@ -11,10 +11,10 @@ mixer_ctl_set_value api.
  tinymix.c | 10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/git/utils/tinymix.c b/git/utils/tinymix.c
+diff --git a/tinyalsa-git/utils/tinymix.c b/tinyalsa-git/utils/tinymix.c
 index 53b5285..43cfefd 100644
---- a/git/utils/tinymix.c
-+++ b/git/utils/tinymix.c
+--- a/tinyalsa-git/utils/tinymix.c
++++ b/tinyalsa-git/utils/tinymix.c
 @@ -385,11 +385,13 @@ static void tinymix_set_value(struct mixer *mixer, const char *control,
                          num_values, num_ctl_values);
                  return;

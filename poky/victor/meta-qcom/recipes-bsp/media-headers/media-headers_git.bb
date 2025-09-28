@@ -10,7 +10,7 @@ PR = "r0"
 
 FILESPATH =+ "${WORKSPACE}/frameworks/native/include:"
 SRC_URI = "file://media/hardware"
-S = "${WORKDIR}/media/hardware"
+S = "${UNPACKDIR}/media/hardware"
 
 do_compile[noexec] = "1"
 

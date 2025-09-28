@@ -44,10 +44,10 @@ IMAGE_INSTALL += "volatile-binds"
 # data
 IMAGE_INSTALL += "iproute2"
 IMAGE_INSTALL += "iptables"
-IMAGE_INSTALL += "dnsmasq"
+#IMAGE_INSTALL += "dnsmasq"
 IMAGE_INSTALL += "ebtables"
 IMAGE_INSTALL += "ethtool"
-IMAGE_INSTALL += "dhcpcd"
+#IMAGE_INSTALL += "dhcpcd"
 IMAGE_INSTALL += "tcpdump"
 
 # drones
@@ -127,13 +127,18 @@ do_makesystem() {
     HASH_TYPE=$(sed -n -e '/Hash type:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
     HASH_ALGORITHM=$(sed -n -e '/Hash algorithm:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
     DATA_BLOCKS=$(sed -n -e '/Data blocks:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
-    DATA_BLOCK_SIZE=$(sed -n -e '/Data block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
-    HASH_BLOCK_SIZE=$(sed -n -e '/Hash block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    DATA_BLOCK_SIZE=$(sed -n -e '/Data block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT | cut -d' ' -f1)
+    #DATA_BLOCK_SIZE=$(sed -n -e '/Data block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    #HASH_BLOCK_SIZE=$(sed -n -e '/Hash block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    HASH_BLOCK_SIZE=$(sed -n -e '/Hash block size:/ s/.*:\s*\([0-9]*\).*/\1/p' $VERITYSETUP_OUTPUT)
     SALT=$(sed -n -e '/Salt:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
     ROOT_HASH=$(sed -n -e '/Root hash:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
 
-    FS_SIZE_IN_512_BLOCKS=$(expr \( $DATA_BLOCKS \* $DATA_BLOCK_SIZE / 512 \) )
-    HASH_OFFSET=$(expr \( $DATA_BLOCKS \+ 1 \) )
+    #FS_SIZE_IN_512_BLOCKS=$(expr \( $DATA_BLOCKS \* $DATA_BLOCK_SIZE / 512 \) )
+    FS_SIZE_IN_512_BLOCKS=$(expr "$DATA_BLOCKS" \* "$DATA_BLOCK_SIZE" / 512)
+    #FS_SIZE_IN_512_BLOCKS=$(( DATA_BLOCKS * DATA_BLOCK_SIZE / 512 ))
+    #HASH_OFFSET=$(( $DATA_BLOCKS + 1 ))
+    HASH_OFFSET=$(expr "$DATA_BLOCKS" + 1)
 
     ## Where does the magic number `179` below come from?
     ## -> see kernel/msm-3.18/Documentation/devices.txt

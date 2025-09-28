@@ -14,7 +14,7 @@ CFLAGS += "-Wno-error -Wno-implicit-function-declaration -Wno-strict-prototypes"
 
 FILESPATH =+ "${WORKSPACE}/frameworks/:"
 SRC_URI   = "file://system/media/"
-S = "${WORKDIR}/system/media"
+S = "${UNPACKDIR}/system/media"
 
 EXTRA_OECONF += " --with-glib"
 

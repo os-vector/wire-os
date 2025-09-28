@@ -15,7 +15,7 @@ BBCLASSEXTEND = "native"
 FILESPATH =+ "${WORKSPACE}/system/core/:"
 SRC_URI   = "file://libcutils"
 
-S = "${WORKDIR}/libcutils"
+S = "${UNPACKDIR}/libcutils"
 
 # mdsprpcd complains about execstack
 CFLAGS += "-O2 -fPIC"

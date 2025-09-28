@@ -13,6 +13,6 @@ BBCLASSEXTEND = " ${@bb.utils.contains('DISTRO_FEATURES', 'nad-stream-update', '
 SRC_URI   = "file://external/safe-iop/"
 SRC_URI  += "file://autotools.patch"
 
-S = "${WORKDIR}/external/safe-iop"
+S = "${UNPACKDIR}/external/safe-iop"
 
 PR = "r0"

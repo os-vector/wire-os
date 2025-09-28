@@ -58,7 +58,7 @@ void add_directory(u32 inode);
 u16 get_directories(int bg);
 u16 get_bg_flags(int bg);
 void init_unused_inode_tables(void);
-u32 allocate_inode();
+u32 allocate_inode(struct fs_info info);
 void free_alloc(struct block_allocation *alloc);
 int reserve_oob_blocks(struct block_allocation *alloc, int blocks);
 int advance_blocks(struct block_allocation *alloc, int blocks);

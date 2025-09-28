@@ -11,7 +11,7 @@ PR = "r1"
 FILESPATH =+ "${WORKSPACE}/frameworks/:"
 SRC_URI = "file://input_helper"
 
-S = "${WORKDIR}/input_helper"
+S = "${UNPACKDIR}/input_helper"
 
 DEPENDS = "libinput libevdev"
 

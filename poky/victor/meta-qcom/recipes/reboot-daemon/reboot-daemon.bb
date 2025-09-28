@@ -12,8 +12,8 @@ FILESPATH =+ "${WORKSPACE}/mdm-ss-mgr:"
 SRC_URI = "file://reboot-daemon"
 SRC_URI += "file://reboot-daemon.service"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 CONFIGURE_SCRIPT = "${S}/reboot-daemon/configure"
 

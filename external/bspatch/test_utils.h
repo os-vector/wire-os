@@ -6,8 +6,11 @@
 #define _BSDIFF_TEST_UTILS_H_
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <string>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #define TEST_AND_RETURN_FALSE(_x)         \
   do {                                    \

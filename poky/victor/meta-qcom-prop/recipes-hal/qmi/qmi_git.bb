@@ -4,7 +4,7 @@ DESCRIPTION = "Qualcomm MSM Interface (QMI) Library"
 
 PR = "r13"
 SRC_DIR = "${WORKSPACE}/qmi"
-S = "${WORKDIR}/qmi"
+S = "${UNPACKDIR}/qmi"
 
 DEPENDS = "configdb diag dsutils libcutils"
 RDEPENDS:${PN} = "dsutils libcutils"
@@ -25,13 +25,13 @@ do_configure:prepend() {
 
     # wire - this is really really bad
 
-    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/diag/git/diag/src/libdiag.la \
+    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/diag/git/sources/diag/src/libdiag.la \
         ${STAGING_LIBDIR}/
 
-    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/time-genoff/git/time-services/time-genoff/libtime_genoff.la \
+    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/time-genoff/git/sources/time-services/time-genoff/libtime_genoff.la \
         ${STAGING_LIBDIR}/
 
-    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/configdb/git/data/configdb/src/libconfigdb.la \
+    cp ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/configdb/git/sources/data/configdb/src/libconfigdb.la \
         ${STAGING_LIBDIR}/
 
     if [ ! -f ${STAGING_LIBDIR}/libglib-2.0.la ]; then

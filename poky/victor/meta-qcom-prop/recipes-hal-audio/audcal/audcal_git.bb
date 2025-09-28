@@ -6,7 +6,7 @@ PR = "r11"
 TARGETNAME = "${@d.getVar('BASEMACHINE', True).replace('mdm','').replace('apq','')}"
 SRC_DIR = "${WORKSPACE}/audio/mm-audio/audcal/"
 
-S = "${WORKDIR}/audio/mm-audio/audcal"
+S = "${UNPACKDIR}/audio/mm-audio/audcal"
 
 DEPENDS = "glib-2.0 diag common acdbmapper"
 

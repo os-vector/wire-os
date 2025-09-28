@@ -19,5 +19,5 @@ EXTRA_OECONF = "--with-lib-path=${STAGING_LIBDIR} \
 
 CFLAGS += "-I${STAGING_INCDIR}/cutils"
 
-S       = "${WORKDIR}/data/dsutils"
+S       = "${UNPACKDIR}/data/dsutils"
 SRC_DIR = "${WORKSPACE}/data/dsutils"

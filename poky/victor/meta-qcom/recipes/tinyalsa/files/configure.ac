@@ -13,7 +13,7 @@ AM_INIT_AUTOMAKE([foreign])
 # Disables auto rebuilding of configure, Makefile.ins
 AM_MAINTAINER_MODE
 # Verifies the --srcdir is correct by checking for the path
-AC_CONFIG_SRCDIR([git/src/pcm.c])
+AC_CONFIG_SRCDIR([tinyalsa-git/src/pcm.c])
 # defines some macros variable to be included by source
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])

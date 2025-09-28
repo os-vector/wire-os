@@ -7,7 +7,7 @@ inherit gitsha
 
 # Automagically move ${S} and ${O} for the user.  They can further override it, but they shouldn't have to
 # do anything for most cases- and they'd best know what they're doing when they do it.
-S = "${WORKDIR}/${PN}"
+S = "${UNPACKDIR}/${PN}"
 O = "${WORKDIR}/${PN}-obj"
 
 # Explicitly bypass fetch...  It's already fetched...

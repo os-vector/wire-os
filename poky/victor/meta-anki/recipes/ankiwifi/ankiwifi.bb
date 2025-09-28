@@ -4,8 +4,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/../victor/meta-qcom/files/anki-licenses/\
 Anki-Inc.-Proprietary;md5=4b03b8ffef1b70b13d869dbce43e8f09"
 
 SRC_URI += "file://settings"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_install() {
   install -d ${D}/var/lib/connman

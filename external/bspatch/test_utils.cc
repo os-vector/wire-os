@@ -3,15 +3,23 @@
 // found in the LICENSE file.
 
 #include "test_utils.h"
+#include <cstdint>
 
 #include <stdio.h>
+#include <cstdint>
 #include <stdlib.h>
+#include <cstdint>
 #include <string.h>
+#include <cstdint>
 #include <sys/stat.h>
+#include <cstdint>
 #include <unistd.h>
+#include <cstdint>
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 using std::string;
 using std::vector;

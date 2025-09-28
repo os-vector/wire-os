@@ -2,7 +2,7 @@ inherit qcommon qlicense qprebuilt
 DESCRIPTION = "OpenCL for our silly Adreno"
 
 SRC_DIR = "${WORKSPACE}/adreno"
-S = "${WORKDIR}/adreno"
+S = "${UNPACKDIR}/adreno"
 
 PR = "1"
 

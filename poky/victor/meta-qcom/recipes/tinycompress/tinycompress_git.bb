@@ -13,7 +13,7 @@ SRC_URI = "git://github.com/alsa-project/tinycompress.git;protocol=https;branch=
 
 EXTRA_OECONF:append = " --with-sanitized-headers=${STAGING_KERNEL_BUILDDIR}/usr/include"
 
-S = "${WORKDIR}/git"
+#S = "${UNPACKDIR}/git"
 
 DEPENDS = "virtual/kernel"
 

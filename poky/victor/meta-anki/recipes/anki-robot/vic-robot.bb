@@ -6,8 +6,8 @@ Anki-Inc.-Proprietary;md5=4b03b8ffef1b70b13d869dbce43e8f09"
 SERVICE_FILE = "vic-robot.service"
 
 SRC_URI = "file://${SERVICE_FILE}"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 inherit systemd
 

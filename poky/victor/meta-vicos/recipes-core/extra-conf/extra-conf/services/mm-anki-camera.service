@@ -6,7 +6,7 @@ After=mm-qcamera-daemon.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/mm-anki-camera-wrapper -v 0 $MM_ANKI_CAMERA_OPTS
+ExecStart=/usr/bin/mm-anki-camera-wrapper -v 0 -r 1 $MM_ANKI_CAMERA_OPTS
 Group=camera
 UMask=0007
 AmbientCapabilities=CAP_WAKE_ALARM

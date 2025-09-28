@@ -8,7 +8,7 @@ ${LICENSE};md5=89aea4e17d99a7cacdbeed46a0096b10"
 
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI   = "file://vendor/qcom/opensource/bluetooth/"
-S = "${WORKDIR}/vendor/qcom/opensource/bluetooth"
+S = "${UNPACKDIR}/vendor/qcom/opensource/bluetooth"
 
 PR = "r1"
 

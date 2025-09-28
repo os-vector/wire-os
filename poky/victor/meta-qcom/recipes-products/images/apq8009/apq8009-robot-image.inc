@@ -8,18 +8,20 @@ require apq8009-base-image.inc
 # These two lines below is a workaround to remove init-mss,
 # since packagegroup-ss-mgr just include reboot-daemon and init-mss
 IMAGE_INSTALL:remove = "packagegroup-ss-mgr"
-#IMAGE_INSTALL += "reboot-daemon"
 
 # Add additional components
-IMAGE_INSTALL += "system-core-debuggerd"
+
+# backtrace unwinding is now done in-anki-binary
+#IMAGE_INSTALL += "system-core-debuggerd"
+
 IMAGE_INSTALL += "e2fsprogs"
 IMAGE_INSTALL += "start-scripts-userfs-reset"
 IMAGE_INSTALL += "chrony"
 IMAGE_INSTALL += "chronyc"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'openssh', d)}"
-#IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'packagegroup-core-tools-profile', d)}"
+
 IMAGE_INSTALL += "${@oe.utils.conditional('DEV', '1', 'openssh', '', d)}"
-#IMAGE_INSTALL += "${@oe.utils.conditional('DEV', '1', 'packagegroup-core-tools-profile', '', d)}"
+
 # does not build with our kernel
 IMAGE_INSTALL:remove = "perf"
 #IMAGE_INSTALL += "connman connman-client connman-tools"

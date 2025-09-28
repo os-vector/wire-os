@@ -9,7 +9,7 @@ DEPENDS += "liblog"
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://anki/user-data-locker/"
 
-S = "${WORKDIR}/anki/user-data-locker"
+S = "${UNPACKDIR}/anki/user-data-locker"
 
 do_compile[depends] += "virtual/kernel:do_shared_workdir"
 

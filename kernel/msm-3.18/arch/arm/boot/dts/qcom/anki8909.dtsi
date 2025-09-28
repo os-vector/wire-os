@@ -23,9 +23,10 @@
 			<275 0>;
 	interrupt-parent = <&intc>;
 
-	chosen {
-		bootargs = "sched_enable_hmp=1";
-	};
+	// this scheduler is for big.LITTLE SoCs
+	//chosen {
+	//	bootargs = "sched_enable_hmp=1";
+	//};
 
 	aliases {
 		/* smdtty devices */
@@ -373,6 +374,7 @@
 			 <  200000 >,
 			 <  400000 >,
 			 <  533330 >,
+			 <  729600 >,
 			 <  800000 >,
 			 <  998400 >,
 			 < 1094400 >,

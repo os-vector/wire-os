@@ -10,5 +10,5 @@ EXTRA_OECONF = "--with-common-includes=${STAGING_INCDIR} \
                 --enable-static=no \
                 --with-sysroot=${STAGING_LIBDIR}/../.."
 
-S       = "${WORKDIR}/qmi_client_helper"
+S       = "${UNPACKDIR}/qmi_client_helper"
 SRC_DIR = "${WORKSPACE}/qmi/qmi_client_helper"

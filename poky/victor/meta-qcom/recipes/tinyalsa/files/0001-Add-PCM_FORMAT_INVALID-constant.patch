@@ -4,13 +4,13 @@ Date: Mon, 17 Oct 2016 14:28:05 +0530
 Subject: [PATCH] new:wq
 
 ---
- git/include/tinyalsa/pcm.h | 1 +
+ tinyalsa-git/include/tinyalsa/pcm.h | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/git/include/tinyalsa/pcm.h b/git/include/tinyalsa/pcm.h
+diff --git a/tinyalsa-git/include/tinyalsa/pcm.h b/tinyalsa-git/include/tinyalsa/pcm.h
 index 5fcb7d8..58a7f56 100644
---- a/git/include/tinyalsa/pcm.h
-+++ b/git/include/tinyalsa/pcm.h
+--- a/tinyalsa-git/include/tinyalsa/pcm.h
++++ b/tinyalsa-git/include/tinyalsa/pcm.h
 @@ -125,6 +125,7 @@ extern "C" {
   * @ingroup libtinyalsa-pcm
   */

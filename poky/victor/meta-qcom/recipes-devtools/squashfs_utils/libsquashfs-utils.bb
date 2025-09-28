@@ -12,7 +12,7 @@ SRC_URI = "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=d7
 SRC_URI += "${CLO_LA_GIT}/platform/external/squashfs-tools;protocol=https;nobranch=1;rev=5b4709ba460869ed66f971115acfa88425a3faf8;subpath=squashfs-tools"
 SRC_URI += "file://Add-autotool-make-files-for-libsquashfs_utils.patch"
 
-S = "${WORKDIR}/squashfs_utils"
+S = "${UNPACKDIR}/squashfs_utils"
 
 DEPENDS += "libcutils"
 

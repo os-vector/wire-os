@@ -42,9 +42,10 @@ All Rights Reserved. Qualcomm Technologies Proprietary and Confidential.
 #include <sys/stat.h>
 #include <sys/select.h>
 #include <fcntl.h>
+#include <linux/termios.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <termios.h>
+//#include <termios.h>
 #include <cutils/properties.h>
 #include "comdef.h"
 #include "bthci_qcomm.h"

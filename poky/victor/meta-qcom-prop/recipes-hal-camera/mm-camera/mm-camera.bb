@@ -2,7 +2,7 @@ inherit qcommon qlicense qprebuilt
 DESCRIPTION = "mm-anki-camera and mm-qcamera-daemon"
 
 SRC_DIR = "${WORKSPACE}/camera/mm-camera"
-S = "${WORKDIR}/camera/mm-camera"
+S = "${UNPACKDIR}/camera/mm-camera"
 
 PR = "1"
 

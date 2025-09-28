@@ -3,8 +3,8 @@ Description=Victor switchboard daemon
 SourcePath=/anki/bin/vic-switchboard
 PartOf=anki-robot.target
 
-Wants=ankibluetoothd.service vic-engine.service vic-cloud.service
-After=ankibluetoothd.service vic-engine.service vic-cloud.service
+Wants=ankibluetoothd.service vic-engine.service
+After=ankibluetoothd.service vic-engine.service
 
 [Service]
 PermissionsStartOnly=true

@@ -13,7 +13,7 @@ BBCLASSEXTEND = " ${@bb.utils.contains('DISTRO_FEATURES', 'nad-stream-update', '
 FILESPATH =+ "${WORKSPACE}/system/core/:"
 SRC_URI   = "file://libutils"
 
-S = "${WORKDIR}/libutils"
+S = "${UNPACKDIR}/libutils"
 
 DEPENDS += "safe-iop"
 

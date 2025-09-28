@@ -4,7 +4,7 @@ DESCRIPTION = "acdb loader Library"
 PR = "r7"
 
 SRC_DIR = "${WORKSPACE}/audio/mm-audio/audio-acdb-util/acdb-loader/"
-S = "${WORKDIR}/audio/mm-audio/audio-acdb-util/acdb-loader"
+S = "${UNPACKDIR}/audio/mm-audio/audio-acdb-util/acdb-loader"
 
 DEPENDS = "glib-2.0 acdbmapper audcal acdbrtac adiertac"
 

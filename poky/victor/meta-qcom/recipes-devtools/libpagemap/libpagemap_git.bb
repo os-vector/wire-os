@@ -11,4 +11,4 @@ PR = "r1"
 FILESPATH =+ "${WORKSPACE}/system/extras/:"
 SRC_URI = "file://libpagemap"
 
-S = "${WORKDIR}/libpagemap"
+S = "${UNPACKDIR}/libpagemap"

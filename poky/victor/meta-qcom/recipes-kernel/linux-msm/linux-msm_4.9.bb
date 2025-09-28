@@ -77,5 +77,5 @@ do_install:append() {
 
 
 do_shared_workdir[dirs] = "${DEPLOY_DIR_IMAGE}"
-KERNEL_VERSION_SANITY_SKIP="1"
+KERNEL_VERSION_SANITY_SKIP = "1"
 INSANE_SKIP:${PN} += " installed-vs-shipped"

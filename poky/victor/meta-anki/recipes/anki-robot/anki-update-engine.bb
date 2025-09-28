@@ -9,8 +9,8 @@ SERVICE_FILE = "update-engine.service"
 ONESHOT_SERVICE_FILE = "update-engine-oneshot.service"
 TIMER_FILE = "update-engine.timer"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 SRC_URI = "file://${SERVICE_FILE}"
 SRC_URI += "file://${ONESHOT_SERVICE_FILE}"

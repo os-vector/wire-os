@@ -12,7 +12,7 @@ SRC_URI  += "file://chgrp-diag"
 SRC_URI  += "file://chgrp-diag.service"
 
 SRC_DIR = "${WORKSPACE}/diag"
-S       = "${WORKDIR}/diag"
+S       = "${UNPACKDIR}/diag"
 
 CFLAGS += "-Wno-error -Wno-implicit-function-declaration"
 CXXFLAGS += "-Wno-error -Wno-implicit-function-declaration"

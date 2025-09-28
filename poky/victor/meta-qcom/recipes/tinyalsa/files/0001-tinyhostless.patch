@@ -8,11 +8,11 @@ Subject: [PATCH] tinyhostless
  1 file changed, 298 insertions(+)
  create mode 100644 git/utils/tinyhostless.c
 
-diff --git a/git/utils/tinyhostless.c b/git/utils/tinyhostless.c
+diff --git a/tinyalsa-git/utils/tinyhostless.c b/tinyalsa-git/utils/tinyhostless.c
 new file mode 100644
 index 0000000..cb18aa7
 --- /dev/null
-+++ b/git/utils/tinyhostless.c
++++ b/tinyalsa-git/utils/tinyhostless.c
 @@ -0,0 +1,298 @@
 +/* tinyhostless.c
 +**

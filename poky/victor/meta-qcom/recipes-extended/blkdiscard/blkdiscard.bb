@@ -4,8 +4,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/../victor/meta-qcom/recipes-extended/blkd
 
 SRC_URI = "file://blkdiscard.c"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_compile () {
   ${CC} ${CFLAGS} ${LDFLAGS} ${S}/blkdiscard.c -o ${S}/blkdiscard

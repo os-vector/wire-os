@@ -29,29 +29,50 @@ __FBSDID("$FreeBSD: src/usr.bin/bsdiff/bspatch/bspatch.c,v 1.1 2005/08/06 01:59:
 #endif
 
 #include "bsdiff/bspatch.h"
+#include <cstdint>
 
 #include <bzlib.h>
+#include <cstdint>
 #include <errno.h>
+#include <cstdint>
 #include <fcntl.h>
+#include <cstdint>
 #include <inttypes.h>
+#include <cstdint>
 #include <stdlib.h>
+#include <cstdint>
 #include <string.h>
+#include <cstdint>
 #include <unistd.h>
+#include <cstdint>
 #include <sys/stat.h>
+#include <cstdint>
 #include <sys/types.h>
+#include <cstdint>
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
+#include <cstdint>
 #include <limits>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "bsdiff/extents_file.h"
+#include <cstdint>
 #include "bsdiff/file_interface.h"
+#include <cstdint>
 #include "buffer_file.h"
+#include <cstdint>
 #include "extents.h"
+#include <cstdint>
 #include "file.h"
+#include <cstdint>
 #include "memory_file.h"
+#include <cstdint>
 #include "sink_file.h"
+#include <cstdint>
 
 namespace {
 

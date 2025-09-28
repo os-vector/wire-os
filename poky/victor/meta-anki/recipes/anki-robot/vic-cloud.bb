@@ -7,8 +7,8 @@ SERVICE_FILE = "vic-cloud.service"
 
 SRC_URI = "file://${SERVICE_FILE}"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 inherit systemd
 

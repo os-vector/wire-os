@@ -21,7 +21,7 @@ SRC_URI = "file://qcom-opensource/ethernet/neutrino-pcie/driver"
 SRC_URI += "file://neutrino_pcie_start_stop_le"
 SRC_URI += "file://setup_avtp_routing_le"
 
-S = "${WORKDIR}/qcom-opensource/ethernet/neutrino-pcie/driver"
+S = "${UNPACKDIR}/qcom-opensource/ethernet/neutrino-pcie/driver"
 
 EXTRA_OEMAKE += "LBITS=32"
 EXTRA_OEMAKE += "DWC_ETH_QOS_DISABLE_PLT_INIT=1"

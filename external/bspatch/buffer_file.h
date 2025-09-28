@@ -6,9 +6,12 @@
 #define _BSDIFF_BUFFER_FILE_H_
 
 #include <memory>
+#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "bsdiff/file_interface.h"
+#include <cstdint>
 
 namespace bsdiff {
 

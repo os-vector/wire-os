@@ -12,7 +12,7 @@ SRC_URI = "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=d7
 SRC_URI += "file://Add-autotool-make-files-for-libfec.patch"
 SRC_URI += "file://Header-reference-change-to-base-from-android-base.patch"
 
-S = "${WORKDIR}/libfec"
+S = "${UNPACKDIR}/libfec"
 
 DEPENDS += "ext4-utils libcutils libfec-rs libcrypto-utils libsquashfs-utils libbase"
 DEPENDS:append_class-target = " system-core"

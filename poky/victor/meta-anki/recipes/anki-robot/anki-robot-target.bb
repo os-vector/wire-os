@@ -10,8 +10,8 @@ SRC_URI += "file://anki.sudoers"
 SRC_URI += "file://multi-user-done.service"
 SRC_URI += "file://start-anki.service"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR="${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR="${S}"
 
 DEPENDS += "vic-init"
 DEPENDS += "vic-robot"

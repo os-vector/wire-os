@@ -15,7 +15,7 @@ SRC_URI += "file://configure.ac;subdir=${BPN}"
 SRC_URI += "file://Makefile.am;subdir=${BPN}"
 SRC_URI += "file://libsync.pc.in;subdir=${BPN}"
 
-S = "${WORKDIR}/libsync"
+S = "${UNPACKDIR}/libsync"
 
 SRC_URI[libsync.md5sum] = "9b8362e45b5a8256b733ccd8546674b4"
 SRC_URI[libsync.sha256sum] = "f4a1c0e077f76b8c509887647c6e979e0e473e54b43a79e3ed156ead92e2742b"

@@ -12,7 +12,7 @@ SRC_URI[sha256sum] = "77a82668a53fdbed1e05ad6febe6dbefb093e3922afb20b993d4ad9ee8
 
 inherit autotools pkgconfig
 
-S = "${WORKDIR}/ddclient-${PV}"
+S = "${UNPACKDIR}/ddclient-${PV}"
 
 #All the DDClient development is on sourceforge.met
 PR = "r6"

@@ -15,7 +15,7 @@ PV = "2.0.0"
 FILESPATH =+ "${WORKSPACE}/filesystems:"
 SRC_URI = "file://mtd-utils"
 
-S = "${WORKDIR}/mtd-utils"
+S = "${UNPACKDIR}/mtd-utils"
 
 # xattr support creates an additional compile-time dependency on acl because
 # the sys/acl.h header is needed. libacl is not needed and thus enabling xattr
@@ -61,16 +61,16 @@ do_install () {
 	oe_runmake install DESTDIR=${D} SBINDIR=${sbindir} MANDIR=${mandir} INCLUDEDIR=${includedir}
 
 	mkdir -p ${MTD_TEST_BIN_PATH}/fstests/
-	find ${S}/../build/tests/fs-tests/ -executable -type f -exec cp {} ${MTD_TEST_BIN_PATH}/fstests/ \;
+	find ${S}/../../build/tests/fs-tests/ -executable -type f -exec cp {} ${MTD_TEST_BIN_PATH}/fstests/ \;
 
 	mkdir -p ${MTD_TEST_BIN_PATH}/ubi-tests/
 	for test in ${ubi_tests}; do
-		cp ${S}/../build/$test ${MTD_TEST_BIN_PATH}/ubi-tests/
+		cp ${S}/../../build/$test ${MTD_TEST_BIN_PATH}/ubi-tests/
 	done
 
 	mkdir -p ${MTD_TEST_BIN_PATH}/checkfs/
 	for test in ${checkfs_tests}; do
-		cp ${S}/../build/$test ${MTD_TEST_BIN_PATH}/checkfs/
+		cp ${S}/../../build/$test ${MTD_TEST_BIN_PATH}/checkfs/
 	done
 }
 

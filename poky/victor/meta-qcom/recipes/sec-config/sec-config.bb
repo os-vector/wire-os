@@ -7,8 +7,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/${LICENSE};md5
 FILESPATH =+ "${THISDIR}/files:"
 
 SRC_URI   = "file://sec_config"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_compile[noexec] = "1"
 

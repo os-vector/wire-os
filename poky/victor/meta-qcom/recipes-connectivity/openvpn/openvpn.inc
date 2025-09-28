@@ -9,7 +9,7 @@ INC_PR = "r2"
 
 SRC_URI = "http://openvpn.net/release/openvpn-${PV}.tar.gz \
 	file://openvpn"
-S = "${WORKDIR}/openvpn-${PV}"
+S = "${UNPACKDIR}/openvpn-${PV}"
 
 CFLAGS += "-fno-inline"
 

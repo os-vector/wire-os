@@ -13,7 +13,7 @@ DEPENDS += "zlib"
 FILESPATH =+ "${WORKSPACE}/system/core/:"
 SRC_URI   = "file://libsparse"
 
-S = "${WORKDIR}/libsparse"
+S = "${UNPACKDIR}/libsparse"
 
 BBCLASSEXTEND = "native"
 

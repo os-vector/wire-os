@@ -19,4 +19,4 @@ docker run -it --rm \
     -v $(pwd)/anki-deps:${HOME}/.anki \
     -v $(pwd):$(pwd) \
     -v $(pwd)/build/cache:${HOME}/.ccache \
-    vic-yocto-builder-6 bash -c "cd $(pwd)/poky && source build/conf/set_bb_env.sh && MACHINE=apq8009-robot VARIANT=perf DISTRO=msm-perf PRODUCT=robot bitbake $@"
+    vic-yocto-builder-7 bash -c "cd $(pwd)/poky && source build/conf/set_bb_env.sh && MACHINE=apq8009-robot VARIANT=perf DISTRO=msm-perf PRODUCT=robot bitbake $@"

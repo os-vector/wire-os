@@ -6,7 +6,7 @@ PR = "r22"
 
 SRC_DIR = "${WORKSPACE}/security/securemsm"
 FILESPATH =+ "${WORKSPACE}/:"
-S = "${WORKDIR}/security/securemsm"
+S = "${UNPACKDIR}/security/securemsm"
 
 ALLOW_EMPTY:${PN} = "1"
 

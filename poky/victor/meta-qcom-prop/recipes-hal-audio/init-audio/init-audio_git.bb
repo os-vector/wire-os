@@ -9,8 +9,8 @@ PR = "r5"
 SRC_URI = "file://init_qcom_audio"
 SRC_URI += "file://init_audio.service"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 INITSCRIPT_NAME = "init_qcom_audio"
 INITSCRIPT_PARAMS = "start 99 2 3 4 5 . stop 1 0 1 6 ."

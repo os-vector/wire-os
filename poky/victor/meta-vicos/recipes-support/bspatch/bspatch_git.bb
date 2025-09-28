@@ -8,7 +8,7 @@ DEPENDS = "bzip2"
 FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://external/bspatch"
 
-S = "${WORKDIR}/external/bspatch"
+S = "${UNPACKDIR}/external/bspatch"
 
 TARGET_CPPFLAGS += "-Iinclude"
 TARGET_CXXFLAGS += "-std=c++11 -O3 -Wall -Werror -fPIC"

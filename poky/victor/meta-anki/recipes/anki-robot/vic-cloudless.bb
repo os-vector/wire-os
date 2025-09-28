@@ -7,8 +7,8 @@ SERVICE_FILE = "vic-cloud.service"
 # GOINSTALLER="go1.15.6.linux-amd64.tar.gz"
 
 SRC_URI = "file://${SERVICE_FILE}"
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 inherit systemd
 

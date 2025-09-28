@@ -11,7 +11,7 @@ SRC_URI = "file://anki/rampost/ file://animfail.service"
 TARGET_CFLAGS += "-Os -Wall -Wno-error -Wno-unused-result -Wno-strict-aliasing -fPIC"
 
 
-S = "${WORKDIR}/anki/rampost"
+S = "${UNPACKDIR}/anki/rampost"
 
 do_install() {
   install -d ${D}/usr/bin

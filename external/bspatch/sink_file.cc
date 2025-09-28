@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sink_file.h"
+#include <cstdint>
 
 namespace bsdiff {
 

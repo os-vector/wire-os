@@ -9,7 +9,7 @@ FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI  = "file://hardware/qcom/audio/"
 SRC_URI += "file://${BASEMACHINE}/"
 
-S = "${WORKDIR}/hardware/qcom/audio"
+S = "${UNPACKDIR}/hardware/qcom/audio"
 PR = "r0"
 
 DEPENDS = "glib-2.0 tinycompress tinyalsa expat system-media libhardware acdbloader"

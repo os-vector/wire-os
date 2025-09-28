@@ -9,7 +9,7 @@ EDITOR="vi"			# needed for packages like cron, git-commit
 PATH=$PATH:/usr/local/sbin:/usr/sbin:/sbin
 
 # Set the prompt for bash and ash (no other shells known to be in use here)
-[ -z "$PS1" ] || export PS1='\[\e[31m\][\u\[\e[33m\]@\h \[\e[32m\]\W\[\e[34m\]]\$\[\e[0m\] '
+[ -z "$PS1" ] || export PS1='\[\e[35;1m\][\u\[\e[31;1m\]@\h \[\e[32m\]\W\[\e[34m\]]\$\[\e[0m\] '
 
 if [ -d /etc/profile.d ]; then
 	for i in /etc/profile.d/*.sh; do
@@ -29,8 +29,19 @@ esac
 
 export PATH PS1 OPIEDIR QPEDIR QTDIR EDITOR TERM
 
+function reboot() {
+    /sbin/reboot $1 &
+    exit
+}
+
 alias ls="ls --color=auto"
-alias reboot="/sbin/reboot & exit"
+alias btop="btop --force-utf"
+alias grep='grep --color=auto'
+alias recovery="/sbin/reboot recovery & exit"
 alias neofetch="neofetch --no_config --ascii_colors 2 --ascii /etc/vector-ascii"
+alias voff="voff && exit"
+alias mrw="mount -o rw,remount /"
+alias stop_robot="systemctl stop anki-robot.target"
+alias start_robot="systemctl start anki-robot.target"
 
 umask 022

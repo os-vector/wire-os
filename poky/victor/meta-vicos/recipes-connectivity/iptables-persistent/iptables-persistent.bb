@@ -23,8 +23,8 @@ SRC_URI += "file://iptables-flush.sh"
 
 SYSTEM_DIR = "${D}${sysconfdir}/systemd/system"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_install() {
   install -d ${D}/etc/iptables

@@ -24,8 +24,8 @@ do_compile () {
     -L${STAGING_LIBDIR} -lstdc++ -lz -llog -lbsd -o ${S}/bootctl
 }
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
+#UNPACKDIR = "${S}"
 
 do_install() {
   install -d ${D}/usr/bin

@@ -13,10 +13,10 @@ Change-Id: I615caf4a62376cd6d9b8abbd9fcfc29166e1c6c2
  git/utils/tinyplay.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/git/utils/tinyplay.c b/git/utils/tinyplay.c
+diff --git a/tinyalsa-git/utils/tinyplay.c b/tinyalsa-git/utils/tinyplay.c
 index d0c1e36..448e81f 100644
---- a/git/utils/tinyplay.c
-+++ b/git/utils/tinyplay.c
+--- a/tinyalsa-git/utils/tinyplay.c
++++ b/tinyalsa-git/utils/tinyplay.c
 @@ -311,7 +311,7 @@ void print_usage(const char *argv0)
  
  int main(int argc, const char **argv)

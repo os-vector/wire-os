@@ -11,6 +11,6 @@ PR = "r1"
 FILESPATH =+ "${WORKSPACE}/system/core/:"
 SRC_URI   = "file://libmincrypt"
 
-S = "${WORKDIR}/libmincrypt"
+S = "${UNPACKDIR}/libmincrypt"
 
 EXTRA_OECONF = " --with-core-includes=${WORKSPACE}/system/core/include"

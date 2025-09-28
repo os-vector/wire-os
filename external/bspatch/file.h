@@ -6,8 +6,10 @@
 #define _BSDIFF_FILE_H_
 
 #include <memory>
+#include <cstdint>
 
 #include "bsdiff/file_interface.h"
+#include <cstdint>
 
 namespace bsdiff {
 
