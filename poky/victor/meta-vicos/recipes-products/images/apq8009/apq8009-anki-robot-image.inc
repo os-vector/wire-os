@@ -2,6 +2,8 @@
 # Include the robot settings
 #
 
+IMAGE_INSTALL += "strace"
+
 # userdata security/stuff
 IMAGE_INSTALL += "cryptsetup"
 IMAGE_INSTALL += "user-data-locker"
