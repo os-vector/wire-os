@@ -3,6 +3,7 @@
 #
 
 IMAGE_INSTALL += "strace"
+IMAGE_INSTALL += "fuse nfs-utils docker"
 
 # userdata security/stuff
 IMAGE_INSTALL += "cryptsetup"
