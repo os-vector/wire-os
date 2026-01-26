@@ -146,13 +146,13 @@ do_makesystem() {
     ## -> The minor number corresponds to the partition number (counting from 1)
     ## -> We assume the boot partition is always on the first MMC block device
  
-    if [ "${FACTORY}" == "1" ] || [ "${USER_BUILD}" == "1" ]; then
+    #if [ "${FACTORY}" == "1" ] || [ "${USER_BUILD}" == "1" ]; then
         # Enable dm-verity for any FACTORY build or if we are making a USER build
-        KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") } dm-verity.dev_wait=1 dm=\"system none ro,0 $FS_SIZE_IN_512_BLOCKS verity $HASH_TYPE 179:##SYSTEM_BOOT_PART## 179:##SYSTEM_BOOT_PART## $DATA_BLOCK_SIZE $HASH_BLOCK_SIZE $DATA_BLOCKS $HASH_OFFSET $HASH_ALGORITHM $ROOT_HASH $SALT\" root=/dev/dm-0"
-    else
+    #    KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") } dm-verity.dev_wait=1 dm=\"system none ro,0 $FS_SIZE_IN_512_BLOCKS verity $HASH_TYPE 179:##SYSTEM_BOOT_PART## 179:##SYSTEM_BOOT_PART## $DATA_BLOCK_SIZE $HASH_BLOCK_SIZE $DATA_BLOCKS $HASH_OFFSET $HASH_ALGORITHM $ROOT_HASH $SALT\" root=/dev/dm-0"
+    #else
         # Disable dm-verity for Developer builds
-        KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") }"
-    fi
+    KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") }"
+    #fi
 
     RAMDISK="/dev/null"
     if [ ! -z "${INITRAMFS_IMAGE}" ]; then

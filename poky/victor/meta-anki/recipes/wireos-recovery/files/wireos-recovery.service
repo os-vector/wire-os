@@ -1,0 +1,18 @@
+[Unit]
+Description=Silly wire daemon
+SourcePath=/anki/bin/wireos-recovery
+Requires=ankiinit.service
+After=ankiinit.service
+
+ConditionFileIsExecutable=/usr/bin/logwrapper
+ConditionFileIsExecutable=/usr/bin/wireos-recovery
+
+[Service]
+# give ankiinit time to do its thing
+WorkingDirectory=/anki/bin
+ExecStartPre=/usr/bin/sleep 3
+ExecStart=/usr/bin/logwrapper /anki/bin/wireos-recovery
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

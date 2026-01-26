@@ -20,3 +20,6 @@
 [submodule "external/purplpkg"]
 	path = external/purplpkg
 	url = https://github.com/purpl-org/purplpkg
+[submodule "anki/wireos-recovery"]
+	path = anki/wireos-recovery
+	url = https://github.com/os-vector/wireos-recovery
