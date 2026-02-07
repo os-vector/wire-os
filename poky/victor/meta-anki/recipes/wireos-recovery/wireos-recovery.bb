@@ -21,6 +21,51 @@ do_install:append () {
 FILES:${PN} += "${systemd_unitdir}/system/"
 SYSTEMD_SERVICE:${PN} = "${SERVICE_FILE}"
 
+inherit useradd
+
+USERADD_PACKAGES = "${PN} "
+
+GID_ANKI      = '2901'
+GID_ROBOT     = '2902'
+GID_ENGINE    = '2903'
+GID_BLUETOOTH = '2904'
+GID_ANKINET   = '2905'
+GID_CLOUD     = '888'
+GID_CAMERA    = '2907'
+GID_SYSTEM    = '1000'
+
+# Add groups
+GROUPADD_PARAM:${PN} = " -g ${GID_ANKI} anki; \
+                         -g ${GID_ROBOT} robot; \
+                         -g ${GID_ENGINE} engine; \
+                         -g ${GID_BLUETOOTH} bluetooth; \
+                         -g ${GID_ANKINET} ankinet; \
+                         -g ${GID_CLOUD} cloud; \
+                         -g ${GID_CAMERA} camera; \
+                         -g ${GID_SYSTEM} system; \
+                         -g 3003 net;"
+
+# VIC-1951: group 3003 already exists as the inet group (AID_NET 3003)
+# Since we have ANDROID_PARANOID_NETWORKING enabled in the kernel, non-admin users
+# must be in this group in order to create TCP/UDP sockets
+
+AID_NET       = '3003'
+UID_ANKI      = "${GID_ANKI}"
+UID_ROBOT     = "${GID_ROBOT}"
+UID_ENGINE    = "${GID_ENGINE}"
+UID_BLUETOOTH = "${GID_BLUETOOTH}"
+UID_NET       = "${GID_ANKINET}"
+UID_CLOUD     = "${GID_CLOUD}"
+UID_SYSTEM    = "${GID_SYSTEM}"
+# Add users
+USERADD_PARAM:${PN} = " -u ${UID_ANKI} -g ${GID_ANKI} -s /bin/false anki; \
+                        -u ${UID_ROBOT} -g ${GID_ROBOT} -G ${GID_ANKI},${GID_SYSTEM} -s /bin/false robot; \
+                        -u ${UID_ENGINE} -g ${GID_ENGINE} -G ${GID_ANKI},${GID_SYSTEM},${AID_NET},${GID_BLUETOOTH},${GID_CAMERA} -s /bin/false engine; \
+                        -u ${UID_BLUETOOTH} -g ${GID_BLUETOOTH} -G ${GID_ANKI},${GID_SYSTEM} -s /bin/false bluetooth; \
+                        -u ${UID_NET} -g ${GID_ANKINET} -G ${GID_ANKI},${GID_BLUETOOTH},${GID_SYSTEM},${AID_NET} -s /bin/false net; \
+                        -u ${UID_CLOUD} -g ${GID_CLOUD} -G ${GID_ANKI},${GID_SYSTEM},${AID_NET} -s /bin/false cloud; \
+                        -u ${UID_SYSTEM} -g ${GID_SYSTEM} -s /bin/false system"
+
 inherit externalsrc
 
 EXTERNALSRC = "${WORKSPACE}/anki/wireos-recovery"
@@ -117,7 +162,7 @@ do_install () {
     install -p -m 0755 ${WORKSPACE}/anki/wireos-recovery/build/libvector-gobot.so ${D}/lib/
     install -p -m 0755 ${WORKSPACE}/anki/wireos-recovery/build/font.ttf ${D}/anki/bin/
     echo "1" > ${D}/anki/etc/revision
-    echo "3.0.1.0" > ${D}/anki/etc/version
+    echo "9.9.9.0" > ${D}/anki/etc/version
 }
 
 FILES:${PN} += "anki/"

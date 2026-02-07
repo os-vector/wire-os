@@ -30,7 +30,7 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'btop', d)}"
 
 # Other stuff
 #IMAGE_INSTALL += "bspatch"
-#IMAGE_INSTALL += "fake-hwclock"
+IMAGE_INSTALL += "fake-hwclock"
 #IMAGE_INSTALL += "rebooter"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'update-os', d)}"
 IMAGE_INSTALL += "anki-update-engine"

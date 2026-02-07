@@ -28,10 +28,10 @@ do_install () {
 	chmod 0755 ${D}/etc/initscripts/*
 	cp -r ${S}/services/* ${D}/usr/lib/systemd/system/
 	chmod 0644 ${D}/usr/lib/systemd/system/*
-	ln -sf /usr/lib/systemd/system/anki-audio-init.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
+	#ln -sf /usr/lib/systemd/system/anki-audio-init.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
 	ln -sf /usr/lib/systemd/system/logd.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
-	ln -sf /usr/lib/systemd/system/mm-anki-camera.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
-	ln -sf /usr/lib/systemd/system/mm-qcamera-daemon.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
+	#ln -sf /usr/lib/systemd/system/mm-anki-camera.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
+	#ln -sf /usr/lib/systemd/system/mm-qcamera-daemon.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
 	ln -sf /usr/lib/systemd/system/mount-data.service ${D}/usr/lib/systemd/system/local-fs.target.requires/
 	ln -sf /usr/lib/systemd/system/partition-links.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
 	ln -sf /usr/lib/systemd/system/enable-wifi.service ${D}/usr/lib/systemd/system/multi-user.target.wants/
