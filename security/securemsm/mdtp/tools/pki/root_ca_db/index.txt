@@ -1,3 +1,0 @@
-V	20351231235959Z		01	unknown	/O=Test Qualcomm Technologies, Inc./OU=Test Qualcomm CDMA Technologies/CN=Test MDTP Root CA
-V	20251231235959Z		02	unknown	/O=Test Qualcomm Technologies, Inc./OU=Test Qualcomm CDMA Technologies/CN=Test ISV A CA
-R	20251231235959Z	141215190528Z	03	unknown	/O=Test Qualcomm Technologies, Inc./OU=Test Qualcomm CDMA Technologies/CN=Test ISV B CA

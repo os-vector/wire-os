@@ -1,5 +1,0 @@
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE,pathlen:0
-keyUsage=digitalSignature
-
-

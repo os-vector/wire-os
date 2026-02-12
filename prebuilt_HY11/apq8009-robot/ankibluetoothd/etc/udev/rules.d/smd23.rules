@@ -1,1 +1,0 @@
-KERNEL=="smd[23]", OWNER="bluetooth", GROUP="bluetooth", MODE="0600"

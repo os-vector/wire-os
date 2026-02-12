@@ -1,6 +1,0 @@
-crlDistributionPoints=URI:http://crl.qdst.com/crls/qctdevattest.crl
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE,pathlen:0
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-
-

@@ -1,9 +1,0 @@
-config NEUTRINO_ETH
-	bool "Neutrino Ethernet driver support"
-	depends on PCI
-	select PHYLIB
-	select PTP_1588_CLOCK
-	select CONFIG_IPA
-	default y
-	---help---
-	  Say y here if you want to use the built-in Neutrino ethernet

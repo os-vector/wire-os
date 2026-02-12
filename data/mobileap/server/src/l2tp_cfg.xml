@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright (c) 2011-2017 Qualcomm Technologies, Inc.  All Rights Reserved.
-     Qualcomm Technologies Proprietary and Confidential. -->
-<system xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="l2tp_cfg.xsd">
-  <l2tpcfg>
-  </l2tpcfg>
-</system>

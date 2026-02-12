@@ -1,9 +1,0 @@
-prefix=/usr
-exec_prefix=/usr
-libdir=/usr/lib
-includedir=/usr/include
-
-Name: xtwifi
-Description: QTI GPS xtwifi client le extn
-Version: @VERSION
-Libs: -L${libdir}

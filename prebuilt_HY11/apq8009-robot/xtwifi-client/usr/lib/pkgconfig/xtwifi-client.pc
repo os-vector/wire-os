@@ -1,9 +1,0 @@
-prefix=/usr
-exec_prefix=/usr
-libdir=/usr/lib
-includedir=/usr/include
-
-Name: xtwifi
-Description: QTI GPS xtwifi
-Version: @VERSION
-Libs: -L${libdir} -lxtwifiserver_protocol

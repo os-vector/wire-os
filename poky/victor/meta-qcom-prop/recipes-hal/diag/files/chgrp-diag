@@ -1,7 +1,0 @@
-#!/bin/sh
-
-#change the group that owns /dev/diag and change permissions to user rw and group rw (no other rw)
-chgrp diag /dev/diag
-chmod 660 /dev/diag
-chown diag:diag /media/card
-chown diag:diag /sdcard

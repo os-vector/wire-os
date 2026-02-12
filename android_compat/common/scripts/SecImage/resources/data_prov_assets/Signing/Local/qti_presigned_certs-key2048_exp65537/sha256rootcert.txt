@@ -1,1 +1,0 @@
-SHA256(qpsa_rootca.cer)= b53fb23d1953decb95928fe657556cea6edab3444dc708c019057cbaf8c62d4a

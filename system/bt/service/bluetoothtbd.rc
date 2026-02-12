@@ -1,5 +1,0 @@
-service bluetoothtbd /system/bin/bluetoothtbd
-    class main
-    user bluetooth
-    oneshot
-    group wakelock net_bt_admin net_bt_stack net_admin

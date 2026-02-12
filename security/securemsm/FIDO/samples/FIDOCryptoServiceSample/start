@@ -1,4 +1,0 @@
-#!/bin/bash
-
-adb shell am start -n com.qualcomm.qti.auth.fidocryptosample/.FidoCryptoClientActivity
-

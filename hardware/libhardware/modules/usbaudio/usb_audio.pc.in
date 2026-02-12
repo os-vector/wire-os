@@ -1,9 +1,0 @@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@
-
-Name: USB HAL
-Description: usbaudio hal library
-Version: @VERSION@
-Libs: -L${libdir} audio.usb.default

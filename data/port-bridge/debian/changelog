@@ -1,5 +1,0 @@
-port-bridge (0.0.1-1) unstable; urgency=low
-
-  * Initial Debian packaging
-
- -- . <@>  Wed, 17 Nov 2010 09:44:44 -0600

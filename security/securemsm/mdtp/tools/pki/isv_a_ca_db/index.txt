@@ -1,2 +1,0 @@
-V	20151231235959Z		01	unknown	/O=Test Qualcomm Technologies, Inc./OU=Test Qualcomm CDMA Technologies/CN=Test ISV A1
-V	20151231235959Z		02	unknown	/O=Test Qualcomm Technologies, Inc./OU=Test Qualcomm CDMA Technologies/CN=Test ISV A2

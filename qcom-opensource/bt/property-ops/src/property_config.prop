@@ -1,7 +1,0 @@
-bluetooth.hciattach,true,false
-bluetooth.status,true,false
-wc_transport.start_hci,false,false
-bluetooth.startbtsnoop,false,false
-wc_transport.soc_initialized,false,false
-wc_transport.start_root,false,false
-bluetooth.isEnabled,false,false

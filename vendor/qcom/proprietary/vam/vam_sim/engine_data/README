@@ -1,9 +1,0 @@
-
-The engine_data folder is for all engine data usage.
-the folder path will be passed to engine api with source_info structure.
-All engine related data including training set, log etc could be saved here.
-Please use it carefully, all files over a certain size will be automatically groomed in hourly base.
-
-Thank you.
-
-
