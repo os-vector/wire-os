@@ -23,3 +23,7 @@
 [submodule "anki/wireos-recovery"]
 	path = anki/wireos-recovery
 	url = https://github.com/os-vector/wireos-recovery
+[submodule "poky/meta-smartphone"]
+	path = poky/meta-smartphone
+	url = https://github.com/shr-distribution/meta-smartphone.git
+	branch = whinlatter

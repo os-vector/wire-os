@@ -22,6 +22,8 @@ IMAGE_INSTALL += "wipe-all-wifi-configs"
 
 # Wire things
 IMAGE_INSTALL += "wireos-recovery"
+IMAGE_INSTALL += "rmtfs"
+IMAGE_INSTALL += "msm-firmware-loader"
 #IMAGE_INSTALL += "libpvictor"
 
 IMAGE_INSTALL += "avahi-daemon"
