@@ -27,3 +27,6 @@
 	path = poky/meta-smartphone
 	url = https://github.com/shr-distribution/meta-smartphone.git
 	branch = whinlatter
+[submodule "kernel/linux-vector-mainline"]
+	path = kernel/linux-vector-mainline
+	url = https://github.com/os-vector/linux-vector-mainline
