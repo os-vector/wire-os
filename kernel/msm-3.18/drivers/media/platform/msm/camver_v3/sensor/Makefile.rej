@@ -1,7 +1,0 @@
---- drivers/media/platform/msm/camera_v2/sensor/Makefile
-+++ drivers/media/platform/msm/camera_v2/sensor/Makefile
-@@ -8,3 +8,4 @@
- obj-$(CONFIG_MT9M114) += mt9m114.o
- obj-$(CONFIG_OV5645) += ov5645.o
- obj-$(CONFIG_OV5645) += ov7695.o
-+obj-$(CONFIG_GC2145_8909) += gc2145_8909.o
