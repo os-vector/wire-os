@@ -8,20 +8,14 @@ DEPENDS += " \
              gtk-doc-native \
              gettext-native \
              e2fsprogs-native \
-             ext4-utils-native \
-             mkbootimg-native \
-             mtd-utils-native \
-"
+             mtd-utils-native"
 
 RDEPENDS += " \
              pkgconfig-native \
              gtk-doc-native \
              gettext-native \
              e2fsprogs-native \
-             ext4-utils-native \
-	     mkbootimg-native \
-             mtd-utils-native \
-"
+             mtd-utils-native"
 
 IMAGE_LINGUAS = ""
 

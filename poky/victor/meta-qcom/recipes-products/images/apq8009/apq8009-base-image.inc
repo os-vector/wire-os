@@ -24,20 +24,20 @@ IMAGE_INSTALL += "base-passwd"
 IMAGE_INSTALL += "glib-2.0"
 
 IMAGE_INSTALL += "libnl"
-IMAGE_INSTALL += "libcutils"
-IMAGE_INSTALL += "liblog"
+#IMAGE_INSTALL += "libcutils"
+#IMAGE_INSTALL += "liblog"
 
 IMAGE_INSTALL += "libxml2"
 
-IMAGE_INSTALL += "start-scripts-find-partitions"
-IMAGE_INSTALL += "start-scripts-firmware-links"
-IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'system-core-adbd', d)}"
-IMAGE_INSTALL += "system-core-logd"
-IMAGE_INSTALL += "system-core-leprop"
-IMAGE_INSTALL += "system-core-usb"
-IMAGE_INSTALL += "system-core-post-boot"
-IMAGE_INSTALL += "system-conf"
-IMAGE_INSTALL += "system-prop"
+#IMAGE_INSTALL += "start-scripts-find-partitions"
+#IMAGE_INSTALL += "start-scripts-firmware-links"
+#IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'system-core-adbd', d)}"
+#IMAGE_INSTALL += "system-core-logd"
+#IMAGE_INSTALL += "system-core-leprop"
+#IMAGE_INSTALL += "system-core-usb"
+#IMAGE_INSTALL += "system-core-post-boot"
+#IMAGE_INSTALL += "system-conf"
+#IMAGE_INSTALL += "system-prop"
 IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "volatile-binds"
 
@@ -57,8 +57,8 @@ IMAGE_INSTALL += "curl"
 IMAGE_INSTALL += "libwebp"
 
 # wlan
-IMAGE_INSTALL += "wcnss"
-IMAGE_INSTALL += "wlan-opensource"
+#IMAGE_INSTALL += "wcnss"
+#IMAGE_INSTALL += "wlan-opensource"
 
 
 #IMAGE_PREPROCESS_COMMAND += "echo ${MACHINE} >> ${IMAGE_ROOTFS}/target;"

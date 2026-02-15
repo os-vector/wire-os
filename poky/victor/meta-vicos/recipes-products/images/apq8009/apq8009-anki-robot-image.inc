@@ -3,9 +3,9 @@
 #
 
 # userdata security/stuff
-IMAGE_INSTALL += "cryptsetup"
-IMAGE_INSTALL += "user-data-locker"
-IMAGE_INSTALL += "securemsm-noship"
+#IMAGE_INSTALL += "cryptsetup"
+#IMAGE_INSTALL += "user-data-locker"
+#IMAGE_INSTALL += "securemsm-noship"
 IMAGE_INSTALL += "vic-christen"
 
 IMAGE_INSTALL += "openssl"

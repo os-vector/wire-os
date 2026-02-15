@@ -6,10 +6,7 @@ DEPENDS += " \
              pkgconfig-native \
              gtk-doc-native \
              gettext-native \
-             e2fsprogs-native \
-             ext4-utils-native \
-             mtd-utils-native \
-"
+             e2fsprogs-native"
 
 IMAGE_LINGUAS = ""
 

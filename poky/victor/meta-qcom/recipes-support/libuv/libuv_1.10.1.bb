@@ -1,4 +1,0 @@
-require libuv.inc
-
-SRC_URI[md5sum] = "42c4b194e5012af62de0538843848318"
-SRC_URI[sha256sum] = "4b5f71939dd4272ebcfb8e04833e9a273a08b1bf1277d37d14085d7b04b19832"
