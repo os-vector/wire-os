@@ -1,0 +1,62 @@
+This directory contains a small port of libselinux for Android.
+It was originally forked in mid-2011, circa libselinux 2.1.0.
+Some changes have been cherry-picked from the upstream libselinux.
+Upstream git repository is https://github.com/SELinuxProject/selinux
+(libselinux subdirectory) and official releases are available from
+https://github.com/SELinuxProject/selinux/wiki/Releases.
+
+This fork differs from upstream libselinux in at least the following ways:
+
+* Dependencies on glibc-specific features have been removed/replaced
+in order to work with bionic,
+
+* Legacy code and compatibility interfaces have been removed,
+
+* Many interfaces, functions, and files are omitted since they are
+unused in Android,
+
+* The python bindings are omitted since they are unused in Android,
+
+* The setrans (context translation) support has been removed since
+there is no need for MLS label translation in Android and the support
+imposes extra overhead on calls passing security contexts,
+
+* The SELinux policy files are all located in / rather than under
+/etc/selinux since /etc is not available in Android until /system
+is mounted and use fixed paths, not dependent on /etc/selinux/config,
+
+* The kernel policy file (sepolicy in Android, policy.N in Linux) does
+not include a version suffix since Android does not need to support
+booting multiple kernels,
+
+* The policy loading logic does not support automatic downgrading of
+the kernel policy file to a version known to the kernel, since this
+requires libsepol on the device and is only needed to support mixing
+and matching kernels and userspace easily,
+
+* The selabel interface and label_file backend have been extended to
+support label-by-symlink and partial matching support for use by ueventd
+in labeling device nodes based on stable symlink names and by init for
+optimizing its restorecon_recursive of /sys,
+
+* Since the fork, upstream libselinux has switched the label_file
+backend to use a binary version of the file_contexts file
+(file_contexts.bin) that contains precompiled versions of the pcre
+regexes.  This reduces the time to load the file_contexts
+configuration, which in Linux can be significant due to the large
+number of entries (> 5000).  As Android has far fewer entries (~400),
+this has not yet seemed necessary.
+
+* restorecon functionality, including recursive restorecon, has been
+fully implemented within new libselinux functions, along with optimizations
+to prune the tree walk if no change has occurred in file_contexts since
+the last restorecon,
+
+* Support for new Android-specific SELinux configuration files, such
+as seapp_contexts, property_contexts, and service_contexts, has been
+added.
+
+New files added for Android:
+* libselinux/include/selinux/android.h
+* libselinux/src/android.c
+* libselinux/src/label_android_property.c (later added upstream)

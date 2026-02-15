@@ -1,0 +1,102 @@
+
+syntax = "proto2";
+
+option java_package = "com.google.common.logging";
+
+option optimize_for = LITE_RUNTIME;
+
+package wireless_android_play_playlog;
+
+// An entry of the map from a stack of addresses to count.
+// Address here is the offset of the instruction address to the load address
+// of the load_module.
+message AddressSample {
+  // List of addresses that represents a call stack.
+  // address[0] is the leaf of the call stack.
+  repeated uint64 address = 1;
+
+  // List of load_module_ids that represents a call stack.
+  // load_module_id[0] is the leaf of the call stack.
+  // This field can be set as empty if all frame share the same load_module_id
+  // with LoadModuleSamples.load_module_id.
+  repeated int32 load_module_id = 2;
+
+  // Total count that the address/address_range is sampled.
+  optional int64 count = 3;
+};
+
+// An entry of the map from address_range to count.
+// [start, end] represents the range of addresses, end->to represents the
+// taken branch that ends the range.
+message RangeSample {
+  // Start instruction address of a range.
+  optional uint64 start = 1;
+
+  // If "end" and "to" is not provided, "start" represents a single instruction.
+  optional uint64 end = 2;
+  optional uint64 to = 3;
+
+  // Total count that the address/address_range is sampled.
+  optional int64 count = 4;
+};
+
+// A load module.
+message LoadModule {
+  // Name of the load_module.
+  optional string name = 1;
+
+  // LoadModule's linker build_id.
+  optional string build_id = 2;
+}
+
+// All samples for a load_module.
+message LoadModuleSamples {
+  optional int32 load_module_id = 1;
+
+  // Map from a stack of addresses to count.
+  repeated AddressSample address_samples = 2;
+
+  // Map from a range triplet (start, end, to) to count.
+  repeated RangeSample range_samples = 3;
+}
+
+// All samples for a program.
+message ProgramSamples {
+  // Name of the program.
+  optional string name = 1;
+
+  // Load module profiles.
+  repeated LoadModuleSamples modules = 2;
+}
+
+// A compressed representation of a perf profile, which contains samples from
+// multiple binaries.
+message AndroidPerfProfile {
+
+  // Type of the hardware event.
+  enum EventType {
+    CYCLE = 0;
+    BRANCH = 1;
+  }
+  // Hardware event used in profiling.
+  optional EventType event = 1;
+
+  // Total number of samples in this profile.
+  // This is the sum of counts of address_samples and range_samples in all
+  // load_module_samples.
+  optional int64 total_samples = 2;
+
+  // Samples for all profiled programs.
+  repeated ProgramSamples programs = 3;
+
+  // List of all load modules.
+  repeated LoadModule load_modules = 4;
+
+  // is device screen on at point when profile is collected?
+  optional bool display_on = 5;
+
+  // system load at point when profile is collected; corresponds
+  // to first value from /proc/loadavg multiplied by 100 then
+  // converted to int32
+  optional int32 sys_load_average = 6;
+}

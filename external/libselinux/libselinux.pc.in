@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: selinux library
+Description: libselinux library
+Version: @VERSION@
+Libs: -L${libdir} -lselinux
+Cflags: -I${includedir}/libselinux
