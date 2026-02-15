@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: ext4_utils
+Description: ext4_utils library and make_extfs utility
+Version: @VERSION@
+Libs: -L${libdir} -lext4_utils
+Cflags: -I${includedir}/ext4_utils

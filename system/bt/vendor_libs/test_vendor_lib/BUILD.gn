@@ -1,0 +1,55 @@
+shared_library("test_vendor_lib") {
+  sources = [
+    "src/bt_vendor.cc",
+    "src/command_packet.cc",
+    "src/dual_mode_controller.cc",
+    "src/event_packet.cc",
+    "src/hci_transport.cc",
+    "src/packet.cc",
+    "src/packet_stream.cc",
+    "src/test_channel_transport.cc",
+    "src/vendor_manager.cc",
+  ]
+
+  include_dirs = [
+    "include",
+    "//",
+
+    # TODO(dennischeng): Ideally we should need to have the lines below for
+    # indirect includes.
+    "//stack/include",
+    "//third_party/libchrome:base",
+  ]
+}
+
+executable("test_vendor_lib_test") {
+  testonly = true
+  sources = [
+    "src/command_packet.cc",
+    "src/event_packet.cc",
+    "src/packet.cc",
+    "src/packet_stream.cc",
+    "test/hci_transport_unittest.cc",
+    "test/packet_stream_unittest.cc",
+  ]
+
+  include_dirs = [
+    "include",
+    "//",
+    "//btcore/include",
+    "//hci/include",
+    "//stack/include",
+  ]
+
+  deps = [
+    "//third_party/googletest:gtest_main",
+    "//third_party/libchrome:base",
+    "//vendor_libs/test_vendor_lib",
+  ]
+
+  libs = [
+    "-lpthread",
+    "-lrt",
+    "-ldl",
+  ]
+}

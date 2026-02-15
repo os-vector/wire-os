@@ -1,0 +1,134 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC interface for receiving callbacks related to Bluetooth GATT
+ * server-role operations.
+ */
+oneway interface IBluetoothGattServerCallback {
+  /**
+   * Called to report the result of a call to
+   * IBluetoothGattServer.registerServer. |status| will be 0 (or
+   * BLE_STATUS_SUCCESS) if the server was successfully registered. |server_if|
+   * is the owning application's unique GATT server handle and can be used to
+   * perform further operations on the IBluetoothGattServer interface.
+   */
+  void onServerRegistered(in int status, in int server_if);
+
+  /**
+   * Called to report the result of a call to
+   * IBluetoothGattServer.endServiceDeclaration. A |status| of 0 denotes
+   * success, which means that the GATT service has been published and is
+   * discoverable. |service_id| belongs to the service that was registered.
+   */
+  void onServiceAdded(in int status, in GattIdentifier service_id);
+
+  /**
+   * Called when there is an incoming read request from the remote device with
+   * address |device_address| for the characteristic with identifier
+   * |characteristic_id|. |offset| is the index of the characteristic value that
+   * the remote device wants to read from. If |is_long| is true, then this
+   * request is part of a Long Read procedure. An implementation should handle
+   * this request by calling IBluetoothGattServer.sendResponse with the given
+   * |request_id| and the appropriate characteristic value.
+   *
+   * If |offset| is invalid then sendResponse should be called with
+   * GATT_ERROR_INVALID_OFFSET. If |is_long| is true but this characteristic is
+   * not a long attribute (i.e. its value would fit within the current ATT MTU),
+   * then GATT_ERROR_ATTRIBUTE_NOT_LONG should be returned.
+   */
+  void onCharacteristicReadRequest(in String device_address, in int request_id,
+                                   in int offset, in boolean is_long,
+                                   in GattIdentifier characteristic_id);
+
+  /**
+   * Called when there is an incoming read request from the remote device with
+   * address |device_address| for the descriptor with identifier
+   * |descriptor_id|. |offset| is the index of the descriptor value that
+   * the remote device wants to read from. If |is_long| is true, then this
+   * request is part of a Long Read procedure. An implementation should handle
+   * this request by calling IBluetoothGattServer.sendResponse with the given
+   * |request_id| and the appropriate descriptor value.
+   *
+   * If |offset| is invalid then sendResponse should be called with
+   * GATT_ERROR_INVALID_OFFSET. If |is_long| is true but this descriptor is
+   * not a long attribute (i.e. its value would fit within the current ATT MTU),
+   * then GATT_ERROR_ATTRIBUTE_NOT_LONG should be returned.
+   */
+  void onDescriptorReadRequest(in String device_address, in int request_id,
+                               in int offset, in boolean is_long,
+                               in GattIdentifier descriptor_id);
+
+  /**
+   * Called when there is an incoming write request from the remote device with
+   * address |device_address| for the characteristic with identifier
+   * |characteristic_id| with the value |value|. An implementation should handle
+   * this request by calling IBluetoothGattServer.sendResponse with the given
+   * |request_id|. |offset| is the index of the characteristic value that the
+   * remote device wants to write to, so the value should be written starting at
+   * |offset|. If |need_response| is false, then this is a "Write Without
+   * Response" procedure and sendResponse should not be called. If
+   * |is_prepare_write| is true, then the implementation should not commit this
+   * write until a call to onExecuteWriteRequest is received.
+   *
+   * If |offset| is invalid, then sendResponse should be called with
+   * GATT_ERROR_INVALID_OFFSET.
+   */
+  void onCharacteristicWriteRequest(in String device_address, in int request_id,
+                                    in int offset, in boolean is_prepare_write,
+                                    in boolean need_response, in byte[] value,
+                                    in GattIdentifier characteristic_id);
+
+  /**
+   * Called when there is an incoming write request from the remote device with
+   * address |device_address| for the descriptor with identifier
+   * |descriptor_id| with the value |value|. An implementation should handle
+   * this request by calling IBluetoothGattServer.sendResponse with the given
+   * |request_id|. |offset| is the index of the descriptor value that the
+   * remote device wants to write to, so the value should be written starting at
+   * |offset|. If |need_response| is false, then this is a "Write Without
+   * Response" procedure and sendResponse should not be called. If
+   * |is_prepare_write| is true, then the implementation should not commit this
+   * write until a call to onExecuteWriteRequest is received.
+   *
+   * If |offset| is invalid, then sendResponse should be called with
+   * GATT_ERROR_INVALID_OFFSET.
+   */
+  void onDescriptorWriteRequest(in String device_address, in int request_id,
+                                in int offset, in boolean is_prepare_write,
+                                in boolean need_response, in byte[] value,
+                                in GattIdentifier descriptor_id);
+
+  /**
+   * Called when there is an incoming execute-write request to commit or abort
+   * previously prepared writes. If |is_execute| is true, then the
+   * implementation should commit all previously prepared writes. Otherwise all
+   * prepared writes should dropped (aborted). The application should report the
+   * result of the execute write by calling IBluetoothGattServer.sendResponse
+   * with the given |request_id|.
+   */
+  void onExecuteWriteRequest(in String device_address, in int request_id,
+                             in boolean is_execute);
+
+  /**
+   * Reports the result of a previous call to
+   * IBluetoothGattServer.sendNotification. If an indication was sent, this will
+   * be called when the remote device sends a confirmation packet. Otherwise
+   * this will be called as soon as the notification packet is successfully sent
+   * out over the radio.
+   */
+  void onNotificationSent(in String device_address, in int status);
+}

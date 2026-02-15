@@ -1,0 +1,77 @@
+                                net_test v0.1
+                                =============
+
+A simple framework for blackbox testing of kernel networking code.
+
+
+Why use it?
+===========
+
+- Fast test / boot cycle.
+- Access to host filesystem and networking via L2 bridging.
+- Full Linux userland including Python, etc.
+- Kernel bugs don't crash the system.
+
+
+How to use it
+=============
+
+cd <kerneldir>
+path/to/net_test/run_net_test.sh <test>
+
+where <test> is the name of a test binary in the net_test directory. This can
+be an x86 binary, a shell script, a Python script. etc.
+
+
+How it works
+============
+
+net_test compiles the kernel to a user-mode linux binary, which runs as a
+process on the host machine. It runs the binary to start a Linux "virtual
+machine" whose root filesystem is the supplied Debian disk image. The machine
+boots, mounts the root filesystem read-only, runs the specified test from init, and then drops to a shell.
+
+
+Access to host filesystem
+=========================
+
+The VM mounts the host filesystem at /host, so the test can be modified and
+re-run without rebooting the VM.
+
+
+Access to host networking
+=========================
+
+Access to host networking is provided by tap interfaces. On the host, the
+interfaces are named <user>TAP0, <user>TAP1, etc., where <user> is the first
+10 characters of the username running net_test. (10 characters because
+IFNAMSIZ = 16). On the guest, they are named eth0, eth1, etc.
+
+net_test does not do any networking setup beyond creating the tap interfaces.
+IP connectivity can be provided on the host side by setting up a DHCP server
+and NAT, sending IPv6 router advertisements, etc. By default, the VM has IPv6
+privacy addresses disabled, so its IPv6 addresses can be predicted using a tool
+such as ipv6calc.
+
+The provided filesystem contains a DHCPv4 client and simple networking
+utilities such as ping[6], traceroute[6], and wget.
+
+The number of tap interfaces is currently hardcoded to two. To change this
+number, modify run_net_test.sh.
+
+
+Logging into the VM, installing packages, etc.
+==============================================
+
+net_test mounts the root filesystem read-only, and runs the test from init, but
+since the filesystem contains a full Linux userland, it's possible to boot into
+userland and modify the filesystem, for example to install packages using
+apt-get install. Log in as root with no password. By default, the filesystem is
+configured to perform DHCPv4 on eth0 and listen to RAs.
+
+
+Bugs
+====
+
+Since the test mounts the filesystem read-only, tests cannot modify
+/etc/resolv.conf and the system resolver is hardcoded to 8.8.8.8.

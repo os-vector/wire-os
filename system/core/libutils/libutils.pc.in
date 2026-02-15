@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: utils
+Description: utils library
+Version: @VERSION@
+Libs: -L${libdir} -lutils
+Cflags: -I${includedir}

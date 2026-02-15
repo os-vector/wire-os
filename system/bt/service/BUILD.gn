@@ -1,0 +1,98 @@
+#
+#  Copyright (C) 2015 Google
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+source_set("service") {
+  sources = [
+    "adapter.cpp",
+    "daemon.cpp",
+    "gatt_client.cpp",
+    "gatt_server.cpp",
+    "gatt_server_old.cpp",
+    "logging_helpers.cpp",
+    "low_energy_client.cpp",
+    "settings.cpp",
+    "common/bluetooth/advertise_data.cpp",
+    "common/bluetooth/adapter_state.cpp",
+    "common/bluetooth/uuid.cpp",
+    "common/bluetooth/scan_filter.cpp",
+    "common/bluetooth/scan_result.cpp",
+    "common/bluetooth/scan_settings.cpp",
+    "common/bluetooth/gatt_identifier.cpp",
+    "common/bluetooth/advertise_settings.cpp",
+    "common/bluetooth/util/atomic_string.cpp",
+    "common/bluetooth/util/address_helper.cpp",
+    "hal/bluetooth_interface.cpp",
+    "hal/bluetooth_gatt_interface.cpp",
+    "hal/fake_bluetooth_gatt_interface.cpp",
+    "hal/fake_bluetooth_interface.cpp",
+    "hal/gatt_helpers.cpp",
+    "ipc/ipc_handler.cpp",
+    "ipc/linux_ipc_host.cpp",
+    "ipc/ipc_manager.cpp",
+    "ipc/ipc_handler_linux.cpp",
+  ]
+
+  include_dirs = [
+    "//",
+    "//service/common",
+    "//third_party/modp_b64/modp64",
+    libhw_include_path,
+  ]
+
+  deps = [
+    "//third_party/libchrome:base"
+  ]
+}
+
+executable("bluetoothtbd") {
+  sources = [
+    "main.cpp",
+  ]
+
+  deps = [
+    ":service",
+    "//btcore",
+    "//third_party/libchrome:base",
+    "//third_party/modp_b64",
+  ]
+
+  include_dirs = [ "//" ]
+
+  libs = [
+    "-ldl",
+    "-lpthread",
+    "-lrt",
+  ]
+}
+
+executable("service_unittests") {
+  testonly = true
+  sources = [
+    "test/fake_hal_util.cpp",
+    "test/ipc_linux_unittest.cpp",
+    "test/settings_unittest.cpp",
+    "test/uuid_unittest.cpp",
+  ]
+
+  include_dirs = [ "//" ]
+
+  deps = [
+    ":service",
+    "//third_party/googletest:gmock_main",
+    "//third_party/libchrome:base",
+    "//third_party/modp_b64",
+  ]
+}

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: fs_mgr
+Description: fs_mgr library
+Version: @VERSION@
+Libs: -L${libdir} -lfs_mgr
+Cflags: -I${includedir}

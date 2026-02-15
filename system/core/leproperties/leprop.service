@@ -1,0 +1,15 @@
+[Unit]
+SourcePath=/sbin/leprop-service
+Description=leprop Service
+Wants=mount-data.service
+After=mount-data.service
+#After=systemrw-build.prop.service
+#Before=persist-prop.service
+#Requires=systemrw-build.prop.service persist-prop.service
+
+[Service]
+Restart=always
+ExecStart=/sbin/leprop-service
+
+[Install]
+WantedBy=multi-user.target

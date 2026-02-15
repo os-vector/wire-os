@@ -1,0 +1,85 @@
+#
+#  Copyright (C) 2015 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+shared_library("bluetooth.default") {
+  # HAL layer
+  sources = [
+    "//btif/src/bluetooth.c",
+  ]
+
+  # platform specific
+  sources += [
+    "bte_main.c",
+    "bte_init.c",
+    "bte_logmsg.c",
+    "bte_conf.c",
+    "stack_config.c",
+  ]
+
+  include_dirs = [
+    "//",
+    "//bta/include",
+    "//bta/sys",
+    "//bta/dm",
+    "//btcore/include",
+    "//include",
+    "//stack/include",
+    "//stack/l2cap",
+    "//stack/a2dp",
+    "//stack/btm",
+    "//stack/avdt",
+    "//hci",
+    "//hci/include",
+    "//udrv/include",
+    "//btif/include",
+    "//btif/co",
+    "//hci/includ",
+    "//vnd/include",
+    "//brcm/include",
+    "//embdrv/sbc/encoder/include",
+    "//embdrv/sbc/decoder/include",
+    "//audio_a2dp_hw",
+    "//utils/include",
+    "//test/suite",
+  ]
+
+  deps = [
+    "//audio_a2dp_hw:audio.a2dp.default",
+    "//bta",
+    "//btcore",
+    "//btif",
+    "//device",
+    "//embdrv/sbc",
+    "//hci",
+    "//osi",
+    "//stack",
+    "//third_party/tinyxml2",
+    "//udrv",
+    "//utils",
+  ]
+
+  cflags_c = [
+    "-Lobj/osi",
+    "-losi",
+  ]
+  libs = [
+    "-ldl",
+    "-lpthread",
+    "-lresolv",
+    "-lrt",
+    "-lz",
+  ]
+}

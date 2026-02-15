@@ -1,0 +1,18 @@
+This directory contains all the "common" sources between the bluetooth daemon
+and our client library. All source files here are under the "bluetooth"
+subdirectory, which is the exported root path for the client static library.
+Only common files should go here. All headers that go into common/bluetooth must
+only include other headers from common/bluetooth and must use "bluetooth" as the
+root path, e.g.:
+
+#include <bluetooth/uuid.h>
+
+This is so that client applications that link against the client library have
+one common include path exported to them, and our headers can find eachother
+within that.
+
+It is however OK to include from the package root when including common headers
+from source files as these are pre-compiled. For example,
+common/bluetooth/adapter_state.cpp should do:
+
+#include "service/common/bluetooth/adapter_state.h"

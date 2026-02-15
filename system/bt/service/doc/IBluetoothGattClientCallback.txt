@@ -1,0 +1,121 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC interface for receiving callbacks related to Bluetooth GATT
+ * client-role operations.
+ * TODO(armansito): Not yet supported.
+ */
+oneway interface IBluetoothGattClientCallback {
+  /**
+   * Called as a result of IBluetoothGattClient.registerClient.
+   * |status| will contain BLE_STATUS_SUCCESS (0) if the client was successfully
+   * registered. |client_id| is the owning application's unique GATT client
+   * handle and can be used to perform further operations on the
+   * IBluetoothGattClient interface.
+   */
+  void onClientRegistered(in int status, in int client_id);
+
+  /**
+   * Called for each GATT service that was discovered on the remote device. The
+   * device that this service belongs to can be obtained from the |service_id|
+   * structure. |is_primary| is true if this refers to a primary service,
+   * otherwise this refers to a secondary service.
+   */
+  void onGetService(in boolean is_primary, in GattIdentifier service_id);
+
+  /**
+   * Called for each include definition that was discovered on the remote
+   * device.
+   */
+  void onGetIncludedService(in GattIdentifier included_service_id);
+
+  /**
+   * Called for each characteristic that was discovered on the remote device.
+   * The service that this characteristic belongs to can be obtained from the
+   * |characteristic_id| structure. |properties| contains the bitmask of GATT
+   * characteristic properties as defined in the Bluetooth Core Specification.
+   */
+  void onGetCharacteristic(in GattIdentifier characteristic_id,
+                           in int properties);
+
+  /**
+   * Called for each descriptor that was discovered on the remote device. The
+   * service and characteristic that this descriptor belongs to can be obtained
+   * from the |descriptor_id| structure.
+   */
+  void onGetDescriptor(in GattIdentifier descriptor_id);
+
+  /**
+   * Called to mark the end of GATT service discovery on the remote device with
+   * address |device_address|. |status| will contain BLE_STATUS_SUCCESS (0) if
+   * the operation was successful.
+   */
+  void onSearchComplete(in String device_address, in int status);
+
+  /**
+   * Called as a result of IBluetoothGattClient.readCharacteristic. |status|
+   * will contain BLE_STATUS_SUCCESS (0) on success and an ATT protocol error
+   * code in case of an error. |characteristic_id| refers to the characteristic
+   * this operation was performed on. On success, |value| will contain the
+   * characteristic value that was read from the remote device. This argument
+   * can be ignored in case of failure.
+   */
+  void onCharacteristicRead(in int status, in GattIdentifier characteristic_id,
+                            in byte[] value);
+
+  /**
+   * Called as a result of IBluetoothGattClient.writeCharacteristic. |status|
+   * will contain BLE_STATUS_SUCCESS (0) on success and an ATT protocol error
+   * code in case of an error. |characteristic_id| refers to the characteristic
+   * this operation was performed on.
+   */
+  void onCharacteristicWrite(in int status,
+                             in GattIdentifier characteristic_id);
+
+  /**
+   * Called as a result of IBluetoothGattClient.endReliableWrite.
+   * |device_address| refers to the remote device that the endReliableWrite
+   * method was called on. |status| will contain BLE_STATUS_SUCCESS (0) on
+   * success and an ATT error code in case of an error.
+   */
+  void onExecuteWrite(in String device_address, in int status);
+
+  /**
+   * Called as a result of IBluetoothGattClient.readDescriptor. |status|
+   * will contain BLE_STATUS_SUCCESS (0) on success and an ATT protocol error
+   * code in case of an error. |descriptor_id| refers to the descriptor this
+   * operation was performed on. On success, |value| will contain the
+   * descriptor value that was read from the remote device. This argument
+   * can be ignored in case of failure.
+   */
+  void onDescriptorRead(in int status, in GattIdentifier descriptor_id,
+                        in byte[] value);
+
+  /**
+   * Called as a result of IBluetoothGattClient.writeDescriptor. |status|
+   * will contain BLE_STATUS_SUCCESS (0) on success and an ATT protocol error
+   * code in case of an error. |descriptor_id| refers to the descriptor this
+   * operation was performed on.
+   */
+  void onDescriptorWrite(in int status, in GattIdentifier descriptor_id);
+
+  /**
+   * Called when there is an incoming ATT Handle-Value notification or
+   * indication for the characteristic with identifier |characteristic_id|.
+   */
+  void onNotify(in GattIdentifier characteristic_id, in byte[] value);
+}

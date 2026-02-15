@@ -1,0 +1,97 @@
+#
+#  Copyright (C) 2015 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+static_library("osi") {
+  sources = [
+    "src/alarm.c",
+    "src/allocation_tracker.c",
+    "src/allocator.c",
+    "src/array.c",
+    "src/buffer.c",
+    "src/compat.c",
+    "src/config.c",
+    "src/data_dispatcher.c",
+    "src/eager_reader.c",
+    "src/fixed_queue.c",
+    "src/future.c",
+    "src/hash_functions.c",
+    "src/hash_map.c",
+    "src/hash_map_utils.c",
+    "src/list.c",
+    "src/metrics_linux.cpp",
+    "src/mutex.c",
+    "src/osi.c",
+    "src/properties.c",
+    "src/reactor.c",
+    "src/ringbuffer.c",
+    "src/semaphore.c",
+    "src/socket.c",
+
+    # TODO(mcchou): Remove these sources after platform specific
+    # dependencies are abstracted.
+    "src/socket_utils/socket_local_client.c",
+    "src/socket_utils/socket_local_server.c",
+    "src/thread.c",
+    "src/time.c",
+    "src/wakelock.c",
+  ]
+
+  include_dirs = [
+    "//",
+    "//utils/include",
+    "//stack/include",
+  ]
+}
+
+executable("net_test_osi") {
+  testonly = true
+  sources = [
+    "test/AlarmTestHarness.cpp",
+    "test/AllocationTestHarness.cpp",
+    "test/alarm_test.cpp",
+    "test/allocation_tracker_test.cpp",
+    "test/allocator_test.cpp",
+    "test/array_test.cpp",
+    "test/config_test.cpp",
+    "test/data_dispatcher_test.cpp",
+    "test/eager_reader_test.cpp",
+    "test/future_test.cpp",
+    "test/hash_map_test.cpp",
+    "test/hash_map_utils_test.cpp",
+    "test/list_test.cpp",
+    "test/properties_test.cpp",
+    "test/rand_test.cpp",
+    "test/reactor_test.cpp",
+    "test/ringbuffer_test.cpp",
+    "test/thread_test.cpp",
+    "test/time_test.cpp",
+  ]
+
+  include_dirs = [
+    "//",
+    "//osi/test",
+  ]
+
+  deps = [
+    "//osi",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  libs = [
+    "-lpthread",
+    "-lrt",
+  ]
+}

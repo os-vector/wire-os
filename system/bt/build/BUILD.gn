@@ -1,0 +1,85 @@
+#
+#  Copyright (C) 2015 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+declare_args() {
+  # Include path for hardware/bluetooth.h
+  libhw_include_path = ""
+  core_include_path = ""
+  audio_include_path = ""
+}
+
+config("default_include_dirs") {
+  # TODO(armansito): Remove "core_include_path" once the cutils includes have
+  # been removed.
+  assert(libhw_include_path != "",
+         "libhardware_include_path build argument wasn't provided.")
+  assert(core_include_path != "",
+         "core_include_path build argument wasn't provided.")
+  assert(audio_include_path != "",
+         "audio_include_path build argument wasn't provided.")
+  include_dirs = [
+    libhw_include_path,
+    core_include_path,
+    audio_include_path,
+  ]
+}
+
+config("linux") {
+  # TODO(keybuk): AndroidConfig.h or equivalent
+
+  cflags = [
+    #TODO(jpawlowski): uncomment once we have no warnings on linux build
+    #    "-Wall",
+    #    "-Werror",
+    "-g",
+    "-O0",
+    "-fpic",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fvisibility=hidden",
+  ]
+
+  cflags_c = [ "-std=c99" ]
+
+  cflags_cc = [
+#TODO(jpawlowski): we should use same c++ version as Android, which is c++11,
+# but we use some c++14 features. Uncomment when this get fixed in code.:
+    "-std=c++14",
+    "-fno-exceptions",
+  ]
+
+  defines = [
+    "_FORTIFY_SOURCE=2",
+    "_GNU_SOURCE",
+    "HAS_NO_BDROID_BUILDCFG",
+    "LOG_NDEBUG=1",
+    "EXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
+    "KERNEL_MISSING_CLOCK_BOOTTIME_ALARM=TRUE",
+
+    # This is a macro to that can be used by source code to detect if the
+    # current build is done by GN or via Android.mk. This is a temporary
+    # workaround until we can remove all Android-specific dependencies.
+    "OS_GENERIC",
+  ]
+}
+
+config("pic") {
+  cflags = [ "-fPIC" ]
+}
+
+config("gc") {
+  ldflags = [ "-Wl,--gc-sections" ]
+}

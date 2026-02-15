@@ -1,0 +1,13 @@
+{
+  "AclDataPacketSize": "1024",
+  "ScoDataPacketSize": "255",
+  "NumAclDataPackets": "10",
+  "NumScoDataPackets": "10",
+  "Version": "4",
+  "Revision": "0",
+  "LmpPalVersion": "0",
+  "ManufacturerName": "0",
+  "LmpPalSubversion": "0",
+  "MaximumPageNumber": "0",
+  "BdAddress": "123456"
+}

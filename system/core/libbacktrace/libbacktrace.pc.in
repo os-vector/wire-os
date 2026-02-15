@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libbacktrace
+Description: libbacktrace library
+Version: @VERSION@
+Libs: -L${libdir} -lbacktrace
+Cflags: -I${includedir}

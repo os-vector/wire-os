@@ -1,0 +1,5 @@
+#! /bin/sh
+# Make /var/log/wtmp point to NULL so logs written to wtmp are not saved
+rm /var/log/wtmp
+ln -s /dev/null /var/log/wtmp
+echo 0 > /data/reboot-cookie

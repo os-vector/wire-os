@@ -1,0 +1,180 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC interface for interacting with Bluetooth GATT client-role
+ * features.
+ * TODO(armansito): Not yet supported.
+ */
+interface IBluetoothGattClient {
+  /**
+   * Registers a client application with this interface. This creates a unique
+   * GATT client instance for the application. Returns true on success; false
+   * otherwise. If successful, the caller will be assigned a "client_id" which
+   * will be reported asynchronously via
+   * IBluetoothGattClientCallback.onRegistered. This ID is required to make
+   * calls to the functions defined below.
+   */
+  boolean registerClient(in IBluetoothGattClientCallback callback);
+
+  /**
+   * Unregisters a previously registered client with interface ID |client_id|.
+   */
+  void unregisterClient(in int client_id);
+
+  /**
+   * Unregisters all previously registered clients.
+   */
+  void unregisterAll();
+
+  /**
+   * Refreshes the local client-side attribute cache that mirrors the attribute
+   * database of remote device with address |device_address|. Returns false in
+   * case of an error. |client_id| is the identifier obtained via
+   * registerClient.
+   */
+  boolean refreshDevice(in int client_id, in String device_address);
+
+  /**
+   * Returns the GATT services, characteristics, and descriptors on the remote
+   * device with address |device_address| asynchronously via the corresponding
+   * IBluetoothGattClientCallback callbacks. Based on the current connection and
+   * bonding state, either GATT service discovery will be initiated or the
+   * results will be returned from the attribute cache. Returns false in case of
+   * an error. |client_id| is the identifier obtained via registerClient.
+   */
+  boolean discoverServices(in int client_id, in String device_address);
+
+  /**
+   * Initiate a read request for the remote characteristic with identifier
+   * |characteristic_id|. The result will be asynchronously reported in
+   * IBluetoothGattClientCallback.onCharacteristicRead. Returns false if the
+   * request cannot be started, e.g. if a read is already pending on this remote
+   * device. If the read request fails due to characteristic permissions,
+   * this function will try to raise the connection security level based on the
+   * characteristic's permission requirements. If that operation fails, then the
+   * |status| parameter of the onCharacteristicRead callback will contain the
+   * appropriate ATT protocol error code. |client_id| is obtained via
+   * registerClient.
+   */
+  boolean readCharacteristic(in int client_id,
+                             in GattIdentifier characteristic_id);
+
+  /**
+   * Initiate a write request for the remote characteristic with identifier
+   * |characteristic_id| with the value |value|. The |write_type| parameter
+   * indicates which of the following GATT write procedure should be used:
+   *
+   *   - WRITE_TYPE_DEFAULT (0x02): Regular Write Procedure
+   *   - WRITE_TYPE_NO_RESPONSE (0x01): Write Without Response procedure
+   *   - WRITE_TYPE_SIGNED (0x04): Signed Write Without Response procedure.
+   *
+   * The result will be asynchronously reported in
+   * IBluetoothGattClientCallback.onCharacteristicWrite. Returns false if the
+   * request cannot be started. If the write request fails due to attribute
+   * permissions, this function will try to raise the connection security level
+   * based on the characteristic's permission requirements. If that operation
+   * fails, then the |status| parameter of the onCharacteristicWrite callback
+   * will contain the appropriate ATT protocol error code. |client_id| is
+   * obtained via registerClient.
+   */
+  boolean writeCharacteristic(in int client_id,
+                              in GattIdentifier characteristic_id,
+                              in int write_type,
+                              in byte[] value);
+
+  /**
+   * Initiate a read request for the remote descriptor with identifier
+   * |descriptor_id|. The result will be asynchronously reported in
+   * IBluetoothGattClientCallback.onDescriptorRead. Returns false if the
+   * request cannot be started, e.g. if a read is already pending on this remote
+   * device. If the read request fails due to descriptor permissions,
+   * this function will try to raise the connection security level based on the
+   * descriptor's permission requirements. If that operation fails, then the
+   * |status| parameter of the onDescriptorRead callback will contain the
+   * appropriate ATT protocol error code. |client_id| is obtained via
+   * registerClient.
+   */
+  boolean readDescriptor(in int client_id,
+                         in GattIdentifier descriptor_id);
+
+  /**
+   * Initiate a write request for the remote descriptor with identifier
+   * |descriptor_id| with the value |value|. The |write_type| parameter
+   * indicates which of the following GATT write procedure should be used:
+   *
+   *   - WRITE_TYPE_DEFAULT (0x02): Regular write procedure
+   *   - WRITE_TYPE_NO_RESPONSE (0x01): Write without response procedure
+   *   - WRITE_TYPE_SIGNED (0x04): Authenticated-signed write procedure
+   *
+   * The result will be asynchronously reported in
+   * IBluetoothGattClientCallback.onDescriptorWrite. Returns false if the
+   * request cannot be started. If the write request fails due to attribute
+   * permissions, this function will try to raise the connection security level
+   * based on the descriptor's permission requirements. If that operation fails,
+   * then the |status| parameter of the onDescriptorWrite callback will contain
+   * the appropriate ATT protocol error code. |client_id| is obtained via
+   * registerClient.
+   */
+  boolean writeDescriptor(in int client_id,
+                          in GattIdentifier descriptor_id,
+                          in int write_type,
+                          in byte[] value);
+
+  /**
+   * Enables handle-value notifications from the remote characteristic with ID
+   * |characteristic_id|. If successful, notifications will be signaled via
+   * IBluetoothGattClientCallback.onNotify. Returns false if the request cannot
+   * be initiated. |client_id| is obtained via registerClient.
+   */
+  boolean registerForNotifications(in int client_id,
+                                   in GattIdentifier characteristic_id);
+
+  /**
+   * Disables handle-value notifications from the remote characteristic with ID
+   * |characteristic_id|. Returns false if the request cannot be initiated, e.g.
+   * if notifications from this characteristic have not been enabled.
+   * |client_id| is obtained via registerClient.
+   */
+  boolean unregisterForNotifications(in int client_id,
+                                     in GattIdentifier characteristic_id);
+
+  /**
+   * Initiates a reliable write procedure for the remote device with address
+   * |device_address|. Once a reliable write transaction has been initiated, all
+   * calls to writeCharacteristic are sent to the remote device for verification
+   * and queued up for atomic execution. The application can verify each write
+   * payload using the IBluetoothGattClientCallback.onCharacteristicWrite
+   * callback and abort reliable write in case of a mismatch. The queued writes
+   * will be processed atomically by the remote device after calling
+   * endReliableWrite. Returns false if the procedure cannot be started, e.g. if
+   * it has already been started earlier. |client_id| is obtained via
+   * registerClient.
+   */
+  boolean beginReliableWrite(in int client_id, in String device_address);
+
+  /**
+   * Ends a previously started reliable write procedure for the remote device
+   * with address |device_address|. If |execute| is true, then a request will be
+   * sent to execute the queued writes, else a request will be sent to abort the
+   * queued writes. Returns false in case of a failure, e.g. if a reliable write
+   * procedure was not started. IBluetoothGattClientCallback.onExecuteWrite will
+   * be used to asynchronously report the result of the execute write request.
+   * |client_id| is obtained via registerClient.
+   */
+  boolean endReliableWrite(in int client_id, in String device_address,
+                           in boolean execute);
+}

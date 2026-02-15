@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+# Copyright (c) 2016, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#   * Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#   * Redistributions in binary form must reproduce the above
+#     copyright notice, this list of conditions and the following
+#     disclaimer in the documentation and/or other materials provided
+#     with the distribution.
+#   * Neither the name of The Linux Foundation nor the names of its
+#     contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+#
+# Short-Description: logd daemon
+# Description: init.d script to start logd daemon
+
+set -e
+wait_for_logd_to_start() {
+    while [ -z $(pidof -o %PPID logd) ];
+    do
+        echo "waiting for logd to start"
+    done
+}
+
+case "$1" in
+  start)
+        if [ ! -d /dev/socket ]; then
+            mkdir /dev/socket
+        fi
+        chmod 777 /dev/socket
+        echo 600 > /proc/sys/net/unix/max_dgram_qlen
+        if [ -z $(pidof -o %PPID logd) ]; then
+            echo "Starting logd ..."
+            start-stop-daemon -S -b -a /sbin/logd
+        fi
+        wait_for_logd_to_start
+        # add a small delay, before socket permission are
+        # being set.
+        sleep 0.2s
+        echo "Logd running: Setting permission .."
+        chmod 0666 /dev/socket/logd
+        chmod 0666 /dev/socket/logdr
+        chmod 0222 /dev/socket/logdw
+        echo "done"
+        ;;
+  stop)
+        echo -n "Stopping logd: "
+        start-stop-daemon -K -n logd
+        echo "done"
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage logd { start | stop | restart}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

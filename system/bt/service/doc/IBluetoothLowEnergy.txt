@@ -1,0 +1,97 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC API for interacting with Bluetooth Low-Energy features.
+ */
+interface IBluetoothLowEnergy {
+  /**
+   * Registers a client application that can manage its own Low Energy
+   * instance. A special client interface ID will be returned in a callback to
+   * the application that can be used to perform Low Energy operations. Returns
+   * false in case of an error.
+   */
+  boolean registerClient(in IBluetoothLowEnergyCallback callback);
+
+  /**
+   * Unregisters a previously registered client with "client interface ID"
+   * |client_if|.
+   */
+  void unregisterClient(in int client_if);
+
+  /**
+   * Unregisters all previously registered clients.
+   */
+  void unregisterAll();
+
+  /* Initiates a BLE connection do device with address |address|. If
+   * |is_direct| is set, use direct connect procedure. Return true on success,
+   * false otherwise.
+   */
+  boolean Connect(in int client_id, in const char* address,
+                  in boolean is_direct);
+
+  /* Disconnect from previously connected BLE device with address |address|.
+   * Returns true on success, false otherwise.
+   */
+  boolean Disconnect(in int client_id, in const char* address);
+
+  /**
+   * Sends request to set MTU to |mtu| for the device with address |address|.
+   * OnMtuChanged callback will be triggered as a result of this call. Returns
+   * true when the command was sent, false otherwise.
+   */
+   boolean setMtu(in int client_id, in char* address, int mtu);
+
+  /**
+   * Initiates a BLE device scan for the scan client with ID |client_id|, using
+   * the parameters defined in |settings|. Scan results that are reported to the
+   * application with the associated IBluetoothLowEnergyCallback event will be
+   * filtered using a combination of hardware and software filtering based on
+   * |filters|. Return true on success, false otherwise.
+   */
+  boolean startScan(in int client_id, in ScanSettings settings,
+                    in ScanFilter[] filters);
+
+  /**
+   * Stops a previously initiated scan session for the client with ID
+   * |client_id|. Return true on success, false otherwise.
+   */
+  boolean stopScan(in int client_id);
+
+  /**
+   * Starts a multi-advertising instance using |advertising_data| and
+   * |scan_response_data|, both of which can be empty. Each of these parameters
+   * must contain the raw advertising packet. Returns false if there were any
+   * synchronous failures, e.g. if the advertising or scan response data are
+   * incorrectly formatted. Otherwise, the result of the operation will be
+   * asynchronously reported in
+   * IBluetoothLowEnergyCallback.onMultiAdvertiseCallback. See the headers in
+   * common/bluetooth/binder for documentation on the AdvertiseData and
+   * AdvertiseSettings data types.
+   */
+  boolean startMultiAdvertising(in int client_if,
+                                in AdvertiseData advertise_data,
+                                in AdvertiseData scan_response_data,
+                                in AdvertiseSettings settings);
+
+  /**
+   * Stops the previously started multi-advertising instance for the given
+   * client. Returns false in case of an error, e.g. this client has not started
+   * an instance.
+   */
+  boolean stopMultiAdvertising(in int client_if);
+}

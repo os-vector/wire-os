@@ -1,0 +1,114 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC interface for interacting with Bluetooth GATT server-role
+ * features.
+ */
+interface IBluetoothGattServer {
+  /**
+   * Registers a client application with this interface. This creates a unique
+   * GATT server instance for the application that will contain the GATT
+   * services belonging to the calling application. A special interface ID will
+   * be returned in a callback to the application that can be used to perform
+   * GATT server operations. Returns false in case of an error.
+   */
+  boolean registerServer(in IBluetoothGattServerCallback callback);
+
+  /**
+   * Unregisters a previously registered server with interface ID |server_if|.
+   */
+  void unregisterServer(in int server_if);
+
+  /**
+   * Unregisters all previously registered servers.
+   */
+  void unregisterAll();
+
+  /**
+   * Begins a new GATT service declaration. This will execute synchronously and
+   * create a new service range. This can be followed by calls to populate the
+   * service range with attributes. The started service won't be published and
+   * made discoverable to remote devices until a successful call to
+   * endServiceDeclaration.
+   *
+   * The created service will be assigned a unique identifier that can be used
+   * by the caller to distinguish between different services. This will be
+   * returned in |out_id| in case of success. Returns false in case of failure,
+   * e.g. a service declaration is already in progress.
+   */
+  boolean beginServiceDeclaration(in int server_if, in boolean is_primary,
+                                  in ParcelUuid uuid,
+                                  out GattIdentifier out_id);
+
+  /**
+   * Adds a characteristic entry to a previously started service declaration.
+   * Returns false in case of failure, e.g. if no service declaration was
+   * started. Returns the uniquely assigned characteristic identifier in
+   * |out_id| in the case of success.
+   */
+  boolean addCharacteristic(in int server_if, in ParcelUuid uuid,
+                            in int properties, in int permissions,
+                            out GattIdentifier out_id);
+
+  /**
+   * Adds a characteristic descriptor entry to a previously started service
+   * declaration. Returns false in case of failure, e.g. if no service
+   * declaration was started or if the declaration does not contain a
+   * characteristic that can own this descriptor. Returns the uniquely assigned
+   * descriptor identifier in |out_id| in the case of success.
+   */
+  boolean addDescriptor(in int server_if, in ParcelUuid uuid,
+                        in int permissions,
+                        out GattIdentifier out_id);
+
+  /**
+   * Ends a previously started service declaration and asynchronously publishes
+   * the service in the underlying attribute database. Returns false in case of
+   * an asynchronous failure, e.g. if no service declaration was started or
+   * there is a pending call to endServiceDeclaration. Otherwise returns true
+   * and reports the result of the operation asynchronously in
+   * IBluetoothGattServerCallback.onServiceAdded.
+   */
+  boolean endServiceDeclaration(in int server_if);
+
+  /**
+   * Sends a response to a currently pending read or write request. The request
+   * will be propagated to the application via IBluetoothGattServerCallback with
+   * a unique |request_id| which must be passed to this method along with the
+   * |device_address| of the device that the request originated from.
+   *
+   * The |status| field should contain the result of the operation. In the case
+   * of success, the application should pass in "0". Otherwise this should
+   * contain an ATT protocol error code.
+   */
+  boolean sendResponse(in int server_if, in String device_address,
+                       in int request_id, in int status,
+                       in int offset, in byte[] value);
+
+  /**
+   * Sends a handle-value notification or indication to the device with the
+   * given address for the characteristic with the given identifier. |confirm|
+   * should be set to true, if a handle-value indication should be sent, which
+   * will remain pending until the remote device sends a handle-value
+   * confirmation. Returns false if a call to this method is pending. Otherwise
+   * reports the result asynchronously in
+   * IBluetoothGattServerCallback.onNotificationSent.
+   */
+  boolean sendNotification(in int server_if, in String device_address,
+                           in GattIdentifier characteristic_id,
+                           in boolean confirm, in byte[] value);
+}

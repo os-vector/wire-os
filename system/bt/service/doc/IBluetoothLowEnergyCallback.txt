@@ -1,0 +1,54 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC interface for receiving callbacks related to Bluetooth Low Energy
+ * operations.
+ */
+oneway interface IBluetoothLowEnergyCallback {
+  /**
+   * Called to report the result of a call to
+   * IBluetoothLowEnergy.registerClient. |status| will be BLE_STATUS_SUCCESS (0)
+   * if the client was successfully registered. |client_if| is the owning
+   * application's unique Low Energy client handle and can be used
+   * to perform further operations on the IBluetoothLowEnergy interface.
+   */
+  void onClientRegistered(in int status, in int client_if);
+
+  /* Called asynchronously to notify the delegate of connection state change.
+   */
+  void OnConnectionState(in int status, in int client_id, in const char* address,
+                         in bool connected);
+
+  /* Called to report current MTU value. Can be a result of calling
+   * IBluetoothLowEnergy.setMtu or remote device trying to change MTU.
+   */
+  void OnMtuChanged(in int status, in const char* address, in int mtu);
+
+  /**
+   * Called to report BLE device scan results once a scan session is started for
+   * this client using IBluetoothLowEnergy.startScan. |scan_result| contains all
+   * the data related to the discovered BLE device.
+   */
+  void onScanResult(in ScanResult scan_result);
+
+  /**
+   * Called to report the result of a call to
+   * IBluetoothLowEnergy.startMultiAdvertising or stopMultiAdvertising.
+   */
+  void onMultiAdvertiseCallback(in int status, in boolean is_start,
+                                in AdvertiseSettings settings);
+}

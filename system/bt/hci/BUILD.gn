@@ -1,0 +1,79 @@
+#
+#  Copyright (C) 2015 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+static_library("hci") {
+  sources = [
+    "src/btsnoop.c",
+    "src/btsnoop_mem.c",
+    "src/btsnoop_net.c",
+    "src/buffer_allocator.c",
+    "src/hci_audio.c",
+    "src/hci_hal.c",
+    "src/hci_hal_h4.c",
+    "src/hci_hal_mct.c",
+    "src/hci_inject.c",
+    "src/hci_layer.c",
+    "src/hci_packet_factory.c",
+    "src/hci_packet_parser.c",
+    "src/low_power_manager.c",
+    "src/packet_fragmenter.c",
+    "src/vendor.c",
+  ]
+
+  include_dirs = [
+    "include",
+    "//",
+    "//include",
+    "//bta/include",
+    "//btcore/include",
+    "//stack/include",
+  ]
+}
+
+executable("net_test_hci") {
+  testonly = true
+  sources = [
+    "//osi/test/AllocationTestHarness.cpp",
+    "//osi/test/AlarmTestHarness.cpp",
+    "test/hci_hal_h4_test.cpp",
+    "test/hci_hal_mct_test.cpp",
+    "test/hci_layer_test.cpp",
+    "test/low_power_manager_test.cpp",
+    "test/packet_fragmenter_test.cpp",
+  ]
+
+  include_dirs = [
+    "//",
+    "//include",
+    "//btcore/include",
+    "//hci/include",
+    "//osi/test",
+    "//stack/include",
+  ]
+
+  deps = [
+    "//hci",
+    "//osi",
+    "//btcore",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  libs = [
+    "-lpthread",
+    "-lrt",
+    "-ldl",
+  ]
+}

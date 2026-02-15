@@ -1,0 +1,201 @@
+// Copyright 2014 Google Inc. All Rights Reserved.
+// Author: pkanwar@google.com (Pankaj Kanwar)
+// Protos for uploading bluetooth metrics.
+
+syntax = "proto2";
+
+package clearcut.connectivity;
+
+option java_package = "com.google.wireless.android.play.playlog.connectivity";
+//option (datapol.file_vetting_status) = "latest";
+
+// import "storage/datapol/annotations/proto/semantic_annotations.proto";
+
+message BluetoothLog {
+
+  // Session information that gets logged for every BT connection.
+  repeated BluetoothSession session = 1;
+
+  // Session information that gets logged for every Pair event.
+  repeated PairEvent pair_event = 2;
+
+  // Information for Wake locks.
+  repeated WakeEvent wake_event = 3;
+
+  // Scan event information.
+  repeated ScanEvent scan_event = 4;
+}
+
+// The information about the device.
+message DeviceInfo {
+
+  // Device type.
+  enum DeviceType {
+
+     // Type is unknown.
+     DEVICE_TYPE_UNKNOWN = 0;
+
+     DEVICE_TYPE_BREDR = 1;
+
+     DEVICE_TYPE_LE = 2;
+
+     DEVICE_TYPE_DUMO = 3;
+  }
+
+  // Device class
+  // https://cs.corp.google.com/#android/system/bt/stack/include/btm_api.h&q=major_computer.
+  optional int32 device_class = 1;
+
+  // Device type.
+  optional DeviceType device_type = 2;
+}
+
+// Information that gets logged for every Bluetooth connection.
+message BluetoothSession {
+
+  // Type of technology used in the connection.
+  enum ConnectionTechnologyType {
+
+     CONNECTION_TECHNOLOGY_TYPE_UNKNOWN = 0;
+
+     CONNECTION_TECHNOLOGY_TYPE_LE = 1;
+
+     CONNECTION_TECHNOLOGY_TYPE_BREDR = 2;
+  }
+
+  // Duration of the session.
+  optional int64 session_duration_sec = 2;
+
+  // Technology type.
+  optional ConnectionTechnologyType connection_technology_type = 3;
+
+  // Reason for disconnecting.
+  optional string disconnect_reason = 4;
+
+  // The information about the device which it is connected to.
+  optional DeviceInfo device_connected_to = 5;
+
+  // The information about the RFComm session.
+  optional RFCommSession rfcomm_session = 6;
+
+  // The information about the A2DP session.
+  optional A2DPSession a2dp_session = 7;
+}
+
+message RFCommSession {
+
+  // bytes transmitted.
+  optional int32 rx_bytes = 1;
+
+  // bytes transmitted.
+  optional int32 tx_bytes = 2;
+}
+
+// Session information that gets logged for every A2DP session.
+message A2DPSession {
+
+  // Media timer in milliseconds.
+  optional int32 media_timer_min_millis = 1;
+
+  // Media timer in milliseconds.
+  optional int32 media_timer_max_millis = 2;
+
+  // Media timer in milliseconds.
+  optional int32 media_timer_avg_millis = 3;
+
+  // Buffer overruns count.
+  optional int32 buffer_overruns_max_count = 4;
+
+  // Buffer overruns total.
+  optional int32 buffer_overruns_total = 5;
+
+  // Buffer underruns average.
+  optional float buffer_underruns_average = 6;
+
+  // Buffer underruns count.
+  optional int32 buffer_underruns_count = 7;
+}
+
+message PairEvent {
+
+  // The reason for disconnecting
+  // https://cs.corp.google.com/#android/system/bt/stack/include/hcidefs.h&q=failed_establish.
+  optional int32 disconnect_reason = 1;
+
+  // Pair event time
+  optional int64 event_time_millis = 2; // [(datapol.semantic_type) = ST_TIMESTAMP];
+
+  // The information about the device which it is paired to.
+  optional DeviceInfo device_paired_with = 3;
+}
+
+message WakeEvent {
+
+  // Information about the wake event type.
+  enum WakeEventType {
+
+     // Type is unknown.
+     UNKNOWN = 0;
+
+     // WakeLock was acquired.
+     ACQUIRED = 1;
+
+     // WakeLock was released.
+     RELEASED = 2;
+  }
+
+  // Information about the wake event type.
+  optional WakeEventType wake_event_type = 1;
+
+  // Initiator of the scan. Only the first three names will be stored.
+  // e.g. com.google.gms.
+  optional string requestor = 2;
+
+  // Name of the wakelock (e.g. bluedroid_timer).
+  optional string name = 3;
+
+  // Time of the event.
+  optional int64 event_time_millis = 4; // [(datapol.semantic_type) = ST_TIMESTAMP];
+}
+
+message ScanEvent {
+
+  // Scan type.
+  enum ScanTechnologyType {
+
+     // Scan Type is unknown.
+     SCAN_TYPE_UNKNOWN = 0;
+
+     SCAN_TECH_TYPE_LE = 1;
+
+     SCAN_TECH_TYPE_BREDR = 2;
+
+     SCAN_TECH_TYPE_BOTH = 3;
+  }
+
+  // Scan event type.
+  enum ScanEventType {
+
+     // Scan started.
+     SCAN_EVENT_START = 0;
+
+     // Scan stopped.
+     SCAN_EVENT_STOP = 1;
+  }
+
+  // Scan event type.
+  optional ScanEventType scan_event_type = 1;
+
+  // Initiator of the scan. Only the first three names will be stored.
+  // e.g. com.google.gms.
+  optional string initiator = 2;
+
+  // Technology used for scanning.
+  optional ScanTechnologyType scan_technology_type = 3;
+
+  // Number of results returned.
+  optional int32 number_results = 4;
+
+  // Time of the event.
+  optional int64 event_time_millis = 5; // [(datapol.semantic_type) = ST_TIMESTAMP];
+}

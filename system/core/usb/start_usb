@@ -1,0 +1,185 @@
+#!/bin/sh
+#
+# Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of The Linux Foundation nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE DISCLAIMED.  IN NO
+# EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Starts the USB Android Gadget.
+wait_for_data_mount() {
+  while ! [ -d /data/usb ]
+  do
+	echo "waiting for /data to mount"
+  done
+}
+
+export KERNEL=`uname -r`
+export SOFTAP_W_DUN="N"
+
+case "$1" in
+  start)
+	if [ -d /sys/class/android_usb/android0/f_ffs ]
+	then
+		echo adb > /sys/class/android_usb/android0/f_ffs/aliases
+	fi
+
+	# get soc platform to update product related information
+	if [ -f /sys/devices/soc0/hw_platform ]; then
+		socplatform=`cat /sys/devices/soc0/machine` 2> /dev/null
+		soc_hwplatform=`cat /sys/devices/soc0/hw_platform`
+	else
+		socplatform=`cat /sys/devices/system/soc/soc0/machine` 2> /dev/null
+	fi
+	echo "soc:" $socplatform
+
+  serialno=`/bin/emr-cat e`
+
+	msm_serial=`cat /sys/devices/soc0/serial_number`
+	msm_serial_hex=`printf %08X $msm_serial`
+	product_string="$socplatform-$soc_hwplatform _SN:$msm_serial_hex"
+
+	# try to mount configfs, and create instance of USB functions if it goes through
+	mount -t configfs none /sys/kernel/config
+	if [ -d /sys/kernel/config/usb_gadget ]; then
+		echo "Configuring the USB gadget using ConfigFS..."
+		cd /sys/kernel/config/usb_gadget
+		mkdir g1
+		cd g1
+		mkdir strings/0x409
+		mkdir configs/c.1
+		mkdir configs/c.1/strings/0x409
+		mkdir functions/mass_storage.0
+		mkdir functions/mass_storage.1
+		mkdir functions/ffs.adb
+		mkdir functions/diag.diag
+		mkdir functions/cser.dun.0
+		mkdir functions/cser.nmea.1
+		mkdir functions/rmnet_bam.rmnet
+		mkdir functions/gsi.rmnet
+		mkdir functions/gsi.rndis
+		mkdir functions/gsi.ecm
+		mkdir functions/gsi.mbim
+		mkdir functions/gsi.dpl
+		mkdir functions/ncm.0
+		mkdir functions/qdss.qdss
+		mkdir functions/uac1.uac1
+		echo "$serialno" > strings/0x409/serialnumber
+		echo "QCOM" > strings/0x409/manufacturer
+		echo "$socplatform" > strings/0x409/product
+		echo "$product_string" > /config/usb_gadget/g1/strings/0x409/product
+		setprop sys.usb.configfs 1
+	fi
+
+	if [ -d /sys/class/android_usb/android0 ]
+	then
+		echo "$product_string" > /sys/class/android_usb/android0/iProduct
+	fi
+
+	# mount functionfs
+	mkdir -p /dev/usb-ffs/adb
+	mount -o uid=2000,gid=2000 -t functionfs adb /dev/usb-ffs/adb
+	mount -o remount,gid=5,mode=620 /dev/pts
+
+	case `source /sbin/usb/target` in
+		*9x15* )
+			# Nothing to do here for 9x15
+			;;
+		*9x25* )
+			echo "Unbind EHCI HSIC host device driver"
+			echo msm_hsic_host > /sys/bus/platform/drivers/msm_hsic_host/unbind
+			;;
+		*9x35* )
+			echo "Unbind EHCI HSIC host device driver"
+			echo f9a15000.hsic_host > /sys/bus/platform/drivers/msm_hsic_host/unbind
+			echo 1 > /sys/devices/virtual/android_usb/android0/f_rndis_qc/max_pkt_per_xfer
+			echo 3 > /sys/module/dwc3/parameters/bulk_ep_xfer_timeout_ms
+			;;
+		*8909* )
+			wait_for_data_mount
+			ln -fs /sbin/usb/compositions/9091 /data/usb/boot_hsusb_composition
+			;;
+		*8916* )
+			ln -fs /sbin/usb/compositions/9091 /data/usb/boot_hsusb_composition
+                        ;;
+		*9640* )
+			echo 16384 > /sys/module/g_android/parameters/rndis_dl_max_xfer_size
+			;;
+		*9650* )
+			echo 16384 > /sys/module/g_android/parameters/gsi_in_rndis_aggr_size
+			;;
+		*sdx20* )
+			echo Y > /sys/module/libcomposite/parameters/enable_l1_for_hs
+			echo Y > /sys/module/dwc3/parameters/enable_dwc3_u1u2
+			;;
+		*8053* | *8017* )
+			wait_for_data_mount
+			ln -fs /sbin/usb/compositions/901D /data/usb/boot_hsusb_composition
+		        ;;
+	esac
+
+	# enable debug message
+	if [ -f /sbin/usb/debuger/default_debug ];
+	then
+		rm -rf /sbin/usb/debuger/statusFile
+		usb_debug -f on n /sbin/usb/debuger/default_debug
+	fi
+
+	# enable concurrent SoftAP and DUN
+	if [ -f /data/usb/softap_w_dun ]
+	then
+		SOFTAP_W_DUN=`cat /data/usb/softap_w_dun`
+	fi
+
+	# boot hsic composition:
+	if [ -d /sys/class/android_usb/android1 ]
+	then
+		/data/usb/boot_hsic_composition y
+		# let hsic compostion script run before starting hsusb
+		sleep 1
+	fi
+
+	# boot hsusb composition:
+	if [ -d /sys/class/android_usb/android0 ]
+	then
+		/data/usb/boot_hsusb_composition n
+
+		if [ "$SOFTAP_W_DUN" == "Y" ]
+		then
+			echo "DUN+SOFTAP mode is enabled."
+			echo 1  > /sys/devices/virtual/android_usb/android0/f_serial/dun_w_softap_enable
+		fi
+	fi
+	;;
+
+  stop)
+        echo "Stopping USB Android Gadget"
+        ;;
+
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage usb { start | stop | restart}" >&2
+        exit 1
+        ;;
+esac

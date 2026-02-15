@@ -1,0 +1,95 @@
+common_sources := BasicHashtable.cpp
+#common_sources += CallStack.cpp
+common_sources += FileMap.cpp
+common_sources += JenkinsHash.cpp
+common_sources += LinearTransform.cpp
+common_sources += Log.cpp
+common_sources += NativeHandle.cpp
+common_sources += Printer.cpp
+#common_sources += ProcessCallStack.cpp
+common_sources += PropertyMap.cpp
+common_sources += RefBase.cpp
+common_sources += SharedBuffer.cpp
+common_sources += Static.cpp
+common_sources += StopWatch.cpp
+common_sources += String8.cpp
+common_sources += String16.cpp
+common_sources += SystemClock.cpp
+common_sources += Threads.cpp
+common_sources += Timers.cpp
+common_sources += Tokenizer.cpp
+common_sources += Unicode.cpp
+common_sources += VectorImpl.cpp
+common_sources += misc.cpp
+
+# Build libutils.so
+lib_LTLIBRARIES := libutils.la
+
+libutils_la_SOURCES  := $(common_sources)
+#libutils_la_CPPFLAGS := -I@SYSTEMCORE_INCLUDES@
+#libutils_la_CPPFLAGS += -I$(top_srcdir)/liblog
+
+libutils_la_CPPFLAGS = -DHAVE_PTHREADS
+libutils_la_CPPFLAGS += -DLINUX_ENABLED
+libutils_la_CPPFLAGS += -D__linux__
+libutils_la_CPPFLAGS += -DANDROID_SMP=0
+libutils_la_CPPFLAGS += -DDEBUG_REFS_CALLSTACK_ENABLED=0
+libutils_la_CPPFLAGS += -std=c++14 -std=gnu++14 -fpermissive
+
+requiredlibs = -lpthread
+
+# Export headers
+utilsincdir=$(includedir)/utils
+utilsinc_HEADERS := @SYSTEMCORE_INCLUDES@/utils/AndroidThreads.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/ashmem.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Atomic.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/BasicHashtable.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/BitSet.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/BlobCache.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/ByteOrder.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/CallStack.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Compat.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Condition.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Debug.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Endian.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Errors.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/FileMap.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Flattenable.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Functor.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/JenkinsHash.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/KeyedVector.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/LinearTransform.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/List.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Log.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Looper.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/LruCache.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/misc.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Mutex.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/NativeHandle.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Printer.h
+#utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/ProcessCallStack.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/PropertyMap.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/RefBase.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/RWLock.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/SharedBuffer.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Singleton.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/SortedVector.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/StopWatch.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/String16.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/String8.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/StrongPointer.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/SystemClock.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/ThreadDefs.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Thread.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/threads.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Timers.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Tokenizer.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Trace.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/TypeHelpers.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Unicode.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/Vector.h
+utilsinc_HEADERS += @SYSTEMCORE_INCLUDES@/utils/VectorImpl.h
+
+pkgconfigdir := $(libdir)/pkgconfig
+pkgconfig_DATA := libutils.pc
+EXTRA_DIST := $(pkgconfig_DATA)

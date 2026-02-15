@@ -1,0 +1,119 @@
+/*
+ * Copyright (C) 2015, The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Binder IPC API for talking with the Bluetooth service and perform high-level
+ * operations on the adapter.
+ */
+interface IBluetooth {
+  /**
+   * Returns true if the Bluetooth adapter is powered and ready to use. This
+   * is equivalent to "getState() == ADAPTER_STATE_ON".
+   */
+  boolean isEnabled();
+
+  /**
+   * Returns the current Bluetooth adapter state. The return value can be one of
+   * the following:
+   *
+   *  - ADAPTER_STATE_OFF = 10
+   *  - ADAPTER_STATE_TURNING_ON = 11
+   *  - ADAPTER_STATE_ON = 12
+   *  - ADAPTER_STATE_TURNING_OFF = 13
+   */
+  int getState();
+
+  /**
+   * Turns on the Bluetooth radio. This function initiates the procedure to
+   * bring the adapter state from ADAPTER_STATE_OFF to ADAPTER_STATE_ON. Returns
+   * false, if the state is not ADAPTER_STATE_OFF or if there is an error while
+   * initiating the operation. On success, the adapter state will be
+   * asynchronously updated to ADAPTER_STATE_TURNING_ON and eventually to
+   * ADAPTER_STATE_ON. Callers can monitor the status of this call by observing
+   * the IBluetoothCallback.onBluetoothStateChange callback.
+   */
+  boolean enable();
+
+  /**
+   * Turns off the Bluetooth radio. This function initiates the procedure to
+   * bring the adapter state from ADAPTER_STATE_ON to ADAPTER_STATE_OFF. Returns
+   * false, if the state is not ADAPTER_STATE_ON or if there is an error while
+   * initiating the operation. On success, the adapter state will be
+   * asynchronously updated to ADAPTER_STATE_TURNING_OFF and eventually to
+   * ADAPTER_STATE_OFF. Callers can monitor the status of this call by observing
+   * the IBluetoothCallback.onBluetoothStateChange callback.
+   */
+  boolean disable();
+
+  /**
+   * Returns the identity Bluetooth Device Address (BD_ADDR) assigned to the
+   * underlying Bluetooth controller. Returns a string of the form
+   * "XX:XX:XX:XX:XX:XX", where each "X" is a hexadecimal digit. Returns
+   * "00:00:00:00:00:00" if the address is not known, which is usually the case
+   * before the adapter is enabled for the first time.
+   */
+  String getAddress();
+
+  /**
+   * Sets the name assigned to the Bluetooth adapter. This is the name that will
+   * be seen by remote devices during discovery. Returns false if the operation
+   * fails.
+   */
+  boolean setName(in String name);
+
+  /**
+   * Returns the current name assigned to the Bluetooth adapter. This is the
+   * name that is seen by remote devices during discovery. If the controller has
+   * not been initialized yet (before the first time it gets enabled), this will
+   * return "not-initialized".
+   */
+  String getName();
+
+  /**
+   * Registers a callback receiver which can be used to listen to state updates
+   * from the adapter. The Bluetooth daemon will automatically register this if
+   * the owning process dies.
+   */
+  void registerCallback(in IBluetoothCallback callback);
+
+  /**
+   * Unregisters a previously registered callback.
+   */
+  void unregisterCallback(in IBluetoothCallback callback);
+
+  /**
+   * Returns true, if the multi-advertisement feature is supported. Returns
+   * false, if this device can only advertise a single instance.
+   */
+  boolean isMultiAdvertisementSupported();
+
+  /**
+   * Returns a binder that can be used to interact with Low-Energy features.
+   */
+  IBluetoothLowEnergy getLowEnergyInterface();
+
+  /**
+   * Returns a binder that can be used to interact with GATT client-role
+   * features.
+   */
+  IBluetoothGattClient getGattClientInterface();
+
+  /**
+   * Returns a binder that can be used to interact with GATT server-role
+   * features.
+   */
+  IBluetoothGattServer getGattServerInterface();
+}
