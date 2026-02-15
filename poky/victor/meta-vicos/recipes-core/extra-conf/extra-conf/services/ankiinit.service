@@ -1,8 +1,6 @@
 [Unit]
 SourcePath=/etc/initscripts/ankiinit
 Description=Anki Post Boot Service
-Requires=leprop.service
-After=init_post_boot.service leprop.service
 
 [Service]
 Type=oneshot

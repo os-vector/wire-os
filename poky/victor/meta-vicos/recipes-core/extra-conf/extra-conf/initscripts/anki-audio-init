@@ -16,16 +16,8 @@ do
   fi
 done
 
-# BRC/JMR: Use amixer controls to find "numid" params
-
-# tinymix set "PRI_MI2S_RX Audio Mixer MultiMedia1" 1
-amixer cset numid=1440 1
-
-# tinymix set "RX3 MIX1 INP1" "RX1"
-amixer cset numid=1633 "RX1"
-
-# tinymix set "SPK" 1
-amixer cset numid=1641 1
-
-# tinymix set "RX3 Digital Volume" 74
-amixer cset numid=33 74
+amixer cset name='PRI_MI2S_RX Audio Mixer MultiMedia1' 1                                                      
+amixer cset name='RX3 MIX1 INP1' 'RX1'                                                                  
+amixer cset name='SPK DAC Switch' 1                                                                           
+amixer cset name='RX3 Digital Volume' 84
+amixer cset name='RX3 Mute Switch' 0

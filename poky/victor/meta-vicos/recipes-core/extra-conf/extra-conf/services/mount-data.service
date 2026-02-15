@@ -32,8 +32,6 @@ SourcePath=/etc/initscripts/mount-data
 RequiresMountsFor=/firmware
 Before=connman.service chronyd.service
 Requires=partition-links.service
-Wants=dev-qseecom.device dev-ion.device
-After=dev-qseecom.device dev-ion.device partition-links.service
 
 [Service]
 Restart=no

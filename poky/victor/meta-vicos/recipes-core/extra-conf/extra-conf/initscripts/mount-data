@@ -30,51 +30,16 @@
 UNBRICK_KEY="anki.unbrick"
 WIPE_COOKIE="/run/wipe-data"
 TOM_LOG="/factory/log1"
-KEY_FILE="/run/userdata.key"
-CONNMAN_DONE_TOKEN=/data/lib/connman/.mount-data
 ROBOT_KEY=/data/etc/robot.pem
 USER_DATA_PARTITION=/dev/block/bootdevice/by-name/userdata
 MOUNT_OPTIONS="defaults,exec,nosuid,nodev,noatime"
 
-mount_data_from_mapped_userdata() {
-    mount -o $MOUNT_OPTIONS --source /dev/mapper/userdata --target /data
-    return $?
-}
-
 make_and_mount_cryptdata() {
   echo "Remaking /data" > /dev/kmsg
-  user-data-locker reset > $KEY_FILE
-  rc=$?
-  if [ $rc -ne 0 ]; then
-    echo "user-data-locker reset returned $rc"
-    return $rc
-  fi
-  cryptsetup -q --key-file $KEY_FILE luksFormat $USER_DATA_PARTITION
-  rc=$?
-  if [ $rc -ne 0 ]; then
-    echo "cryptsetup luksFormat returned $rc"
-    return $rc
-  fi
-  cryptsetup -q --key-file $KEY_FILE luksOpen $USER_DATA_PARTITION userdata
-  rc=$?
-  if [ $rc -ne 0 ]; then
-    echo "cryptsetup luksOpen returned $rc"
-    return $rc
-  fi
-  mkfs.ext4 -O ^metadata_csum,^64bit /dev/mapper/userdata
-  rc=$?
-  if [ $rc -ne 0 ]; then
-    echo "mkfs.ext4 returned $rc"
-    cryptsetup luksClose userdata
-    return $rc
-  fi
-  mount_data_from_mapped_userdata
-  rc=$?
-  if [ $rc -ne 0 ]; then
-    echo "mount /data returned $rc"
-    cryptsetup luksClose userdata
-    return $rc
-  fi
+  # we no longer need these options for mainline, but it's
+  # probably best to keep compatibility with the older kernel
+  mkfs.ext4 -O ^metadata_csum,^64bit $USER_DATA_PARTITION
+  mount -o $MOUNT_OPTIONS $USER_DATA_PARTITION /data
 }
 
 make_userdata() {
@@ -122,34 +87,11 @@ mount_tmp_userdata() {
 }
 
 mount_userdata() {
-    # If the partition has not already been formatted for LUKS, don't bother trying
-    # to mount it.
-    if ! cryptsetup -v isLuks $USER_DATA_PARTITION; then
-      return 1
-    fi
-
-    # Get the passphrase (key) using TrustZone
-    user-data-locker > $KEY_FILE
-    rc=$?
-    if [ $rc -ne 0 ]; then
-      echo "user-data-locker returned $rc"
-      return $rc
-    fi
-
-    # Open the encrypted partition
-    cryptsetup -q --key-file $KEY_FILE luksOpen $USER_DATA_PARTITION userdata
-    rc=$?
-    if [ $rc -ne 0 ]; then
-       echo "cryptsetup luksOpen returned $rc"
-       return $rc
-    fi
-
     # Try to mount the /data partition
-    mount_data_from_mapped_userdata
+    mount -o $MOUNT_OPTIONS $USER_DATA_PARTITION /data
     rc=$?
     if [ $rc -ne 0 ]; then
       echo "mount /data returned $rc"
-      cryptsetup luksClose userdata
     fi
     return $rc
 }
@@ -157,26 +99,19 @@ mount_userdata() {
 
 case "$1" in
   start )
-    hexdump -e '"%c"' -n 4 /dev/block/bootdevice/by-name/userdata | egrep -q WIPE && echo "1" > /tmp/data_cleared && chown engine:anki /tmp/data_cleared
-    if grep $UNBRICK_KEY /proc/cmdline > /dev/null; then
-      echo "Mount-data in UNBRICK MODE" > /dev/kmsg
-      mount_tmp_userdata
+    mount_userdata
+    mounted=$?
+    if [ $mounted -ne 0 ]; then
+      make_and_mount_cryptdata
       mounted=$?
-    else
-      mount_userdata
-      mounted=$?
-      if [ $mounted -ne 0 ]; then
-        make_and_mount_cryptdata
-        mounted=$?
-        sync
-        if [ $mounted -eq 0 ]; then
-          dmesg > /data/format-data.log
-          echo "-----------------------------" >> /data/format-data.log
-          journalctl -u mount-data >> /data/format-data.log
-        fi
+      sync
+      if [ $mounted -eq 0 ]; then
+        dmesg > /data/format-data.log
+        echo "-----------------------------" >> /data/format-data.log
+        journalctl -u mount-data >> /data/format-data.log
       fi
-      rm -rf $KEY_FILE
     fi
+    rm -rf $KEY_FILE
 
     # Always create userdata
     make_userdata
@@ -185,10 +120,10 @@ case "$1" in
     mkdir -p /data/etc
 
     if [[ ! -f /data/etc/localtime ]]; then
-	cp /usr/share/zoneinfo/America/Chicago /data/etc/localtime
+      cp /usr/share/zoneinfo/America/Chicago /data/etc/localtime
     fi
     if [[ ! -f /data/etc/timezone ]]; then
-	echo "America/Chicago" > /data/etc/timezone
+      echo "America/Chicago" > /data/etc/timezone
     fi
     mount --bind /data/etc/localtime /etc/localtime
     mount --bind /data/etc/timezone  /etc/timezone
@@ -198,9 +133,7 @@ case "$1" in
     echo "Unmounting /data"
     sync
     umount /data
-    cryptsetup luksClose userdata
     if test -e $WIPE_COOKIE; then
-      user-data-locker reset
       blkdiscard -s $USER_DATA_PARTITION
       blkdiscard -s /dev/block/bootdevice/by-name/switchboard
       echo WIPE > /dev/block/bootdevice/by-name/userdata

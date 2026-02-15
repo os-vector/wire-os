@@ -6,25 +6,18 @@
 # @nathan-anki  - to stop overheating, limit CPU to 533MHz, RAM to 400MHz
 # this is now handled by wired, theoretically
 echo 533333 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-echo disabled > /sys/kernel/debug/msm_otg/bus_voting  # This prevents USB from pinning RAM to 400MHz
-echo 0 > /sys/kernel/debug/msm-bus-dbg/shell-client/update_request
-echo 1 > /sys/kernel/debug/msm-bus-dbg/shell-client/mas
-echo 512 > /sys/kernel/debug/msm-bus-dbg/shell-client/slv
-echo 0 > /sys/kernel/debug/msm-bus-dbg/shell-client/ab
-echo active clk2 0 1 max 400000 > /sys/kernel/debug/rpm_send_msg/message # Max RAM freq in KHz = 500MHz
-echo 1 > /sys/kernel/debug/msm-bus-dbg/shell-client/update_request
 #End clock speed limits
 
 # Move RT FIFO tasks off core 0 to reduce timer interrupt induced jitter.
 pgrep tty | xargs -I PID taskset -p 0xe PID
 
-# TODO Move this power rail controll into the camera driver
-CAM_REG_GPIO=83
-if [ ! -d /sys/class/gpio/gpio$CAM_REG_GPIO ]; then
-    echo $CAM_REG_GPIO > /sys/class/gpio/export
-fi
-echo out > /sys/class/gpio/gpio$CAM_REG_GPIO/direction
-echo 1 > /sys/class/gpio/gpio$CAM_REG_GPIO/value
+# # TODO Move this power rail controll into the camera driver
+# CAM_REG_GPIO=83
+# if [ ! -d /sys/class/gpio/gpio$CAM_REG_GPIO ]; then
+#     echo $CAM_REG_GPIO > /sys/class/gpio/export
+# fi
+# echo out > /sys/class/gpio/gpio$CAM_REG_GPIO/direction
+# echo 1 > /sys/class/gpio/gpio$CAM_REG_GPIO/value
 # End camera force hack
 
 # Set spi buf size to size of LCD frame (184*96*2)
@@ -48,10 +41,6 @@ done
 setprop ro.hw.ver `/bin/emr-cat v`
 setprop ro.model `/bin/emr-cat m`
 
-if [ $HAVE_EMR -eq 0 ]; then
-  echo $SERIALNO > /sys/class/android_usb/android0/iSerial
-fi
-
 if [ -x /usr/bin/vic-christen ]; then
     /usr/bin/vic-christen
 fi
@@ -68,5 +57,31 @@ fi
 
 # Report OS Version to boot log
 echo "VicOS Version: `getprop ro.anki.version`" > /dev/kmsg
+
+# usb
+
+mount -t configfs none /sys/kernel/config 2>/dev/null || true
+cd /sys/kernel/config/usb_gadget
+mkdir -p g1
+cd g1
+echo 0x18d1 > idVendor
+echo 0x4ee8 > idProduct
+mkdir -p strings/0x409
+echo "anki"   > strings/0x409/manufacturer
+echo "vector" > strings/0x409/product
+echo "0002"   > strings/0x409/serialnumber
+mkdir -p configs/c.1/strings/0x409
+echo "ecm" > configs/c.1/strings/0x409/configuration
+mkdir -p functions/ecm.usb0
+echo 02:00:00:00:00:01 > functions/ecm.usb0/dev_addr
+echo 02:00:00:00:00:02 > functions/ecm.usb0/host_addr
+ln -s functions/ecm.usb0 configs/c.1/
+echo ci_hdrc.0 > UDC
+ip addr add 192.168.7.2/24 dev usb0
+ip link set usb0 up
+
+# wlan
+
+echo start > /sys/class/remoteproc/remoteproc1/state
 
 exit 0
