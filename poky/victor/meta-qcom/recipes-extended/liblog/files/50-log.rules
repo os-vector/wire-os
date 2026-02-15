@@ -1,0 +1,5 @@
+KERNEL=="binder", MODE="0666"
+KERNEL=="log_main", SUBSYSTEM=="misc", NAME="log/main", MODE="0644"
+KERNEL=="log_radio", SUBSYSTEM=="misc", NAME="log/radio", MODE="0644"
+KERNEL=="log_system", SUBSYSTEM=="misc", NAME="log/system", MODE="0644"
+KERNEL=="log_events", SUBSYSTEM=="misc", NAME="log/events", MODE="0644"

@@ -8,6 +8,7 @@ DEPENDS += " \
              gtk-doc-native \
              gettext-native \
              e2fsprogs-native \
+             mkbootimg-native \
              mtd-utils-native"
 
 RDEPENDS += " \
@@ -15,6 +16,7 @@ RDEPENDS += " \
              gtk-doc-native \
              gettext-native \
              e2fsprogs-native \
+             mkbootimg-native \
              mtd-utils-native"
 
 IMAGE_LINGUAS = ""
