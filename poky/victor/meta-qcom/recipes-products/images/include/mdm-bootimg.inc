@@ -9,6 +9,7 @@ DEPENDS += " \
              gettext-native \
              e2fsprogs-native \
              mkbootimg-native \
+             ext4-utils-native \
              mtd-utils-native"
 
 RDEPENDS += " \
@@ -17,6 +18,7 @@ RDEPENDS += " \
              gettext-native \
              e2fsprogs-native \
              mkbootimg-native \
+             ext4-utils-native \
              mtd-utils-native"
 
 IMAGE_LINGUAS = ""

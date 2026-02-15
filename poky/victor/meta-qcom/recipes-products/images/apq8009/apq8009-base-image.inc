@@ -95,61 +95,86 @@ do_makesystem() {
     echo "SYSTEMRW_SIZE_EXT4=" ${SYSTEMRW_SIZE_EXT4}
     echo "CONFIG_FILE=" ${CONFIG_FILE}
     echo "VICTOR_CONFIG_FILE=" ${VICTOR_CONFIG_FILE}
+    which make_ext4fs
 
-    RAW_FILE=${DEPLOY_DIR_IMAGE}/${MACHINE}-system.ext4
-    #RW_FILE=${DEPLOY_DIR_IMAGE}/${MACHINE}-systemrw.ext4
+    RAW_FILE=${DEPLOY_DIR_IMAGE}/${MACHINE}-raw-sysfs.ext4
+    SPARSE_FILE=${DEPLOY_DIR_IMAGE}/${MACHINE}-sysfs.ext4
+    VERITYSETUP_OUTPUT=${DEPLOY_DIR_IMAGE}/${MACHINE}-veritysetup.txt
 
     BLOCK_SIZE=4096
-    BLOCKS=$(expr ${SYSTEM_SIZE_EXT4} / ${BLOCK_SIZE})
-
-    mkdir -p ${DEPLOY_DIR_IMAGE}
+    DATA_BLOCKS=$( expr ${SYSTEM_SIZE_EXT4} / $BLOCK_SIZE )
 
     cp ${CONFIG_FILE} ./final_user_config
     if [[ -e ${VICTOR_CONFIG_FILE} ]]; then
-        echo "Appending contents of ${VICTOR_CONFIG_FILE} to our final canned fs config"
-        cat ${VICTOR_CONFIG_FILE} >> ./final_user_config
+       echo "Appending contents of ${VICTOR_CONFIG_FILE} to our final canned fs config"
+       cat ${VICTOR_CONFIG_FILE} >> ./final_user_config
     fi
 
-    echo "creating empty ext4 filesystem"
+    echo "making the sparse ext4 file system"
+    make_ext4fs ${IMAGE_EXT4_EXTRA_OPTIONS} -a / -C ./final_user_config ${IMAGE_EXT4_SELINUX_OPTIONS} -l ${SYSTEM_SIZE_EXT4} ${RAW_FILE} ${IMAGE_ROOTFS}
+    make_ext4fs -l ${SYSTEMRW_SIZE_EXT4} ${DEPLOY_DIR_IMAGE}/${MACHINE}-systemrw.ext4
 
-    mke2fs \
-        -t ext4 \
-        -b ${BLOCK_SIZE} \
-        -L system \
-        -O ^has_journal \
-        -E lazy_itable_init=0,lazy_journal_init=0 \
-        ${RAW_FILE} \
-        ${BLOCKS}
+    veritysetup --data-block-size=${BLOCK_SIZE} --data-blocks=${DATA_BLOCKS} --hash-offset=${SYSTEM_SIZE_EXT4} format ${RAW_FILE} ${RAW_FILE} >${VERITYSETUP_OUTPUT}
+    #img2simg ${RAW_FILE} ${SPARSE_FILE}
 
-    e2fsdroid \
-        -f ${IMAGE_ROOTFS} \
-        -C ./final_user_config \
-        -a / \
-        ${RAW_FILE}
 
     echo "=== Generate Boot Image containing Kernel, DTB, initramfs etc... ===="
 
+    mkdir -p ${DEPLOY_DIR_IMAGE}
+
+    VERITYSETUP_OUTPUT=${DEPLOY_DIR_IMAGE}/apq8009-robot-veritysetup.txt
+
+    HASH_TYPE=$(sed -n -e '/Hash type:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    HASH_ALGORITHM=$(sed -n -e '/Hash algorithm:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    DATA_BLOCKS=$(sed -n -e '/Data blocks:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    DATA_BLOCK_SIZE=$(sed -n -e '/Data block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT | cut -d' ' -f1)
+    #DATA_BLOCK_SIZE=$(sed -n -e '/Data block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    #HASH_BLOCK_SIZE=$(sed -n -e '/Hash block size:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    HASH_BLOCK_SIZE=$(sed -n -e '/Hash block size:/ s/.*:\s*\([0-9]*\).*/\1/p' $VERITYSETUP_OUTPUT)
+    SALT=$(sed -n -e '/Salt:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+    ROOT_HASH=$(sed -n -e '/Root hash:/ s/.*:\s*// p' $VERITYSETUP_OUTPUT)
+
+    #FS_SIZE_IN_512_BLOCKS=$(expr \( $DATA_BLOCKS \* $DATA_BLOCK_SIZE / 512 \) )
+    FS_SIZE_IN_512_BLOCKS=$(expr "$DATA_BLOCKS" \* "$DATA_BLOCK_SIZE" / 512)
+    #FS_SIZE_IN_512_BLOCKS=$(( DATA_BLOCKS * DATA_BLOCK_SIZE / 512 ))
+    #HASH_OFFSET=$(( $DATA_BLOCKS + 1 ))
+    HASH_OFFSET=$(expr "$DATA_BLOCKS" + 1)
+
+    ## Where does the magic number `179` below come from?
+    ## -> see kernel/msm-3.18/Documentation/devices.txt
+    ## -> All MMC block devices get the major device number 179
+    ## -> The minor number corresponds to the partition number (counting from 1)
+    ## -> We assume the boot partition is always on the first MMC block device
+ 
+    #if [ "${FACTORY}" == "1" ] || [ "${USER_BUILD}" == "1" ]; then
+        # Enable dm-verity for any FACTORY build or if we are making a USER build
+    #    KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") } dm-verity.dev_wait=1 dm=\"system none ro,0 $FS_SIZE_IN_512_BLOCKS verity $HASH_TYPE 179:##SYSTEM_BOOT_PART## 179:##SYSTEM_BOOT_PART## $DATA_BLOCK_SIZE $HASH_BLOCK_SIZE $DATA_BLOCKS $HASH_OFFSET $HASH_ALGORITHM $ROOT_HASH $SALT\" root=/dev/dm-0"
+    #else
+        # Disable dm-verity for Developer builds
     KERNEL_CMD_PARAMS="${@ d.getVar("KERNEL_CMD_PARAMS") }"
+    #fi
 
     RAMDISK="/dev/null"
+    # the ramdisk is no more
+    #if [ ! -z "${INITRAMFS_IMAGE}" ]; then
+	#    RAMDISK="${DEPLOY_DIR_IMAGE}/${INITRAMFS_IMAGE}-${MACHINE}.rootfs.cpio.gz"
+    #fi
 
+    ## Save kernel cmd line for debugging purposes
     echo "KERNEL_CMD_PARAMS=$KERNEL_CMD_PARAMS" > ${DEPLOY_DIR_IMAGE}/kernel_params.txt
-
-    ## NOTE: don't use ${KERNEL_CMD_PARAMS} below - it will be expanded to whatever
-    ##       ${@ d.getVar("KERNEL_CMD_PARAMS") } returns
-    ##       we are modifying a local shell variable here
-    ##       see: https://stackoverflow.com/questions/48213497/how-do-i-update-a-datastore-variable-from-inside-a-bash-variable
 
     cat ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin ${DEPLOY_DIR_IMAGE}/qcom-apq8009-anki-vector.dtb > ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-dtb-${MACHINE}.bin
 
-    ${STAGING_BINDIR_NATIVE}/mkbootimg \
-        --kernel ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-dtb-${MACHINE}.bin \
+
+    ## NOTE: don't use ${KERNEL_CMD_PARAMS} below - it will be expanded to the same what ${@ d.getVar("KERNEL_CMD_PARAMS") } returns
+    ##       we are modifying a local shell variable here, that can only be dereferenced by using $KERNEL_CMD_PARAMS
+    ##       c.f. https://stackoverflow.com/questions/48213497/how-do-i-update-a-datastore-variable-from-inside-a-bash-variable
+    # Make bootimage
+    ${STAGING_BINDIR_NATIVE}/mkbootimg --kernel ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-dtb-${MACHINE}.bin \
         --ramdisk "$RAMDISK" \
         --cmdline "$KERNEL_CMD_PARAMS" \
         --pagesize ${PAGE_SIZE} \
         --base ${KERNEL_BASE} \
         --ramdisk_offset 0x0 \
-        ${extra_mkbootimg_params} \
-        --output ${DEPLOY_DIR_IMAGE}/${MACHINE}-boot.img
+        ${extra_mkbootimg_params} --output ${DEPLOY_DIR_IMAGE}/${MACHINE}-boot.img
 }
-
