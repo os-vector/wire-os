@@ -67,8 +67,8 @@ cd g1
 echo 0x18d1 > idVendor
 echo 0x4ee8 > idProduct
 mkdir -p strings/0x409
-echo "anki"   > strings/0x409/manufacturer
-echo "vector" > strings/0x409/product
+echo "Anki"   > strings/0x409/manufacturer
+echo "Vector" > strings/0x409/product
 echo "0002"   > strings/0x409/serialnumber
 mkdir -p configs/c.1/strings/0x409
 echo "ecm" > configs/c.1/strings/0x409/configuration
@@ -83,5 +83,7 @@ ip link set usb0 up
 # wlan
 
 echo start > /sys/class/remoteproc/remoteproc1/state
+sleep 1
+iw dev wlan0 set power_save off
 
 exit 0
