@@ -1,0 +1,450 @@
+#! /bin/sh
+#
+# Copyright (c) 2011-2014, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of The Linux Foundation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# PM Configuration
+
+set -e
+
+case "$1" in
+  start)
+        soc_id=`cat /sys/devices/soc0/soc_id`
+
+	case "$soc_id" in
+	"290" | "296" | "297" | "298" | "299" | "322")
+		echo -n "Starting powerconfig for mdm9607: "
+
+		echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+		echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+		echo 80 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+		echo 998400 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+		echo "1 806400:80" > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+		echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+		echo 806400 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+		echo mem > /sys/power/autosleep
+
+		# Enable Low Power modes
+		echo 0 > /sys/module/lpm_levels/parameters/sleep_disabled
+		;;
+	esac
+
+        case "$soc_id" in
+        "279" | "284" | "285" | "286" | "283")
+                echo -n "Starting powerconfig for MDM9650: "
+
+                echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+                echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+                echo 800000 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+                echo "85 800000:90" > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo mem > /sys/power/autosleep
+
+                # Disable standalone_pc
+                echo N > /sys/module/lpm_levels/system/cpu0/standalone_pc/idle_enabled
+                echo N > /sys/module/lpm_levels/system/cpu0/standalone_pc/suspend_enabled
+
+		# Enable Low Power modes
+                echo N > /sys/module/lpm_levels/parameters/sleep_disabled
+                ;;
+        esac
+
+        case "$soc_id" in
+        "234" | "235" | "236"| "237" | "238")
+                echo -n "Starting powerconfig for 9x40: "
+                echo N > /sys/module/lpm_levels/parameters/sleep_disabled
+
+                echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+                echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+                echo 800000 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+                echo "85 800000:90" > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo mem > /sys/power/autosleep
+                ;;
+        esac
+
+        case "$soc_id" in
+        "104" | "105" | "106" | "107")
+                echo -n "Starting powerconfig for 9x15: "
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/rpm_resources/enable_low_power/pxo
+                echo 2 > /sys/module/rpm_resources/enable_low_power/vdd_dig
+                echo 2 > /sys/module/rpm_resources/enable_low_power/vdd_mem
+                echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo "done"
+                ;;
+         esac
+
+         case "$soc_id" in
+         "134" | "148" | "149" | "150" | "151" | "152" | "173" | "174" | "175")
+                echo -n "Starting powerconfig for 9x25: "
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/lpm_resources/enable_low_power/pxo
+                echo 1 > /sys/module/lpm_resources/enable_low_power/vdd_dig
+                echo 675000 > /sys/module/lpm_resources/enable_low_power/vdd_mem
+                echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo "done";
+                ;;
+         esac
+
+         case "$soc_id" in
+         "333" | "314")
+                echo -n "Starting powerconfig for SDX20: "
+                echo N > /sys/module/lpm_levels/parameters/sleep_disabled
+                # Enable LPMs
+                echo Y > /sys/module/lpm_levels/system/cpu0/wfi/idle_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/standalone_pc/idle_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/pc/idle_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/wfi/suspend_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/standalone_pc/suspend_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/pc/suspend_enabled
+
+                echo interactive >  /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+                echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+                echo 800000 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+                echo "85 800000:90" > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+
+                echo mem > /sys/power/autosleep
+                ;;
+         esac
+
+         case "$soc_id" in
+         "334" )
+                echo -n "Starting powerconfig for SDX24: "
+                echo N > /sys/module/lpm_levels/parameters/sleep_disabled
+                #CPU Governor settings
+                echo ondemand >  /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+                #Enable Suspend
+                echo mem > /sys/power/autosleep
+                #Enable bus-dcvs
+                echo "compute" > /sys/class/devfreq/soc:qcom,cpubw/governor
+                echo 10 > /sys/class/devfreq/soc:qcom,cpubw/polling_interval
+
+		echo "++++ $0 -> ENABLE-FTRACE" > /dev/kmsg
+		#Enable FTRACE_ENABLE on SDX24
+		#bail out if its perf config
+		if [ ! -d /sys/module/msm_rtb ]
+		then
+			return
+		fi
+
+		#bail out if coresight isn't present
+		if [ ! -d /sys/bus/coresight ]
+		then
+			return
+		fi
+
+		#coresight
+		echo sg > /sys/bus/coresight/devices/coresight-tmc-etr/mem_type
+
+		echo 0 > /sys/kernel/debug/tracing/events/enable
+		echo mem > /sys/bus/coresight/devices/coresight-tmc-etr/out_mode
+		echo 1 > /sys/bus/coresight/devices/coresight-tmc-etr/enable_sink
+		echo 1 > /sys/bus/coresight/devices/coresight-stm/enable_source
+		echo 1 > /sys/kernel/debug/tracing/tracing_on
+
+		#SoftIRQs
+		echo 1 > /sys/kernel/debug/tracing/events/irq/enable
+		#echo 1 > /sys/kernel/debug/tracing/events/irq/filter
+		echo 1 > /sys/kernel/debug/tracing/events/irq/softirq_entry/enable
+		echo 1 > /sys/kernel/debug/tracing/events/irq/softirq_exit/enable
+		echo 1 > /sys/kernel/debug/tracing/events/irq/softirq_raise/enable
+		#IRQs
+		echo 1 > /sys/kernel/debug/tracing/events/irq/enable
+		echo 1 > /sys/kernel/debug/tracing/events/irq/irq_handler_entry/enable
+		echo 1 > /sys/kernel/debug/tracing/events/irq/irq_handler_exit/enable
+		echo "++++ $0 -> END" > /dev/kmsg
+	        ;;
+	 esac
+
+         case "$soc_id" in
+         "187" | "227" | "228" | "229" | "230" | "231")
+                echo -n "Starting powerconfig for 9x35: "
+                subsyszero=`cat /sys/bus/msm_subsys/devices/subsys0/name`
+                subsysone=`cat /sys/bus/msm_subsys/devices/subsys1/name`
+                subsystwo=`cat /sys/bus/msm_subsys/devices/subsys2/name`
+                if [ "$subsyszero" == "modem" ]
+                then
+                   subsys=subsys0
+                elif [ "$subsysone" == "modem" ]
+                then
+                   subsys=subsys1
+                else
+                   subsys=subsys2
+                fi
+                counter=0
+                while [ ${counter} -le 10 ]
+                do
+                  msstate=`cat /sys/bus/msm_subsys/devices/$subsys/state`
+                  if [ "$msstate" == "ONLINE" ]
+                  then
+                      break
+                  fi
+                  counter=$(( $counter + 1 ))
+                  sleep 1
+                done
+                echo Y > /sys/module/lpm_levels/system/cpu0/pc/idle_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/pc/suspend_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/standalone_pc/idle_enabled
+                echo Y > /sys/module/lpm_levels/system/cpu0/standalone_pc/suspend_enabled
+
+                echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+                echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+                echo 800000 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+                echo "85 800000:90" > /sys/devices/system/cpu/cpufreq/interactive/target_loads
+                echo 40000 > /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo "done";
+                ;;
+         esac
+
+         case "$soc_id" in
+         "116" | "142" | "154")
+                echo -n "Starting powerconfig for 8x30: "
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled
+                echo 1 > /sys/module/rpm_resources/enable_low_power/L2_cache
+                echo 1 > /sys/module/rpm_resources/enable_low_power/pxo
+                echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_dig
+                echo 1 > /sys/module/rpm_resources/enable_low_power/vdd_mem
+                echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo ondemand > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+                chmod 664 /sys/devices/system/cpu/cpu1/online
+                echo 10 > /sys/devices/platform/msm_sdcc.3/idle_timeout
+                echo 50000 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+                echo 90 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+                echo 1 > /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
+                echo 4 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
+                echo 10 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential
+                echo 70 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core
+                echo 918000 > /sys/devices/system/cpu/cpufreq/ondemand/optimal_freq
+                echo 918000 > /sys/devices/system/cpu/cpufreq/ondemand/sync_freq
+                echo 80 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load
+                echo 384000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo 384000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+                echo "done"
+                ;;
+          esac
+
+          case "$soc_id" in
+          "126")
+                set +e
+                echo -n "Starting powerconfig for 8974: "
+                echo 2 > /sys/module/lpm_resources/enable_low_power/l2
+                echo 1 > /sys/module/lpm_resources/enable_low_power/pxo
+                echo 1 > /sys/module/lpm_resources/enable_low_power/vdd_dig
+                echo 1 > /sys/module/lpm_resources/enable_low_power/vdd_mem
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/idle_enabled
+                soc_revision=`cat /sys/devices/soc0/revision`
+                if [ "$soc_revision" != "1.0" ]; then
+                    echo 1 > /sys/module/pm_8x60/modes/cpu0/retention/idle_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu1/retention/idle_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu2/retention/idle_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu3/retention/idle_enabled
+                fi
+                echo 0 > /sys/module/msm_thermal/core_control/enabled
+                echo 1 > /sys/devices/system/cpu/cpu1/online 2>&1 > /dev/null
+                echo 1 > /sys/devices/system/cpu/cpu2/online 2>&1 > /dev/null
+                echo 1 > /sys/devices/system/cpu/cpu3/online 2>&1 > /dev/null
+                echo "ondemand" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo "ondemand" > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+                echo "ondemand" > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor
+                echo "ondemand" > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor
+                echo 50000 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+                echo 90 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+                echo 1 > /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
+                echo 4 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
+                echo 10 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential
+                echo 70 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core
+                echo 3 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential_multi_core
+                echo 960000 > /sys/devices/system/cpu/cpufreq/ondemand/optimal_freq
+                echo 960000 > /sys/devices/system/cpu/cpufreq/ondemand/sync_freq
+                echo 80 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo 300000 > /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq
+                echo 300000 > /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq
+                echo 300000 > /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq
+                chown system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+                chown system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo 1 > /sys/module/msm_thermal/core_control/enabled
+                chown root.system /sys/devices/system/cpu/mfreq
+                chmod 220 /sys/devices/system/cpu/mfreq
+                chown root.system /sys/devices/system/cpu/cpu1/online
+                chown root.system /sys/devices/system/cpu/cpu2/online
+                chown root.system /sys/devices/system/cpu/cpu3/online
+                chmod 664 /sys/devices/system/cpu/cpu1/online
+                chmod 664 /sys/devices/system/cpu/cpu2/online
+                chmod 664 /sys/devices/system/cpu/cpu3/online
+                echo 1 > /dev/cpuctl/apps/cpu.notify_on_migrate
+                echo "done"
+                set +e
+                ;;
+         esac
+
+         case "$soc_id" in
+         "145" | "158" | "159" | "198" | "205" | "220" | "221" | "222" | "223" | "224" | "200")
+                set +e
+                echo -n "Starting powerconfig for 8226: "
+                echo 4 > /sys/module/lpm_levels/enable_low_power/l2
+                echo 1 > /sys/module/msm_pm/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu1/power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu2/power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu3/power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu1/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu2/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu3/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu1/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu2/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu3/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/msm_pm/modes/cpu0/power_collapse/idle_enabled
+                echo 1 > /sys/devices/system/cpu/cpu1/online
+                echo 1 > /sys/devices/system/cpu/cpu2/online
+                echo 1 > /sys/devices/system/cpu/cpu3/online
+                echo "ondemand" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 50000 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+                echo 90 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+                echo 1 > /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
+                echo 2 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
+                echo 10 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential
+                echo 70 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core
+                echo 10 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential_multi_core
+                echo 787200 > /sys/devices/system/cpu/cpufreq/ondemand/optimal_freq
+                echo 300000 > /sys/devices/system/cpu/cpufreq/ondemand/sync_freq
+                echo 80 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                chmod 664 /sys/devices/system/cpu/cpu1/online
+                chmod 664 /sys/devices/system/cpu/cpu2/online
+                chmod 664 /sys/devices/system/cpu/cpu3/online
+                # disable msm_hsic_host for 8x26
+                if [ -e /sys/bus/platform/drivers/msm_hsic_host ]; then
+                    if [ ! -L /sys/bus/usb/devices/1-1 ]; then
+                        echo msm_hsic_host > /sys/bus/platform/drivers/msm_hsic_host/unbind
+                    fi
+                fi
+                echo "done"
+                set +e
+                ;;
+         esac
+
+         case "$soc_id" in
+          "147" | "161" | "162" | "163" | "164" | "165" | "166")
+                set +e
+                echo -n "Starting powerconfig for 8610: "
+                echo 4 > /sys/module/lpm_levels/enable_low_power/l2
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled
+                echo 1 > /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled
+                nr_cpus=`cat /proc/cpuinfo | grep processor | wc -l`
+                if [ "$nr_cpus" == "2" ] || [ "$nr_cpus" == "3" ] || [ "$nr_cpus" == "4" ]; then
+                    echo -n "Setting CPU1"
+                    echo 1 > /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/idle_enabled
+                    echo 1 > /sys/devices/system/cpu/cpu1/online
+                    chmod 664 /sys/devices/system/cpu/cpu1/online
+                fi
+                if [ "$nr_cpus" == "3" ] || [ "$nr_cpus" == "4" ]; then
+                    echo -n "Setting CPU2"
+                    echo 1 > /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/idle_enabled
+                    echo 1 > /sys/devices/system/cpu/cpu2/online
+                    chmod 664 /sys/devices/system/cpu/cpu2/online
+                fi
+                if [ "$nr_cpus" == "4" ]; then
+                    echo -n "Setting CPU3"
+                    echo 1 > /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled
+                    echo 1 > /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/idle_enabled
+                    echo 1 > /sys/devices/system/cpu/cpu3/online
+                    chmod 664 /sys/devices/system/cpu/cpu3/online
+                fi
+                echo "ondemand" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+                echo 50000 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+                echo 90 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+                echo 1 > /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
+                echo 4 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
+                echo 10 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential
+                echo 70 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core
+                echo 3 > /sys/devices/system/cpu/cpufreq/ondemand/down_differential_multi_core
+                echo 300000 > /sys/devices/system/cpu/cpufreq/ondemand/optimal_freq
+                echo 300000 > /sys/devices/system/cpu/cpufreq/ondemand/sync_freq
+                echo 80 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load
+                echo 300000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+                echo "done"
+                set +e
+                ;;
+         esac
+         ;;
+  stop)
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage pm { start | stop | restart}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
+

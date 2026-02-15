@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+# Copyright (c) 2011, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of The Linux Foundation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# adbd        init.d script to start the Android debug bridge daemon
+
+set -e
+
+if [ -f /etc/default/adbd ]; then
+        . /etc/default/adbd
+fi
+
+case "$1" in
+  start)
+        echo -n "Starting adbd: " > /dev/kmsg
+        start-stop-daemon -S -b -a /sbin/adbd
+        # Check first if the /etc/adb_devid already has an id saved from earlier boot up.
+        # If yes use it to retrieve adb devices else use the msm ID and save it to /etc/adb_devid for subsequent boot ups.
+
+        if [ -s "/etc/adb_devid" ]
+        then
+                cat /etc/adb_devid > /sys/class/android_usb/android0/iSerial
+        else
+                ret_val=`cat /proc/cmdline | grep "androidboot.serialno" |wc -l`
+                if  [ $ret_val -eq 1 ]
+                then
+                    serial_no=`cat /proc/cmdline | awk '{ for ( n=1; n<=NF; n++ ) if($n ~ "androidboot.serial") print $n }' | awk '{split($0,a, "=");print a[2]}'`
+                    echo $serial_no > /sys/class/android_usb/android0/iSerial
+                else
+                    cat /proc/sys/kernel/random/boot_id | cut -d- -f5 > /sys/class/android_usb/android0/iSerial
+                fi
+                    cat /sys/class/android_usb/android0/iSerial > /etc/adb_devid
+                    sync
+        fi
+        echo "done" > /dev/kmsg
+        ;;
+  stop)
+        echo -n "Stopping adbd: " > /dev/kmsg
+        start-stop-daemon -K -n adbd
+        echo "done" > /dev/kmsg
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo "Usage adbd { start | stop | restart}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
