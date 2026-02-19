@@ -27,7 +27,7 @@ AM_CFLAGS =	-std=c11 \
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_LDFLAGS := $(LDFLAGS) -lpthread -lcutils
+AM_LDFLAGS := $(LDFLAGS) -lpthread
 
 bin_PROGRAMS = vic-christen
 vic_christen_CC = @CC@

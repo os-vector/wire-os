@@ -7,7 +7,7 @@ SourcePath=/anki/bin/vic-init.sh
 PartOf=anki-robot.target
 
 Wants=anki-audio-init.service
-After=anki-audio-init.service fake-hwclock.service logd.service syslog.service factory.mount data.mount
+After=anki-audio-init.service fake-hwclock.service syslog.service factory.mount data.mount
 Requires=fake-hwclock.service
 
 ConditionFileIsExecutable=/anki/bin/vic-init.sh
@@ -16,8 +16,8 @@ ConditionFileIsExecutable=/anki/bin/vic-init.sh
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/bin/sh /anki/bin/vic-init.sh
-Group=anki
-UMask=0002
+#Group=anki
+#UMask=0002
 
 [Install]
 WantedBy=anki-robot.target

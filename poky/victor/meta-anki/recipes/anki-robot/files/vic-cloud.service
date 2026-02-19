@@ -6,7 +6,7 @@ PartOf=anki-robot.target
 Wants=vic-engine.service
 After=vic-engine.service
 
-ConditionFileIsExecutable=/usr/bin/logwrapper
+#ConditionFileIsExecutable=/usr/bin/logwrapper
 ConditionFileIsExecutable=/anki/bin/vic-cloud
 
 [Service]
@@ -14,12 +14,12 @@ PermissionsStartOnly=true
 EnvironmentFile=/anki/etc/vic-cloud.env
 ExecStartPre=/bin/mkdir -p /run/vic-cloud
 ExecStartPre=/bin/chown -R anki:anki /run/vic-cloud
-ExecStart=/usr/bin/logwrapper /anki/bin/vic-cloud $VIC_CLOUD_OPTS
+ExecStart=/anki/bin/vic-cloud $VIC_CLOUD_OPTS
 ExecStopPost=/anki/bin/vic-on-exit
 Restart=no
-User=cloud
-Group=anki
-UMask=0002
+#User=cloud
+#Group=anki
+#UMask=0002
 
 # VIC-1951
 # /factory/cloud has mode 440, which prevents us from reading it as the net user.

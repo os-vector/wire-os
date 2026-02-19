@@ -57,6 +57,8 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'rsync', d)}"
 #IMAGE_INSTALL += "mm-camera"
 #IMAGE_INSTALL += "ankibluetoothd"
 
+IMAGE_INSTALL += "libpcre"
+
 # for OpenCL and EGL if you want that
 #IMAGE_INSTALL += "adreno"
 
@@ -80,5 +82,41 @@ IMAGE_INSTALL += "connman"
 IMAGE_INSTALL += "connman-client"
 #IMAGE_INSTALL += "kernel-module-ramoops"
 
+IMAGE_INSTALL += "leproperties"
+
 IMAGE_INSTALL += "i2c-tools"
 IMAGE_INSTALL += "v4l-utils"
+IMAGE_INSTALL += "bluez-tools"
+IMAGE_INSTALL += "bluealsa"
+
+IMAGE_INSTALL:append = " \
+    kernel-module-algif-hash \
+    kernel-module-algif-skcipher \
+    kernel-module-af-alg \
+    kernel-module-iptable-nat \
+    kernel-module-nf-nat \
+    kernel-module-iptable-mangle \
+    kernel-module-gc1066 \
+    kernel-module-v4l2-cci \
+    kernel-module-qcom-camss \
+    kernel-module-videobuf2-dma-contig \
+    kernel-module-videobuf2-memops \
+    kernel-module-videobuf2-v4l2 \
+    kernel-module-videobuf2-common \
+    kernel-module-v4l2-fwnode \
+    kernel-module-v4l2-async \
+    kernel-module-videodev \
+    kernel-module-mc \
+    kernel-module-overlay \
+    kernel-module-xt-tcpudp \
+    kernel-module-xt-conntrack \
+    kernel-module-nf-conntrack \
+    kernel-module-nf-defrag-ipv6 \
+    kernel-module-nf-defrag-ipv4 \
+    kernel-module-iptable-filter \
+    kernel-module-ip-tables \
+    kernel-module-x-tables \
+    kernel-module-fuse \
+    kernel-module-ipv6 \
+"
+

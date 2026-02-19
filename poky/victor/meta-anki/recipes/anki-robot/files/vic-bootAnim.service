@@ -10,8 +10,8 @@ Restart=no
 RemainAfterExit=no
 ExecStart=/anki/bin/vic-bootAnim
 ExecStopPost=/anki/bin/vic-on-exit
-Group=anki
-UMask=0002
+#Group=anki
+#UMask=0002
 
 [Install]
 WantedBy=sysinit.target

@@ -100,7 +100,7 @@ ExecStartPre=/bin/bash -c 'echo starting > /run/update-engine/phase'
 # wrapped with logwrapper so that any emitted DAS events will end up in the
 # correct place.  In addition, after the process finishes, its exit code is
 # captured so that other processes can inspect it
-ExecStart=/bin/bash -c '/usr/bin/logwrapper /anki/bin/update-engine; echo $? > /run/update-engine/exit_code'
+ExecStart=/bin/bash -c '/anki/bin/update-engine; echo $? > /run/update-engine/exit_code'
 
 # If no exit code, update-engine was stopped for some reason, so we fill in
 # error code 10 (OS: Unknown system error).  See platform/update-engine/error-codes.md

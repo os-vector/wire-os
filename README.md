@@ -8,22 +8,16 @@
     - IMU probably
     - audio (and therefore qdsp)
     - body comms
+    - camera! (just gc1066 for now)
 - currently not working
-    - camera
-        - will take a lot of work :(
     - userdata decryption
 - Why do this?
     - notice how basically all of the Qualcomm stuff is gone
         - that's why.
 - What else is there to be done?
-    - still need to get the camera working
-        - vector 1.0 has a gc1066 sensor
-        - camera ISP is the current issue
-        - mainline has a qcom-camss driver for msm8916. msm8909 should have essentially the same thing but with different clocks and interrupts and such. still haven't fully wrapped my head around it
+    - vector 2.0 camera
     - wlan needs to be tuned for stability
     - sysfs still needs proper init scripts for the hardware
-    - need to rewrite the parts which use getprop/setprop (or make my own getprop/setprop)
-    - need to make a new camera client once camera is working
     - need to rewrite ankibluetoothd since that expects a downstream driver
         - hopefully bluez is stable enough
     - right now, it won't actually boot on a bot unless you're smart and know how to build lk1st

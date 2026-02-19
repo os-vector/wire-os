@@ -12,7 +12,8 @@ SRC_URI = "file://initscripts \
 	   file://services \
 	   file://other \
            file://rsync \
-           file://wlan"
+           file://wlan \
+           file://udev"
 
 S = "${UNPACKDIR}"
 #UNPACKDIR = "${S}"
@@ -26,6 +27,7 @@ do_install () {
 	install -m 0755 ${S}/other/set-timezone ${D}/usr/sbin/set-timezone
         install -m 0755 ${S}/other/btop.conf ${D}/etc/btop.conf
 	install -d ${D}/usr/lib/firmware
+	install -d ${D}/etc/udev/rules.d
 	cp -r ${S}/initscripts/* ${D}/etc/initscripts/
 	chmod 0755 ${D}/etc/initscripts/*
 	cp -r ${S}/services/* ${D}/usr/lib/systemd/system/
@@ -43,6 +45,9 @@ do_install () {
 
 	install -m 0644 ${S}/rsync/rsyncd-victor.conf ${D}/etc/rsyncd-victor.conf
 	install -m 0644 ${S}/rsync/rsyncd.service ${D}/usr/lib/systemd/system/rsyncd.service
+
+	install -m 0644 ${S}/udev/90-usb-debugging.rules ${D}/etc/udev/rules.d/90-usb-debugging.rules
+	install -m 0755 ${S}/udev/usb-net-up.sh ${D}/usr/sbin/usb-net-up.sh
 }
 
 FILES:${PN} = "	/usr/lib \
@@ -50,6 +55,8 @@ FILES:${PN} = "	/usr/lib \
 		/usr/sbin/export-gpio \
 		/usr/sbin/set-timezone \
 		/etc/btop.conf \
+		/etc/udev \
+		/usr/sbin/usb-net-up.sh \
 		/etc/rsyncd-victor.conf \
                 /init"
 

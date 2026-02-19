@@ -3,6 +3,9 @@
 ##  bad. Anything that we can limp along without should be put somewhere else so that this script exits
 ##  with status 0 and the system init process can continue.
 
+mkdir -p /dev/socket
+chown anki:anki /dev/socket
+
 # @nathan-anki  - to stop overheating, limit CPU to 533MHz, RAM to 400MHz
 # this is now handled by wired, theoretically
 echo 533333 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
@@ -58,6 +61,24 @@ fi
 # Report OS Version to boot log
 echo "VicOS Version: `getprop ro.anki.version`" > /dev/kmsg
 
+# camera
+
+modprobe gc1066
+SENSOR="gc1066 0-003c"
+media-ctl --links "\"$SENSOR\":0 -> \"msm_csiphy0\":0 [1]" 
+media-ctl --links '"msm_csiphy0":1 -> "msm_csid0":0 [1]'
+media-ctl --links '"msm_csid0":1 -> "msm_ispif0":0 [1]'
+media-ctl --links '"msm_ispif0":1 -> "msm_vfe0_rdi0":0 [1]'
+media-ctl --set-v4l2 "\"$SENSOR\":0[fmt:SBGGR10_1X10/1280x720]"
+media-ctl --set-v4l2 '"msm_csiphy0":0[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_csiphy0":1[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_csid0":0[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_csid0":1[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_ispif0":0[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_ispif0":1[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_vfe0_rdi0":0[fmt:SBGGR10_1X10/1280x720]'
+media-ctl --set-v4l2 '"msm_vfe0_rdi0":1[fmt:SBGGR10_1X10/1280x720]'
+
 # usb
 
 mount -t configfs none /sys/kernel/config 2>/dev/null || true
@@ -77,13 +98,11 @@ echo 02:00:00:00:00:01 > functions/ecm.usb0/dev_addr
 echo 02:00:00:00:00:02 > functions/ecm.usb0/host_addr
 ln -s functions/ecm.usb0 configs/c.1/
 echo ci_hdrc.0 > UDC
-ip addr add 192.168.7.2/24 dev usb0
-ip link set usb0 up
 
 # wlan
 
 echo start > /sys/class/remoteproc/remoteproc1/state
-sleep 1
+sleep 4
 iw dev wlan0 set power_save off
 
 exit 0

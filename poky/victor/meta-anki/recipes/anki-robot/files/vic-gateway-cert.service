@@ -18,9 +18,9 @@ EnvironmentFile=/anki/etc/vic-gateway-cert.env
 ExecStart=/bin/sh -c "/sbin/vic-gateway-cert || SERVICE_RESULT=exit-code EXIT_CODE=exited EXIT_STATUS=1 /anki/bin/vic-on-exit"
 Type=oneshot
 RemainAfterExit=true
-User=net
-Group=anki
-UMask=0002
+#User=net
+#Group=anki
+#UMask=0002
 
 # VIC-1951: Temporarily add CAP_DAC_READ_SEARCH to enable running as
 # lower priv than root until we determine which file access is required.

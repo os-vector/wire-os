@@ -22,3 +22,35 @@ EXTERNALSRC = "${WORKSPACE}/kernel/linux-vector-mainline"
 EXTERNALSRC_BUILD = "${WORKSPACE}/kernel/linux-vector-mainline"
 
 S = "${EXTERNALSRC}"
+
+# gc1066 will be loaded by userland
+KERNEL_MODULE_AUTOLOAD:append = " \
+    af_alg \
+    algif_hash \
+    algif_skcipher \
+    ip_tables \
+    x_tables \
+    iptable_filter \
+    iptable_mangle \
+    iptable_nat \
+    nf_nat \
+    nf_conntrack \
+    nf_defrag_ipv4 \
+    nf_defrag_ipv6 \
+    xt_tcpudp \
+    xt_conntrack \
+    overlay \
+    fuse \
+    ipv6 \
+    qcom_camss \
+    videodev \
+    mc \
+    videobuf2_common \
+    videobuf2_memops \
+    videobuf2_dma_contig \
+    videobuf2_v4l2 \
+    v4l2_fwnode \
+    v4l2_async \
+    v4l2_cci \
+"
+

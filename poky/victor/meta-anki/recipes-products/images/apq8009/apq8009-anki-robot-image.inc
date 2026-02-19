@@ -21,7 +21,6 @@ IMAGE_INSTALL += "vic-bootanim"
 IMAGE_INSTALL += "victor"
 
 # Wire things
-IMAGE_INSTALL += "wireos-recovery"
 IMAGE_INSTALL += "rmtfs"
 IMAGE_INSTALL += "msm-firmware-loader"
 #IMAGE_INSTALL += "libpvictor"

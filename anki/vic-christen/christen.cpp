@@ -22,8 +22,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <cutils/properties.h>
-
 const std::string kRobotNamePropertyKey = "anki.robot.name";
 const std::string kProductNamePropertyKey = "ro.anki.product.name";
 const std::string kDefaultProductName = "Vector";
@@ -32,6 +30,8 @@ const std::string kTestNameFile = "/factory/name";
 const std::string kProcCmdlineFile = "/proc/cmdline";
 const uint32_t kVectorNameSize = 11;
 const uint32_t kRtsHeaderVersion = 2;
+
+#define PROPERTY_VALUE_MAX 92
 
 const std::string kSwitchboardBlockDevice = "/dev/block/bootdevice/by-name/switchboard";
 const size_t kSwitchboardDataBlockLen = 262144; // 256 * 1024 bytes -- (256kb)
@@ -48,7 +48,6 @@ static const std::vector<char> kLetters = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H
                                            'W', 'X', 'Y', 'Z'
                                           };
 static const std::vector<char> kDigits =  {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
-
 
 /* Reference: vic-switchboard definitions
  *  Structs describing the internal format of block device data that we care about
@@ -73,6 +72,60 @@ static const std::vector<char> kDigits =  {'1', '2', '3', '4', '5', '6', '7', '8
  * };
  *
  */
+
+int property_get(const char* key, char* value, const char* default_value) {
+  char cmd[256] = {0};
+  snprintf(cmd, sizeof(cmd), "getprop %s", key);
+
+  FILE* fp = popen(cmd, "r");
+  if (!fp) {
+    if (default_value) {
+      strncpy(value, default_value, PROPERTY_VALUE_MAX - 1);
+      value[PROPERTY_VALUE_MAX - 1] = 0;
+      return strlen(value);
+    }
+    value[0] = 0;
+    return 0;
+  }
+
+  if (!fgets(value, PROPERTY_VALUE_MAX, fp)) {
+    pclose(fp);
+    if (default_value) {
+      strncpy(value, default_value, PROPERTY_VALUE_MAX - 1);
+      value[PROPERTY_VALUE_MAX - 1] = 0;
+      return strlen(value);
+    }
+    value[0] = 0;
+    return 0;
+  }
+
+  pclose(fp);
+
+  size_t len = strlen(value);
+  while (len > 0 && (value[len - 1] == '\n' || value[len - 1] == '\r')) {
+    value[--len] = 0;
+  }
+
+  if (len == 0 && default_value) {
+    strncpy(value, default_value, PROPERTY_VALUE_MAX - 1);
+    value[PROPERTY_VALUE_MAX - 1] = 0;
+    return strlen(value);
+  }
+
+  return len;
+}
+
+int property_set(const char* key, const char* value) {
+  if (!key || !value) return -1;
+
+  char cmd[512] = {0};
+  snprintf(cmd, sizeof(cmd), "setprop %s \"%s\"", key, value);
+
+  int rc = system(cmd);
+  if (rc != 0) return -1;
+
+  return 0;
+}
 
 // Based on the reference structs, this header format can never change
 // Note that due to a bug in the factory version of vic-switchboard, the value of the

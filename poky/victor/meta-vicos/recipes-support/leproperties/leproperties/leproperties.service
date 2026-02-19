@@ -1,0 +1,11 @@
+[Unit]
+Description=leproperties daemon
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/leproperties
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

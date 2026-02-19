@@ -11,11 +11,11 @@ After=vic-robot.service anki-audio-init.service
 EnvironmentFile=/anki/etc/vic-anim.env
 Restart=no
 ExecStartPre=-/bin/systemctl stop vic-bootAnim.service
-ExecStart=/usr/bin/logwrapper /anki/bin/vic-anim $VIC_ANIM_OPTS
+ExecStart=/anki/bin/vic-anim $VIC_ANIM_OPTS
 ExecStopPost=/anki/bin/vic-on-exit
 Nice=-2
-Group=anki
-UMask=0002
+#Group=anki
+#UMask=0002
 
 [Install]
 WantedBy=anki-robot.target

@@ -10,6 +10,4 @@ SRC_URI = "file://anki/vic-christen"
 
 S = "${UNPACKDIR}/anki/vic-christen"
 
-DEPENDS += "libcutils"
-
 INSANE_SKIP:${PN} += " ldflags"

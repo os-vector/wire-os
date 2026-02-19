@@ -9,14 +9,14 @@ After=vic-init.service
 [Service]
 PermissionsStartOnly=true
 EnvironmentFile=/anki/etc/vic-robot.env
-ExecStartPre=/bin/chown robot /dev/ttyHS0 /dev/spidev0.0
+ExecStartPre=/bin/chown robot /dev/ttyMSM1 /dev/spidev0.0
 ExecStartPre=/bin/chgrp anki /dev/block/bootdevice/by-name/emr
 ExecStart=/anki/bin/vic-robot $VIC_ROBOT_OPTS
 ExecStopPost=/anki/bin/vic-on-exit
 Restart=no
-User=robot
-Group=anki
-UMask=0002
+#User=robot
+#Group=anki
+#UMask=0002
 
 # Robot process runs at top priority
 Nice=-20

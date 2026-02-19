@@ -6,16 +6,16 @@ PartOf=anki-robot.target
 Wants=vic-crashuploader.service
 After=vic-crashuploader.service
 
-ConditionFileIsExecutable=/usr/bin/logwrapper
+#ConditionFileIsExecutable=/usr/bin/logwrapper
 ConditionFileIsExecutable=/anki/bin/vic-webserver
 
 [Service]
 EnvironmentFile=/anki/etc/vic-webserver.env
-ExecStart=/usr/bin/logwrapper /anki/bin/vic-webserver $VIC_WEBSERVER_OPTS
+ExecStart=/anki/bin/vic-webserver $VIC_WEBSERVER_OPTS
 ExecStopPost=/anki/bin/vic-on-exit
 Restart=no
-Group=anki
-UMask=0002
+#Group=anki
+#UMask=0002
 
 [Install]
 WantedBy=anki-robot.target
