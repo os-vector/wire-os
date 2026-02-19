@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/dts-v1/;
+#include <skeleton32.dtsi>
+#include <lk2nd.dtsi>
+
+/ {
+	qcom,msm-id   = <QCOM_ID_APQ8009 0x00020000>;
+	qcom,board-id = <0x2 8>;
+};
+
+&lk2nd {
+	model = "Qualcomm Sound Acoustics Platform 212";
+	compatible = "qualcomm,qsap";
+};
