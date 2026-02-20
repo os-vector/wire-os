@@ -2204,6 +2204,7 @@ int boot_linux_from_mmc(void)
 
 		dtb = dev_tree_appended(image_buf, dtb_image_size, dtb_offset,
 				(void *)hdr->tags_addr);
+		dprintf(CRITICAL, "why are we here rn");
 		if (!dtb) {
 			dprintf(CRITICAL, "ERROR: Appended Device Tree Blob not found\n");
 #if WITH_LK2ND_DEVICE_2ND
@@ -5379,10 +5380,7 @@ void aboot_fastboot_register_commands(void)
 	for (i = 1; i < fastboot_cmds_count; i++)
 		fastboot_register(cmd_list[i].name,cmd_list[i].cb);
 
-#ifndef DISABLE_FASTBOOT_CMDS
-	if (partition_multislot_is_supported())
-		fastboot_register("set_active", cmd_set_active);
-#endif
+	fastboot_register("set_active", cmd_set_active);
 
 	/* publish variables and their values */
 	fastboot_publish("product",  TARGET(BOARD));

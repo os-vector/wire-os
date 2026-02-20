@@ -6,10 +6,12 @@
 
 / {
 	qcom,msm-id   = <QCOM_ID_APQ8009 0x00020000>;
-	qcom,board-id = <0x2 8>;
+	qcom,board-id = <0x08010208 8>;
 };
 
 &lk2nd {
-	model = "Qualcomm Sound Acoustics Platform 212";
-	compatible = "qualcomm,qsap";
+	model = "Anki Vector";
+	compatible = "anki,vector";
+
+	lk2nd,dtb-files = "apq8009-anki-vector";
 };

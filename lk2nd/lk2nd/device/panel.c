@@ -87,7 +87,7 @@ static int lk2nd_panel_detect(const void *dtb, int node)
 
 	return 0;
 }
-LK2ND_DEVICE_INIT("lk2nd,panel", lk2nd_panel_detect);
+//LK2ND_DEVICE_INIT("lk2nd,panel", lk2nd_panel_detect);
 
 static int lk2nd_panel_dt_update(void *dtb, const char *cmdline,
 				 enum boot_type boot_type)
@@ -131,4 +131,4 @@ static int lk2nd_panel_dt_update(void *dtb, const char *cmdline,
 
 	return 0;
 }
-DEV_TREE_UPDATE(lk2nd_panel_dt_update);
+//DEV_TREE_UPDATE(lk2nd_panel_dt_update);

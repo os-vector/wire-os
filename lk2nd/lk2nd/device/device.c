@@ -90,16 +90,17 @@ static void device_init(const void *dtb, int device_node)
 	extern const struct lk2nd_device_init __lk2nd_device_init_start;
 	extern const struct lk2nd_device_init __lk2nd_device_init_end;
 	int node;
-
+	dprintf(CRITICAL, "device_init1\n");
 	if (&__lk2nd_device_init_start == &__lk2nd_device_init_end)
 		return; /* No initializers */
-
+	dprintf(CRITICAL, "device_init2\n");
 	fdt_for_each_subnode(node, dtb, device_node) {
 		const struct lk2nd_device_init *di;
 		for (di = &__lk2nd_device_init_start; di < &__lk2nd_device_init_end; ++di)
 			if (do_device_init(dtb, node, di))
 				break;
 	}
+	dprintf(CRITICAL, "device_init3\n");
 	if (node < 0 && node != -FDT_ERR_NOTFOUND)
 		dprintf(CRITICAL, "Failed to check lk2nd device subnodes: %d\n", node);
 }
@@ -172,7 +173,7 @@ static void lk2nd_device_init(void)
 #ifdef LK2ND_DISPLAY
 	lk2nd_dev.panel.name = lk2nd_oem_panel_name();
 #endif
-
+	dprintf(CRITICAL, "lk2nd_device_init\n");
 	dtb = lk2nd_device2nd_init();
 #ifdef LK2ND_BUNDLE_DTB
 	dtb = lk2nd_bundled_dtb;

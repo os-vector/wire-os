@@ -51,4 +51,4 @@ static void lk2nd_device2nd_init_spi_display(void)
 
 	fbcon_setup(&fb);
 }
-LK2ND_INIT(lk2nd_device2nd_init_spi_display);
+//LK2ND_INIT(lk2nd_device2nd_init_spi_display);
