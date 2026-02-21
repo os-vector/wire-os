@@ -15,6 +15,22 @@
         - (though, wi-fi and ble are both stable in my experience)
         - mac address isn't the same as downstream
         - ssid doesn't show up in ccis
+	- reboot causes a bunch of stop jobs which sometimes go up to 6 minutes
+		- to prevent, stop anki-robot.target before rebooting
+	- backlight LED value ranges go up to 255 now rather than 20, meaning screen is dim since i haven't changed victor to be able to deal with that
+- how do I usb?
+	- keep him plugged in while booting. once a new network interface appears in your ifconfig, run:
+
+```
+sudo ip addr add 192.168.7.1/24 dev <interface>
+
+# if you use nmcli
+sudo nmcli device set <interface> managed no
+
+sudo ip link set <interface> up
+
+# now you can ssh root@192.168.7.2
+```
 
 
 # WireOS
