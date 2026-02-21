@@ -23,11 +23,6 @@ pgrep tty | xargs -I PID taskset -p 0xe PID
 # echo 1 > /sys/class/gpio/gpio$CAM_REG_GPIO/value
 # End camera force hack
 
-# Set spi buf size to size of LCD frame (184*96*2)
-chmod 666 /sys/module/spidev/parameters/bufsiz
-echo 35328 > /sys/module/spidev/parameters/bufsiz
-chmod 444 /sys/module/spidev/parameters/bufsiz
-
 # emr-cat prints a placeholder value even on error
 SERIALNO=`/bin/emr-cat e`
 HAVE_EMR=$?
@@ -64,6 +59,7 @@ echo "VicOS Version: `getprop ro.anki.version`" > /dev/kmsg
 # camera
 
 modprobe gc1066
+sleep 1
 SENSOR="gc1066 0-003c"
 media-ctl --links "\"$SENSOR\":0 -> \"msm_csiphy0\":0 [1]" 
 media-ctl --links '"msm_csiphy0":1 -> "msm_csid0":0 [1]'
@@ -104,5 +100,8 @@ echo ci_hdrc.0 > UDC
 echo start > /sys/class/remoteproc/remoteproc1/state
 sleep 4
 iw dev wlan0 set power_save off
+
+ip addr add 192.168.7.2/24 dev usb0
+ip link set usb0 up
 
 exit 0

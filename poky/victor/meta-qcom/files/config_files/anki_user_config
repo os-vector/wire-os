@@ -21,18 +21,7 @@ usr/bin/emr-cat                 0   6   2755
 # ================================
 #
 
-usr/bin/ankibluetoothd      2904 2904 0750
-usr/bin/viccubetool         2904 2904 0750
-misc/bluetooth              2904 2904 0750
-misc/bluetooth/bt_did.conf  2904 2904 0640
-misc/bluetooth/bt_stack.conf  2904 2904 0640
-misc/bluetooth/init.msm.bt.sh  2904 2904 0750
-misc/bluetooth/iot_devlist.conf 2904 2904 0640
-
-
-# Camera Stuff
-# ===========
-usr/qtiroot/usr/bin/mm-anki-camera      2907 2907 0750
+usr/bin/wirebluetoothd      2904 2904 0750
 
 # Systemd notify
 bin/systemd-notify          2901 2901 0750

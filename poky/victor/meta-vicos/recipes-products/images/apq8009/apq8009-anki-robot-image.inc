@@ -2,6 +2,8 @@
 # Include the robot settings
 #
 
+DEPENDS += "lk2nd"
+
 # userdata security/stuff
 #IMAGE_INSTALL += "cryptsetup"
 #IMAGE_INSTALL += "user-data-locker"
@@ -46,16 +48,7 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'nano', d)}"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'rsync', d)}"
 #IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'vim-tiny', d)}"
 
-# all the HAL stuff
-#IMAGE_INSTALL += "audiohal"
-#IMAGE_INSTALL += "bt-property"
-#IMAGE_INSTALL += "libbt-vendor"
-#IMAGE_INSTALL += "fluoride"
-#IMAGE_INSTALL += "rmtstorage"
-#IMAGE_INSTALL += "adsprpc"
-#IMAGE_INSTALL += "init-audio"
-#IMAGE_INSTALL += "mm-camera"
-#IMAGE_INSTALL += "ankibluetoothd"
+IMAGE_INSTALL += "wirebluetoothd"
 
 IMAGE_INSTALL += "libpcre"
 
@@ -87,7 +80,7 @@ IMAGE_INSTALL += "leproperties"
 IMAGE_INSTALL += "i2c-tools"
 IMAGE_INSTALL += "v4l-utils"
 IMAGE_INSTALL += "bluez-tools"
-IMAGE_INSTALL += "bluealsa"
+#IMAGE_INSTALL += "bluealsa"
 
 IMAGE_INSTALL:append = " \
     kernel-module-algif-hash \

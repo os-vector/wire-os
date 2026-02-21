@@ -1,27 +1,20 @@
 # branch alert
 
 - This branch is an attempt to implement the msm8916-mainline kernel. It's 6.19.0 for early Qualcomm SoCs.
-- So far, I have written a DTS, and have gotten the following working:
-    - wlan mostly
-    - display
-    - both backlight LEDs
-    - IMU probably
-    - audio (and therefore qdsp)
-    - body comms
-    - camera! (just gc1066 for now)
-- currently not working
-    - userdata decryption
 - Why do this?
     - notice how basically all of the Qualcomm stuff is gone
         - that's why.
-- What else is there to be done?
-    - vector 2.0 camera
-    - wlan needs to be tuned for stability
-    - sysfs still needs proper init scripts for the hardware
-    - need to rewrite ankibluetoothd since that expects a downstream driver
-        - hopefully bluez is stable enough
-    - right now, it won't actually boot on a bot unless you're smart and know how to build lk1st
-        - i need to get lk2nd building, and get that in the boot partition, with the actual kernel and stuff at a 512KiB offset
+- all the hardware works!
+    - though there are some known issues:
+        - VECTOR 2.0 WILL NOT WORK as i have not written a sensor driver just yet
+        - USERDATA DECRYPTION IS NOT BUILT IN! THIS WILL ERASE YOUR USER DATA!
+        - anki-robot.target might need a restart for camera to work
+        - exposure and gain ranges in victor need to be tuned
+        - wi-fi is slower due to wcn36xx not supporting bluetooth coexistence properly
+        - ble is slower
+        - (though, wi-fi and ble are both stable in my experience)
+        - mac address isn't the same as downstream
+        - ssid doesn't show up in ccis
 
 
 # WireOS

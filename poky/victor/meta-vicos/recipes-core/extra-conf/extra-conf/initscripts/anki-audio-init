@@ -19,5 +19,5 @@ done
 amixer cset name='PRI_MI2S_RX Audio Mixer MultiMedia1' 1                                                      
 amixer cset name='RX3 MIX1 INP1' 'RX1'                                                                  
 amixer cset name='SPK DAC Switch' 1                                                                           
-amixer cset name='RX3 Digital Volume' 80
+amixer cset name='RX3 Digital Volume' 70
 amixer cset name='RX3 Mute Switch' 0

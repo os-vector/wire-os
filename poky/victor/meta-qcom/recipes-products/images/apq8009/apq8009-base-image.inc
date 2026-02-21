@@ -176,5 +176,13 @@ do_makesystem() {
         --pagesize ${PAGE_SIZE} \
         --base ${KERNEL_BASE} \
         --ramdisk_offset 0x0 \
-        ${extra_mkbootimg_params} --output ${DEPLOY_DIR_IMAGE}/${MACHINE}-boot.img
+        ${extra_mkbootimg_params} --output ${DEPLOY_DIR_IMAGE}/${MACHINE}-boot-prelk2nd.img
+
+    # merge lk2nd and our boot img
+    size=$(stat -c %s "${DEPLOY_DIR_IMAGE}/lk2nd-msm8909.img")
+    # 512 KiB offset is what lk2nd wants
+    remaining=$(expr 524288 - "$size")
+    echo "$remaining"
+    dd if=/dev/zero of="${DEPLOY_DIR_IMAGE}/lk2nd-zeroes.bin" bs=1 count=$remaining
+    cat "${DEPLOY_DIR_IMAGE}/lk2nd-msm8909.img" "${DEPLOY_DIR_IMAGE}/lk2nd-zeroes.bin" "${DEPLOY_DIR_IMAGE}/${MACHINE}-boot-prelk2nd.img" > "${DEPLOY_DIR_IMAGE}/${MACHINE}-boot.img"
 }

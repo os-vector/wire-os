@@ -52,5 +52,5 @@ do_makesystem:append() {
     dd if=${MACHINE}-boot.img.sig of=${MACHINE}-boot.img.sig.padded conv=notrunc
     cat ${MACHINE}-boot.img.nonsecure ${MACHINE}-boot.img.sig.padded > ${MACHINE}-boot.img.secure
     rm -rf ${MACHINE}-boot.img.${TARGET_SHA_TYPE} ${MACHINE}-boot.img.sig ${MACHINE}-boot.img.sig.padded
-    mv -f ${MACHINE}-boot.img.secure ${MACHINE}-boot.img
+    #mv -f ${MACHINE}-boot.img.secure ${MACHINE}-boot.img
 }

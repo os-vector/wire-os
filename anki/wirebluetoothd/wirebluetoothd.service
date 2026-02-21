@@ -1,0 +1,12 @@
+[Unit]
+Description=wire bluetooth daemon
+SourcePath=/usr/bin/wirebluetoothd
+Requires=ankiinit.service
+After=ankiinit.service
+
+[Service]
+ExecStart=/usr/bin/wirebluetoothd
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

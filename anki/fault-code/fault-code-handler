@@ -345,13 +345,13 @@ else
 
 fi
 
-if [ $KILL_CAMERA_AFTER_STOPPING_ROBOT -eq 1 ]; then
-  log "Kill and restart mm-anki-camera"
-  systemctl kill -s 9 mm-anki-camera
-  systemctl kill -s 9 mm-qcamera-daemon
-  systemctl start mm-qcamera-daemon
-  systemctl start mm-anki-camera
-fi
+#if [ $KILL_CAMERA_AFTER_STOPPING_ROBOT -eq 1 ]; then
+#  log "Kill and restart mm-anki-camera"
+#  systemctl kill -s 9 mm-anki-camera
+#  systemctl kill -s 9 mm-qcamera-daemon
+#  systemctl start mm-qcamera-daemon
+#  systemctl start mm-anki-camera
+#fi
 
 #
 # Read and discard any fault codes that arrived during shutdown,

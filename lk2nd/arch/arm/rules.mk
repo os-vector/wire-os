@@ -125,7 +125,7 @@ ifeq ($(MEMVARS_SET),0)
 $(error missing MEMBASE or MEMSIZE variable, please set in target rules.mk)
 endif
 
-LIBGCC := $(shell $(TOOLCHAIN_PREFIX)gcc $(CFLAGS) $(THUMBCFLAGS) -print-libgcc-file-name)
+#LIBGCC := $(shell $(TOOLCHAIN_PREFIX)gcc $(CFLAGS) $(THUMBCFLAGS) -print-libgcc-file-name)
 #$(info LIBGCC = $(LIBGCC))
 
 # potentially generated files that should be cleaned out with clean make rule

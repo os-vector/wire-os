@@ -1,8 +1,8 @@
 [Unit]
 SourcePath=/etc/initscripts/boot-successful
 Description=Marks boot as successful
-After=ankibluetoothd.service
-Requires=ankibluetoothd.service
+After=wirebluetoothd.service
+Requires=wirebluetoothd.service
 
 [Service]
 Type=oneshot

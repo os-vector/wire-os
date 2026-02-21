@@ -1,0 +1,16 @@
+[Unit]
+Description=bluetooth wrapper thingy thing
+SourcePath=/usr/bin/wirebluetoothd
+Requires=ankiinit.service
+After=ankiinit.service
+
+ConditionFileIsExecutable=/usr/bin/wirebluetoothd
+
+[Service]
+# give ankiinit time to do its thing
+ExecStartPre=/usr/bin/sleep 3
+ExecStart=/usr/bin/wirebluetoothd
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

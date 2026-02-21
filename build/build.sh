@@ -270,7 +270,6 @@ FINAL_BUILD_INVOCATION="cd $(pwd)/poky && \
     export DO_SIGN=${DO_SIGN} && \
     export OTA_MANIFEST_SIGNING_KEY=${OTA_SIGNING_KEY_PASSWORD} && \
     export BOOT_IMAGE_SIGNING_PASSWORD=${BOOT_PASSWORD} && \
-    ${BOOT_MAKE_COMMAND} && \
     ANKIDEV=${ANKIDEV} make"
 
 if [[ ${NO_DOCKER} == "1" ]]; then

@@ -43,11 +43,8 @@ make_and_mount_cryptdata() {
 }
 
 make_userdata() {
-  if [ ! -e $CONNMAN_DONE_TOKEN ]; then
-    mkdir -p /data/lib/connman/
-    cp -rf /var/lib/connman/* /data/lib/connman
-    touch $CONNMAN_DONE_TOKEN
-  fi
+  mkdir -p /data/lib/connman/
+  cp -rf /var/lib/connman/* /data/lib/connman
   if [ ! -f $ROBOT_KEY ]; then
     mkdir -p /data/etc
     openssl genrsa -out $ROBOT_KEY 2048
