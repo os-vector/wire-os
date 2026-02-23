@@ -6,18 +6,19 @@
         - that's why.
 - all the hardware works!
     - though there are some known issues:
-        - VECTOR 2.0 WILL NOT WORK as i have not written a sensor driver just yet
         - USERDATA DECRYPTION IS NOT BUILT IN! THIS WILL ERASE YOUR USER DATA!
         - anki-robot.target might need a restart for camera to work
         - exposure and gain ranges in victor need to be tuned
         - wi-fi is slower due to wcn36xx not supporting bluetooth coexistence properly
         - ble is slower
         - (though, wi-fi and ble are both stable in my experience)
+	- ble takes a while to properly init! wait like 10 seconds after boot before double clicking
         - mac address isn't the same as downstream
         - ssid doesn't show up in ccis
 	- reboot causes a bunch of stop jobs which sometimes go up to 6 minutes
 		- to prevent, stop anki-robot.target before rebooting
 	- backlight LED value ranges go up to 255 now rather than 20, meaning screen is dim since i haven't changed victor to be able to deal with that
+	- 2.0 might be hotter than usual?
 - how do I usb?
 	- keep him plugged in while booting. once a new network interface appears in your ifconfig, run:
 

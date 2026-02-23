@@ -63,7 +63,7 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'net-tools', d)
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'util-linux-dmesg', d)}"
 
 # skittle
-#IMAGE_INSTALL += "purplpkg"
+IMAGE_INSTALL += "purplpkg"
 
 # want some debug tools?
 #IMAGE_INSTALL += "gdb"
@@ -80,7 +80,7 @@ IMAGE_INSTALL += "leproperties"
 IMAGE_INSTALL += "i2c-tools"
 IMAGE_INSTALL += "v4l-utils"
 IMAGE_INSTALL += "bluez-tools"
-#IMAGE_INSTALL += "bluealsa"
+IMAGE_INSTALL += "bluealsa"
 
 IMAGE_INSTALL:append = " \
     kernel-module-algif-hash \
@@ -90,6 +90,7 @@ IMAGE_INSTALL:append = " \
     kernel-module-nf-nat \
     kernel-module-iptable-mangle \
     kernel-module-gc1066 \
+    kernel-module-bf2253l \
     kernel-module-v4l2-cci \
     kernel-module-qcom-camss \
     kernel-module-videobuf2-dma-contig \

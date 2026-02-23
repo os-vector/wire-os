@@ -6,7 +6,7 @@ After=ankiinit.service
 
 [Service]
 ExecStart=/usr/bin/wirebluetoothd
-Restart=no
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

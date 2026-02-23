@@ -58,22 +58,33 @@ echo "VicOS Version: `getprop ro.anki.version`" > /dev/kmsg
 
 # camera
 
-modprobe gc1066
+SENSOR=""
+RES=""
+if [ $(emr-cat v) == "00000020" ]; then
+	modprobe bf2253l
+	SENSOR="bf2253l 0-006e"
+	RES="1600x1200"
+else
+ 	modprobe gc1066
+	SENSOR="gc1066 0-003c"
+	RES="1280x720"
+fi
 sleep 1
-SENSOR="gc1066 0-003c"
-media-ctl --links "\"$SENSOR\":0 -> \"msm_csiphy0\":0 [1]" 
+
+media-ctl --links "\"$SENSOR\":0 -> \"msm_csiphy0\":0 [1]"
 media-ctl --links '"msm_csiphy0":1 -> "msm_csid0":0 [1]'
 media-ctl --links '"msm_csid0":1 -> "msm_ispif0":0 [1]'
 media-ctl --links '"msm_ispif0":1 -> "msm_vfe0_rdi0":0 [1]'
-media-ctl --set-v4l2 "\"$SENSOR\":0[fmt:SBGGR10_1X10/1280x720]"
-media-ctl --set-v4l2 '"msm_csiphy0":0[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_csiphy0":1[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_csid0":0[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_csid0":1[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_ispif0":0[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_ispif0":1[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_vfe0_rdi0":0[fmt:SBGGR10_1X10/1280x720]'
-media-ctl --set-v4l2 '"msm_vfe0_rdi0":1[fmt:SBGGR10_1X10/1280x720]'
+
+media-ctl --set-v4l2 "\"$SENSOR\":0[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_csiphy0\":0[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_csiphy0\":1[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_csid0\":0[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_csid0\":1[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_ispif0\":0[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_ispif0\":1[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_vfe0_rdi0\":0[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "\"msm_vfe0_rdi0\":1[fmt:SBGGR10_1X10/$RES]"
 
 # usb
 
