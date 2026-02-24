@@ -20,7 +20,7 @@ do_compile() {
     echo ${STAGING_LIBDIR}
     make \
         LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${STAGING_LIBDIR_NATIVE}" \
-        LIBGCC="${STAGING_LIBDIR}/arm-oe-linux-gnueabi/15.2.0/libgcc.a" \
+        LIBGCC="${STAGING_LIBDIR}/arm-oe-linux-gnueabihf/15.2.0/libgcc.a" \
         TOOLCHAIN_PREFIX=arm-oe-linux-gnueabi- \
         lk2nd-msm8909
 }
