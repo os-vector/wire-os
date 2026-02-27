@@ -17,7 +17,6 @@ ExecStartPre=/bin/chgrp anki /dev/block/bootdevice/by-name/emr
 #ExecStartPre=/bin/chown engine /dev/kgsl-3d0
 #ExecStartPre=/sbin/export-gpio 94
 #ExecStartPre=/sbin/export-gpio 0
-# need time to make sure the camera is going to work
 ExecStartPre=/bin/sleep 3
 ExecStart=/anki/bin/vic-engine $VIC_ENGINE_OPTS
 ExecStopPost=/anki/bin/vic-on-exit

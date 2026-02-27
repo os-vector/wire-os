@@ -1,0 +1,12 @@
+#!/bin/bash
+
+while true; do                                                                                                                                              
+    if ! ip link show usb0 | grep -q 'state UP'; then
+        ip link set usb0 up                                                                                                                                 
+    fi          
+    if ! ip addr show usb0 | grep -q '192.168.7.2/24'; then
+        ip addr add 192.168.7.2/24 dev usb0 2>/dev/null
+    fi
+    iw dev wlan0 set power_save off
+    sleep 10
+done

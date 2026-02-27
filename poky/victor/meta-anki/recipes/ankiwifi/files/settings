@@ -2,6 +2,7 @@
 OfflineMode=false
 DefaultAutoConnectTechnologies=wifi
 PreferredTechnologies=wifi
+AllowWifiPowerSave=false
 
 [WiFi]
 Enable=true

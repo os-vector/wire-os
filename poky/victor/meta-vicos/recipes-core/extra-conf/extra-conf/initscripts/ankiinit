@@ -9,19 +9,9 @@ chown anki:anki /dev/socket
 # @nathan-anki  - to stop overheating, limit CPU to 533MHz, RAM to 400MHz
 # this is now handled by wired, theoretically
 echo 533333 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+# actually 400
+echo 200000 > /sys/bus/platform/devices/400000.interconnect/bus_scaling/scaling_max_rate_khz
 #End clock speed limits
-
-# Move RT FIFO tasks off core 0 to reduce timer interrupt induced jitter.
-pgrep tty | xargs -I PID taskset -p 0xe PID
-
-# # TODO Move this power rail controll into the camera driver
-# CAM_REG_GPIO=83
-# if [ ! -d /sys/class/gpio/gpio$CAM_REG_GPIO ]; then
-#     echo $CAM_REG_GPIO > /sys/class/gpio/export
-# fi
-# echo out > /sys/class/gpio/gpio$CAM_REG_GPIO/direction
-# echo 1 > /sys/class/gpio/gpio$CAM_REG_GPIO/value
-# End camera force hack
 
 # emr-cat prints a placeholder value even on error
 SERIALNO=`/bin/emr-cat e`
@@ -50,9 +40,6 @@ if [ -e /data/maintenance_reboot ]; then
     mv /data/maintenance_reboot /run/after_maintenance_reboot
 fi
 
-#Enable Ramoops
-#modprobe ramoops
-
 # Report OS Version to boot log
 echo "VicOS Version: `getprop ro.anki.version`" > /dev/kmsg
 
@@ -71,20 +58,17 @@ else
 fi
 sleep 1
 
-media-ctl --links "\"$SENSOR\":0 -> \"msm_csiphy0\":0 [1]"
-media-ctl --links '"msm_csiphy0":1 -> "msm_csid0":0 [1]'
-media-ctl --links '"msm_csid0":1 -> "msm_ispif0":0 [1]'
-media-ctl --links '"msm_ispif0":1 -> "msm_vfe0_rdi0":0 [1]'
+media-ctl --links '"'"$SENSOR"'":0 -> "msm_csiphy0":0 [1], "msm_csiphy0":1 -> "msm_csid0":0 [1], "msm_csid0":1 -> "msm_ispif0":0 [1], "msm_ispif0":1 -> "msm_vfe0_rdi0":0 [1]'
 
-media-ctl --set-v4l2 "\"$SENSOR\":0[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_csiphy0\":0[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_csiphy0\":1[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_csid0\":0[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_csid0\":1[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_ispif0\":0[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_ispif0\":1[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_vfe0_rdi0\":0[fmt:SBGGR10_1X10/$RES]"
-media-ctl --set-v4l2 "\"msm_vfe0_rdi0\":1[fmt:SBGGR10_1X10/$RES]"
+media-ctl --set-v4l2 "'$SENSOR':0[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_csiphy0':0[fmt:SBGGR10_1X10/${RES}]"                                                                                             
+media-ctl --set-v4l2 "'msm_csiphy0':1[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_csid0':0[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_csid0':1[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_ispif0':0[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_ispif0':1[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_vfe0_rdi0':0[fmt:SBGGR10_1X10/${RES}]"
+media-ctl --set-v4l2 "'msm_vfe0_rdi0':1[fmt:SBGGR10_1X10/${RES}]"
 
 # usb
 
@@ -109,10 +93,5 @@ echo ci_hdrc.0 > UDC
 # wlan
 
 echo start > /sys/class/remoteproc/remoteproc1/state
-sleep 4
-iw dev wlan0 set power_save off
-
-ip addr add 192.168.7.2/24 dev usb0
-ip link set usb0 up
 
 exit 0

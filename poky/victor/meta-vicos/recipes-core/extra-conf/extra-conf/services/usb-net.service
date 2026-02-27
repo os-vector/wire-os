@@ -1,0 +1,12 @@
+[Unit]
+SourcePath=/etc/initscripts/usb-net
+Description=USB networking
+Requires=ankiinit.service
+After=ankiinit.service
+
+[Service]
+Type=simple
+ExecStart=/etc/initscripts/usb-net
+
+[Install]
+WantedBy=multi-user.target

@@ -11,6 +11,8 @@ for ((i=1; i<=max_attempts; i++)); do
   echo attempt 1
   CATTEMPT="$(connmanctl enable wifi 2>&1)"
   if [[ ! "${CATTEMPT}" == *"Error wifi"* ]] && [[ ! "${CATTEMPT}" == *"wifi is not"* ]]; then
+    sleep 1
+    iw dev wlan0 set power_save off
     break
   fi
   sleep 1
