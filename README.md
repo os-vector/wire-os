@@ -13,6 +13,10 @@
         - ssid doesn't show up in ccis
 	- reboot causes a bunch of stop jobs which sometimes go up to 6 minutes
 		- to prevent, stop anki-robot.target before rebooting
+	- CozmoBot.MainCycleTimeError
+		- Anki, in 2018, had core 3 isolation for vic-robot, i think because of this
+		- they eventually added a preempt-rt patch which removed that, which this kernel probably doesn't have
+	- camera might skip a frame sometimes, throwing the vision timestamp off
 - how do I usb?
 	- keep him plugged in while booting. once a new network interface appears in your ifconfig, run:
 
