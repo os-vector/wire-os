@@ -62,6 +62,9 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'procps', d)}"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'net-tools', d)}"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'util-linux-dmesg', d)}"
 
+IMAGE_INSTALL += "util-linux-taskset"
+IMAGE_INSTALL += "devmem2"
+
 # skittle
 IMAGE_INSTALL += "purplpkg"
 

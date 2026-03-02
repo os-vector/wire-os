@@ -13,7 +13,6 @@
         - ssid doesn't show up in ccis
 	- reboot causes a bunch of stop jobs which sometimes go up to 6 minutes
 		- to prevent, stop anki-robot.target before rebooting
-	- i have done quite a bit of work on cpuidle and power collapse, but it's probably still a bit more powerhungry than downstream
 - how do I usb?
 	- keep him plugged in while booting. once a new network interface appears in your ifconfig, run:
 

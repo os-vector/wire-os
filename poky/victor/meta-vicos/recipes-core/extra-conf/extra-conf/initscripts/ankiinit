@@ -7,10 +7,8 @@ mkdir -p /dev/socket
 chown anki:anki /dev/socket
 
 # @nathan-anki  - to stop overheating, limit CPU to 533MHz, RAM to 400MHz
-# this is now handled by wired, theoretically
 echo 533333 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-# actually 400
-echo 200000 > /sys/bus/platform/devices/400000.interconnect/bus_scaling/scaling_max_rate_khz
+# ram is now handled by icc
 #End clock speed limits
 
 # emr-cat prints a placeholder value even on error
