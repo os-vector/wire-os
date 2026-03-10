@@ -109,8 +109,6 @@ echo ci_hdrc.0 > UDC
 # wlan
 
 echo start > /sys/class/remoteproc/remoteproc1/state
-sleep 4
-iw dev wlan0 set power_save off
 
 ip addr add 192.168.7.2/24 dev usb0
 ip link set usb0 up

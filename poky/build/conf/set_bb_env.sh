@@ -219,7 +219,7 @@ function build-prod() {
 }
 
 # cleared every time
-cleanList=(lk2nd victor wirebluetoothd vic-christen leproperties vic-cloud rampost anki-version machine-robot-image extra-conf vic-engine vic-robot update-os update-engine wireutils initscript-anki rebooter vic-anim vic-init vic-switchboard vic-gateway-cert base-files libpvictor fake-hwclock purplpkg)
+cleanList=(victor wirebluetoothd vic-christen leproperties vic-cloud rampost anki-version machine-robot-image extra-conf vic-engine vic-robot update-os update-engine wireutils initscript-anki rebooter vic-anim vic-init vic-switchboard vic-gateway-cert base-files libpvictor fake-hwclock purplpkg)
 
 function clean-oskr() {
   unset_bb_env

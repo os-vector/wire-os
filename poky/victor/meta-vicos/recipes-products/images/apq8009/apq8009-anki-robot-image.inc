@@ -48,7 +48,7 @@ IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'nano', d)}"
 IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'rsync', d)}"
 #IMAGE_INSTALL += "${@oe.utils.conditional('USER_BUILD', '1', '', 'vim-tiny', d)}"
 
-#IMAGE_INSTALL += "wirebluetoothd"
+IMAGE_INSTALL += "wirebluetoothd"
 
 IMAGE_INSTALL += "libpcre"
 
@@ -67,13 +67,15 @@ IMAGE_INSTALL += "purplpkg"
 
 # want some debug tools?
 #IMAGE_INSTALL += "gdb"
-#IMAGE_INSTALL += "strace"
+IMAGE_INSTALL += "strace"
 
 IMAGE_INSTALL += "syslog-ng"
 IMAGE_INSTALL += "logrotate"
 IMAGE_INSTALL += "connman"
 IMAGE_INSTALL += "connman-client"
 #IMAGE_INSTALL += "kernel-module-ramoops"
+IMAGE_INSTALL += "util-linux-taskset"
+IMAGE_INSTALL += "util-linux-lscpu"
 
 IMAGE_INSTALL += "leproperties"
 
