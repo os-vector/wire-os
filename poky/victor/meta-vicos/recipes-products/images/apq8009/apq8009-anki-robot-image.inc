@@ -5,8 +5,8 @@
 #DEPENDS += "lk2nd"
 
 # userdata security/stuff
-#IMAGE_INSTALL += "cryptsetup"
-#IMAGE_INSTALL += "user-data-locker"
+IMAGE_INSTALL += "cryptsetup"
+IMAGE_INSTALL += "user-data-locker"
 #IMAGE_INSTALL += "securemsm-noship"
 IMAGE_INSTALL += "vic-christen"
 
@@ -114,5 +114,6 @@ IMAGE_INSTALL:append = " \
     kernel-module-x-tables \
     kernel-module-fuse \
     kernel-module-ipv6 \
+    kernel-module-vector-keymaster \
 "
 

@@ -16,10 +16,10 @@ do_configure () {
     oe_runmake_call CC="${KERNEL_CC}" LD="${KERNEL_LD}" -C ${S} ARCH=${ARCH} ${KERNEL_EXTRA_ARGS} ${KERNEL_DEFCONFIG}
 }
 
-PV = "6.19.0"
+PV = "7.0.0"
 
-EXTERNALSRC = "${WORKSPACE}/kernel/linux-vector-mainline"
-EXTERNALSRC_BUILD = "${WORKSPACE}/kernel/linux-vector-mainline"
+EXTERNALSRC = "${WORKSPACE}/kernel/linux-vector"
+EXTERNALSRC_BUILD = "${WORKSPACE}/kernel/linux-vector"
 
 S = "${EXTERNALSRC}"
 
@@ -45,6 +45,7 @@ KERNEL_MODULE_AUTOLOAD:append = " \
     qcom_camss \
     videodev \
     mc \
+    vector-keymaster \
     videobuf2_common \
     videobuf2_memops \
     videobuf2_dma_contig \
