@@ -1,8 +1,8 @@
 [Unit]
 SourcePath=/etc/initscripts/ankiinit
 Description=Anki Post Boot Service
-Requires=partition-links.service leproperties.service
-After=partition-links.service leproperties.service
+Requires=partition-links.service leproperties.service mount-data.service
+After=partition-links.service leproperties.service mount-data.service
 
 [Service]
 Type=oneshot

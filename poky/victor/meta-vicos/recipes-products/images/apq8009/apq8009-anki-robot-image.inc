@@ -2,7 +2,7 @@
 # Include the robot settings
 #
 
-#DEPENDS += "lk2nd"
+DEPENDS += "lk2nd"
 
 # userdata security/stuff
 IMAGE_INSTALL += "cryptsetup"
@@ -113,7 +113,6 @@ IMAGE_INSTALL:append = " \
     kernel-module-ip-tables \
     kernel-module-x-tables \
     kernel-module-fuse \
-    kernel-module-ipv6 \
     kernel-module-vector-keymaster \
 "
 
