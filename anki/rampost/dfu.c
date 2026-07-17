@@ -278,8 +278,10 @@ RampostErr dfu_sequence(const char* dfu_file, bool force_update)
           ++tries;
       }
   }
-  // ignore DevBuild*
-  if (installed_version && strstr((const char*)installed_version, "DevBuild")) {
+  // ignore DevBuild* but not 2.0's devbuild
+  if ((installed_version && strstr((const char*)installed_version, "DevBuild")) && 
+      !(installed_version && strstr((const char*)installed_version, "DevBuild9c26f10"))) 
+  {
     DAS_PRINTHEX(DAS_EVENT, "dfu.installed_version", installed_version, VERSTRING_LEN);
     DAS_LOG(DAS_EVENT, "dfu.success", "ignoring DevBuild");
     return err_OK;
