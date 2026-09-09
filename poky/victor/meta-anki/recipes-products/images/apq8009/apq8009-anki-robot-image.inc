@@ -2,7 +2,7 @@
 # Include the robot settings
 #
 # Anki stuff
-IMAGE_INSTALL += "animfail"
+#IMAGE_INSTALL += "animfail"
 IMAGE_INSTALL += "anki-crash-log"
 IMAGE_INSTALL += "anki-robot-target"
 IMAGE_INSTALL += "anki-version"

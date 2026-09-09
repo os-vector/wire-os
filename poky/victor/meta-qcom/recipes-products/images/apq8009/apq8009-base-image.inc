@@ -45,10 +45,10 @@ IMAGE_INSTALL += "volatile-binds"
 IMAGE_INSTALL += "iproute2"
 IMAGE_INSTALL += "iptables"
 #IMAGE_INSTALL += "dnsmasq"
-IMAGE_INSTALL += "ebtables"
-IMAGE_INSTALL += "ethtool"
+#IMAGE_INSTALL += "ebtables"
+#IMAGE_INSTALL += "ethtool"
 #IMAGE_INSTALL += "dhcpcd"
-IMAGE_INSTALL += "tcpdump"
+#IMAGE_INSTALL += "tcpdump"
 
 # drones
 IMAGE_INSTALL += "nettle"
