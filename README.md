@@ -151,16 +151,15 @@ If you want to :P
         -   He handles too-bright situations much better now
 -   Picovoice Porcupine (1.5) wakeword engine
     -   Custom wake words in :8080 webserver!
+-   YuNet + MobileFaceNet facial detection+recognition
+    -   Replacing the proprietary Okao libraries
 -   `htop` and `rsync` are embedded
 -   No more Python - update-engine was rewritten in C++
 -   General bug fixes - for instance, now he won't read the EMR partition upon every single screen draw (DDL bug)
 -   :8080 webserver for configuring things I don't want to integrate into a normal app
--   Cat and dog detection (basic, similar to Cozmo)
--   Smaller OTA size - a dev OTA is 153M somehow
 -   New Anki boot animation, new pre-boot-anim splash screen, rainbow backpack light animations
 -   TensorFlow Lite has been updated to v2.19.0 (a modern 2025 release)
-	-  This means we can maybe leverage the GPU delegate at some point
-	-  XNNPACK - the CPU delegate - is faster than what was there before
+	-  Gives us XNNPACK and an OpenCL delegate
 -   OpenCV has been updated to 4.12.0 (latest as of 11-2025)
   	-  Much better SDK streaming performance
 -   [Face overlays](https://www.reddit.com/r/AnkiVector/comments/1lteb3m/_/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
