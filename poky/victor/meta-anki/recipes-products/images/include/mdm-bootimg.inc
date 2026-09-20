@@ -31,6 +31,9 @@ TARGET_NUM = "${@('0' if d.getVar('DEV') == '1' else '1' if d.getVar('OSKR') == 
 
 WHAT_OS_AM_I = "wire-os_wire_os"
 
+# VV | CFW DEVS, CHANGE THIS | VV
+PRETTY_OS_NAME = "WireOS"
+
 gen_buildprop:append() {
    mkdir -p ${IMAGE_ROOTFS}/cache
    BUILD_TIMESTAMP=`cat ${IMAGE_ROOTFS}/etc/version`
@@ -106,4 +109,6 @@ gen_buildprop:append() {
    echo "ro.build.target=${TARGET_NUM}" >> ${IMAGE_ROOTFS}/build.prop
 
    echo "ro.build.os.cfw.name=${WHAT_OS_AM_I}" >> ${IMAGE_ROOTFS}/build.prop
+
+   echo "ro.build.os.cfw.prettyname=${PRETTY_OS_NAME}" >> ${IMAGE_ROOTFS}/build.prop
 }

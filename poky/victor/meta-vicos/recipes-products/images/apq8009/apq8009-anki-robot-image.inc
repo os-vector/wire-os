@@ -58,7 +58,7 @@ IMAGE_INSTALL += "mm-camera"
 IMAGE_INSTALL += "ankibluetoothd"
 
 # for OpenCL and EGL if you want that
-#IMAGE_INSTALL += "adreno"
+IMAGE_INSTALL += "adreno"
 
 IMAGE_INSTALL += "busybox"
 
