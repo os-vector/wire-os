@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -797,13 +797,6 @@ void writeBeaconToMemory(tpAniSirGlobal pMac, tANI_U16 size, tANI_U16 length, tp
     // copy end of beacon only if length > 0
     if (length > 0)
     {
-        if (size + pMac->sch.schObject.gSchBeaconOffsetEnd >
-            SCH_MAX_BEACON_SIZE) {
-            PELOGE(schLog(pMac, LOGE,
-                   FL("beacon template fail size %d BeaconOffsetEnd %d"),
-                   size, pMac->sch.schObject.gSchBeaconOffsetEnd);)
-            return;
-        }
         for (i=0; i < pMac->sch.schObject.gSchBeaconOffsetEnd; i++)
             pMac->sch.schObject.gSchBeaconFrameBegin[size++] = pMac->sch.schObject.gSchBeaconFrameEnd[i];
     }

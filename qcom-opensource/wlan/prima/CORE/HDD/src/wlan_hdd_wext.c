@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -423,6 +423,12 @@ enum {
 int hdd_validate_mcc_config(hdd_adapter_t *pAdapter, v_UINT_t staId,
                                 v_UINT_t arg1, v_UINT_t arg2, v_UINT_t arg3);
 
+#ifdef WLAN_FEATURE_PACKET_FILTERING
+int wlan_hdd_set_filter(hdd_adapter_t *pAdapter, tpPacketFilterCfg pRequest);
+#endif
+static int get_fwr_memdump(struct net_device *,
+                            struct iw_request_info *,
+                            union iwreq_data *, char *);
 /**---------------------------------------------------------------------------
 
   \brief mem_alloc_copy_from_user_helper -
@@ -2364,8 +2370,6 @@ static int __iw_set_genie(struct net_device *dev,
                 memcpy( pWextState->WPARSNIE, genie - 2, (eLen + 2));
                 pWextState->roamProfile.pRSNReqIE = pWextState->WPARSNIE;
                 pWextState->roamProfile.nRSNReqIELength = eLen + 2;
-                wlan_hdd_mask_unsupported_rsn_caps(pWextState->WPARSNIE + 2,
-                                                   eLen);
               break;
 
          default:
@@ -4132,6 +4136,13 @@ static int __iw_set_priv(struct net_device *dev,
     else if( strncasecmp(cmd, "pnoforce", 8) == 0 ) {
         hddLog( VOS_TRACE_LEVEL_INFO, "pnoforce");
         /*TODO: support pnoforce*/
+    }
+    else if( strncasecmp(cmd, "pno",3) == 0 ) {
+
+        hddLog( VOS_TRACE_LEVEL_INFO, "pno");
+        vos_status = iw_set_pno(dev, info, wrqu, cmd, 3);
+        kfree(cmd);
+        return (vos_status == VOS_STATUS_SUCCESS) ? 0 : -EINVAL;
     }
     else if( strncasecmp(cmd, "rssifilter",10) == 0 ) {
         hddLog( VOS_TRACE_LEVEL_INFO, "rssifilter");
@@ -7586,6 +7597,13 @@ static int __iw_setnone_getnone(struct net_device *dev,
                      TRUE, TRUE);
             break;
         }
+        case WE_GET_FW_MEMDUMP:
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                     "FW_MEM_DUMP requested ");
+            get_fwr_memdump(dev,info,wrqu,extra);
+            break;
+        }
         default:
         {
             hddLog(LOGE, "%s: unknown ioctl %d", __func__, sub_cmd);
@@ -9720,6 +9738,426 @@ static int iw_get_statistics(struct net_device *dev,
    return ret;
 }
 #ifdef FEATURE_WLAN_SCAN_PNO
+
+/*Max Len for PNO notification*/
+#define MAX_PNO_NOTIFY_LEN 100
+void found_pref_network_cb (void *callbackContext,
+                              tSirPrefNetworkFoundInd *pPrefNetworkFoundInd)
+{
+  hdd_adapter_t* pAdapter = (hdd_adapter_t*)callbackContext;
+  union iwreq_data wrqu;
+  char buf[MAX_PNO_NOTIFY_LEN+1];
+
+  hddLog(VOS_TRACE_LEVEL_WARN, "A preferred network was found: %s with rssi: -%d",
+         pPrefNetworkFoundInd->ssId.ssId, pPrefNetworkFoundInd->rssi);
+
+  // create the event
+  memset(&wrqu, 0, sizeof(wrqu));
+  memset(buf, 0, sizeof(buf));
+
+  snprintf(buf, MAX_PNO_NOTIFY_LEN, "QCOM: Found preferred network: %s with RSSI of -%u",
+           pPrefNetworkFoundInd->ssId.ssId,
+          (unsigned int)pPrefNetworkFoundInd->rssi);
+
+  wrqu.data.pointer = buf;
+  wrqu.data.length = strlen(buf);
+
+  // send the event
+
+  wireless_send_event(pAdapter->dev, IWEVCUSTOM, &wrqu, buf);
+
+}
+
+
+/*string based input*/
+VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
+                      union iwreq_data *wrqu, char *extra, int nOffset)
+{
+  hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+  hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+  /* pnoRequest is a large struct, so we make it static to avoid stack
+     overflow.  This API is only invoked via ioctl, so it is
+     serialized by the kernel rtnl_lock and hence does not need to be
+     reentrant */
+  tSirPNOScanReq pnoRequest = {0};
+  char *ptr, *data;
+  v_U8_t i,j, ucParams, ucMode;
+  size_t len;
+  eHalStatus status = eHAL_STATUS_FAILURE;
+  /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+            "PNO data len %d data %s",
+            wrqu->data.length,
+            extra);
+
+  if (wrqu->data.length <= nOffset )
+  {
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN, "PNO input is not correct");
+    return VOS_STATUS_E_FAILURE;
+  }
+
+  pnoRequest.enable = 0;
+  pnoRequest.ucNetworksCount = 0;
+  /*-----------------------------------------------------------------------
+    Input is string based and expected to be like this:
+
+    <enabled> <netw_count>
+    for each network:
+    <ssid_len> <ssid> <authentication> <encryption>
+    <ch_num> <channel_list optional> <bcast_type> <rssi_threshold>
+    <scan_timers> <scan_time> <scan_repeat> <scan_time> <scan_repeat>
+
+    e.g:
+    1 2 4 test 0 0 3 1 6 11 2 40 5 test2 4 4 6 1 2 3 4 5 6 1 0 2 5 2 300 0
+
+    this translates into:
+    -----------------------------
+    enable PNO
+    look for 2 networks:
+    test - with authentication type 0 and encryption type 0,
+    that can be found on 3 channels: 1 6 and 11 ,
+    SSID bcast type is unknown (directed probe will be sent if AP not found)
+    and must meet -40dBm RSSI
+
+    test2 - with auth and enrytption type 4/4
+    that can be found on 6 channels 1, 2, 3, 4, 5 and 6
+    bcast type is non-bcast (directed probe will be sent)
+    and must not meet any RSSI threshold
+
+    scan every 5 seconds 2 times, scan every 300 seconds until stopped
+  -----------------------------------------------------------------------*/
+
+  /* making sure argument string ends with '\0' */
+  len = (wrqu->data.length-nOffset) + 1;
+  data = vos_mem_malloc(len);
+  if (NULL == data) {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                FL("fail to allocate memory %zu"), len);
+      return -EINVAL;
+  }
+  vos_mem_zero(data, len);
+  vos_mem_copy(data, &extra[nOffset], (len-1));
+  ptr = data;
+
+  if (1 != sscanf(ptr," %hhu%n", &(pnoRequest.enable), &nOffset))
+  {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "PNO enable input is not valid %s",ptr);
+      vos_mem_free(data);
+      return VOS_STATUS_E_FAILURE;
+  }
+
+  if ( 0 == pnoRequest.enable )
+  {
+    /*Disable PNO*/
+    memset(&pnoRequest, 0, sizeof(pnoRequest));
+    status = sme_SetPreferredNetworkList(WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                &pnoRequest,
+                                pAdapter->sessionId,
+                                found_pref_network_cb, pAdapter);
+    if (eHAL_STATUS_SUCCESS != status)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: failed to disable PNO", __func__);
+        vos_mem_free(data);
+        return VOS_STATUS_E_FAILURE;
+    }
+    pHddCtx->isPnoEnable = FALSE;
+    vos_mem_free(data);
+    return VOS_STATUS_SUCCESS;
+  }
+
+  if (TRUE == pHddCtx->isPnoEnable)
+  {
+     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+               FL("already PNO is enabled"));
+     vos_mem_free(data);
+     return -EBUSY;
+  }
+  pHddCtx->isPnoEnable = TRUE;
+
+  ptr += nOffset;
+
+  if (1 != sscanf(ptr," %hhu %n", &(pnoRequest.ucNetworksCount), &nOffset))
+  {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "PNO count input not valid %s",ptr);
+      goto error;
+  }
+
+  VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+            "PNO enable %d networks count %d offset %d",
+            pnoRequest.enable,
+            pnoRequest.ucNetworksCount,
+            nOffset);
+
+  /* Parameters checking:
+      ucNetworksCount has to be larger than 0*/
+  if (( 0 == pnoRequest.ucNetworksCount ) ||
+      ( pnoRequest.ucNetworksCount > SIR_PNO_MAX_SUPP_NETWORKS ))
+  {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN, "Network input is not correct");
+      goto error;
+  }
+
+  ptr += nOffset;
+
+  pnoRequest.aNetworks =
+           vos_mem_malloc(sizeof(tSirNetworkType)*pnoRequest.ucNetworksCount);
+  if (pnoRequest.aNetworks == NULL)
+  {
+       VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+           FL("failed to allocate memory aNetworks %u"),
+               (uint32)sizeof(tSirNetworkType)*pnoRequest.ucNetworksCount);
+       goto error;
+  }
+  vos_mem_zero(pnoRequest.aNetworks,
+               sizeof(tSirNetworkType)*pnoRequest.ucNetworksCount);
+
+  for ( i = 0; i < pnoRequest.ucNetworksCount; i++ )
+  {
+
+    pnoRequest.aNetworks[i].ssId.length = 0;
+
+    ucParams = sscanf(ptr," %hhu %n",
+                      &(pnoRequest.aNetworks[i].ssId.length),&nOffset);
+
+    if (1 != ucParams)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "PNO ssid length input is not valid %s",ptr);
+        goto error;
+    }
+
+    if (( 0 == pnoRequest.aNetworks[i].ssId.length ) ||
+        ( pnoRequest.aNetworks[i].ssId.length > 32 ) )
+    {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "SSID Len %d is not correct for network %d",
+                pnoRequest.aNetworks[i].ssId.length, i);
+      goto error;
+    }
+
+    /*Advance to SSID*/
+    ptr += nOffset;
+
+    memcpy(pnoRequest.aNetworks[i].ssId.ssId, ptr,
+           pnoRequest.aNetworks[i].ssId.length);
+    ptr += pnoRequest.aNetworks[i].ssId.length;
+
+    ucParams = sscanf(ptr," %u %u %hhu %n",
+                      &(pnoRequest.aNetworks[i].authentication),
+                      &(pnoRequest.aNetworks[i].encryption),
+                      &(pnoRequest.aNetworks[i].ucChannelCount),
+                      &nOffset);
+
+    if ( 3 != ucParams )
+    {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                "Incorrect cmd %s",ptr);
+      goto error;
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+              "PNO len %d ssid 0x%08x%08x%08x%08x%08x%08x%08x%08x"
+              "auth %d encry %d channel count %d offset %d",
+              pnoRequest.aNetworks[i].ssId.length,
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[0]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[4]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[8]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[12]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[16]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[20]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[24]),
+              *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[28]),
+              pnoRequest.aNetworks[i].authentication,
+              pnoRequest.aNetworks[i].encryption,
+              pnoRequest.aNetworks[i].ucChannelCount,
+              nOffset );
+
+    /*Advance to channel list*/
+    ptr += nOffset;
+
+    if (SIR_PNO_MAX_NETW_CHANNELS < pnoRequest.aNetworks[i].ucChannelCount)
+    {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_WARN,
+                "Incorrect number of channels");
+      goto error;
+    }
+
+    if ( 0 !=  pnoRequest.aNetworks[i].ucChannelCount)
+    {
+      for ( j = 0; j < pnoRequest.aNetworks[i].ucChannelCount; j++)
+      {
+           if (1 != sscanf(ptr," %hhu %n",
+                           &(pnoRequest.aNetworks[i].aChannels[j]),
+                           &nOffset))
+            {    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                           "PNO network channel input is not valid %s",ptr);
+                 goto error;
+            }
+            if (!IS_CHANNEL_VALID(pnoRequest.aNetworks[i].aChannels[j])) {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                          FL("invalid channel: %hhu"),
+                             pnoRequest.aNetworks[i].aChannels[j]);
+                goto error;
+            }
+
+            /*Advance to next channel number*/
+            ptr += nOffset;
+      }
+    }
+
+    if (1 != sscanf(ptr," %u %n",
+                    &(pnoRequest.aNetworks[i].bcastNetwType),
+                    &nOffset))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "PNO broadcast network type input is not valid %s",ptr);
+        goto error;
+    }
+    if (pnoRequest.aNetworks[i].bcastNetwType > 2) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  FL("invalid bcast nw type: %u"),
+                      pnoRequest.aNetworks[i].bcastNetwType);
+         goto error;
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+            "PNO bcastNetwType %d offset %d",
+            pnoRequest.aNetworks[i].bcastNetwType,
+            nOffset );
+
+    /*Advance to rssi Threshold*/
+    ptr += nOffset;
+
+    if (1 != sscanf(ptr," %hhu %n",
+                    &(pnoRequest.aNetworks[i].rssiThreshold),
+                    &nOffset))
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "PNO rssi threshold input is not valid %s",ptr);
+        goto error;
+    }
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+            "PNO rssi %d offset %d",
+            pnoRequest.aNetworks[i].rssiThreshold,
+            nOffset );
+    /*Advance to next network*/
+    ptr += nOffset;
+  }/*For ucNetworkCount*/
+
+  ucParams = sscanf(ptr," %hhu %n",
+                    &(pnoRequest.scanTimers.ucScanTimersCount),
+                    &nOffset);
+
+  /*Read the scan timers*/
+  if (( 1 == ucParams ) && ( pnoRequest.scanTimers.ucScanTimersCount > 0 ))
+  {
+     ptr += nOffset;
+
+     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+        "Scan timer count %d offset %d",
+        pnoRequest.scanTimers.ucScanTimersCount,
+        nOffset );
+
+     if ( SIR_PNO_MAX_SCAN_TIMERS < pnoRequest.scanTimers.ucScanTimersCount )
+     {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "Incorrect cmd - too many scan timers");
+       goto error;
+     }
+
+     for ( i = 0; i < pnoRequest.scanTimers.ucScanTimersCount; i++ )
+     {
+        ucParams = sscanf(ptr," %u %u %n",
+           &(pnoRequest.scanTimers.aTimerValues[i].uTimerValue),
+           &( pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat),
+           &nOffset);
+
+        if (2 != ucParams)
+        {
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                    "Incorrect cmd - diff params then expected %d", ucParams);
+            goto error;
+        }
+
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+            "PNO Timer value %d Timer repeat %d offset %d",
+            pnoRequest.scanTimers.aTimerValues[i].uTimerValue,
+            pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat,
+            nOffset );
+
+        ptr += nOffset;
+     }
+
+  }
+  else
+  {
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+       "No scan timers provided param count %d scan timers %d",
+        ucParams,  pnoRequest.scanTimers.ucScanTimersCount );
+
+    /*Scan timers defaults to 5 minutes*/
+    pnoRequest.scanTimers.ucScanTimersCount = 1;
+    pnoRequest.scanTimers.aTimerValues[0].uTimerValue  = 60;
+    pnoRequest.scanTimers.aTimerValues[0].uTimerRepeat = 0;
+  }
+
+  ucParams = sscanf(ptr," %hhu %n",&(ucMode), &nOffset);
+
+  pnoRequest.modePNO = ucMode;
+  /*for LA we just expose suspend option*/
+  if (( 1 != ucParams )||(  ucMode >= SIR_PNO_MODE_MAX ))
+  {
+     pnoRequest.modePNO = SIR_PNO_MODE_ON_SUSPEND;
+  }
+  pnoRequest.p24GProbeTemplate = vos_mem_malloc(SIR_PNO_MAX_PB_REQ_SIZE);
+  if (pnoRequest.p24GProbeTemplate == NULL){
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+          FL("failed to allocate memory p24GProbeTemplate %u"),
+              SIR_PNO_MAX_PB_REQ_SIZE);
+      goto error;
+  }
+
+  pnoRequest.p5GProbeTemplate = vos_mem_malloc(SIR_PNO_MAX_PB_REQ_SIZE);
+  if (pnoRequest.p5GProbeTemplate == NULL){
+      VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_ERROR,
+          FL("failed to allocate memory p5GProbeTemplate %u"),
+              SIR_PNO_MAX_PB_REQ_SIZE);
+      goto error;
+  }
+
+  vos_mem_zero(pnoRequest.p24GProbeTemplate, SIR_PNO_MAX_PB_REQ_SIZE);
+  vos_mem_zero(pnoRequest.p5GProbeTemplate, SIR_PNO_MAX_PB_REQ_SIZE);
+
+  status = sme_SetPreferredNetworkList(WLAN_HDD_GET_HAL_CTX(pAdapter), &pnoRequest,
+                                pAdapter->sessionId,
+                                found_pref_network_cb, pAdapter);
+  if (eHAL_STATUS_SUCCESS == status)
+  {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                  "%s: PNO enabled", __func__);
+      vos_mem_free(data);
+      return VOS_STATUS_SUCCESS;
+  }
+error:
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                "%s: Failed to enable PNO", __func__);
+    pHddCtx->isPnoEnable = FALSE;
+    if (pnoRequest.aNetworks)
+        vos_mem_free(pnoRequest.aNetworks);
+    if (pnoRequest.p24GProbeTemplate)
+        vos_mem_free(pnoRequest.p24GProbeTemplate);
+    if (pnoRequest.p5GProbeTemplate)
+        vos_mem_free(pnoRequest.p5GProbeTemplate);
+
+    vos_mem_free(data);
+    return VOS_STATUS_E_FAILURE;
+}/*iw_set_pno*/
+
 VOS_STATUS iw_set_rssi_filter(struct net_device *dev, struct iw_request_info *info,
         union iwreq_data *wrqu, char *extra, int nOffset)
 {
@@ -9739,6 +10177,55 @@ VOS_STATUS iw_set_rssi_filter(struct net_device *dev, struct iw_request_info *in
 
     sme_SetRSSIFilter(WLAN_HDD_GET_HAL_CTX(pAdapter), rssiThreshold);
     return VOS_STATUS_SUCCESS;
+}
+
+
+static int __iw_set_pno_priv(struct net_device *dev,
+                           struct iw_request_info *info,
+                           union iwreq_data *wrqu, char *extra)
+{
+    hdd_adapter_t *pAdapter;
+    hdd_context_t *pHddCtx;
+    int ret = 0;
+    VOS_STATUS status;
+
+    ENTER();
+    pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    if (NULL == pAdapter)
+    {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                  "%s: Adapter is NULL",__func__);
+        return -EINVAL;
+    }
+
+    pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    ret = wlan_hdd_validate_context(pHddCtx);
+    if (0 != ret)
+    {
+        return ret;
+    }
+
+
+    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
+                "Set PNO Private");
+
+    status = iw_set_pno(dev,info,wrqu,extra,0);
+
+    EXIT();
+    return status;
+}
+
+static int iw_set_pno_priv(struct net_device *dev,
+                           struct iw_request_info *info,
+                           union iwreq_data *wrqu, char *extra)
+{
+    int ret;
+
+    vos_ssr_protect(__func__);
+    ret = __iw_set_pno_priv(dev, info, wrqu, extra);
+    vos_ssr_unprotect(__func__);
+
+    return ret;
 }
 #endif /*FEATURE_WLAN_SCAN_PNO*/
 
@@ -9882,7 +10369,7 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
              if(curr_country[0] == '0' && curr_country[1] == '0')
                      regulatory_hint_user("IN", NL80211_USER_REG_HINT_USER);
              else
-                     regulatory_hint_user("00", NL80211_USER_REG_HINT_USER);
+                     regulatory_hint_user("OO", NL80211_USER_REG_HINT_USER);
 #else
              if(curr_country[0] == '0' && curr_country[1] == '0')
                      regulatory_hint_user("IN");
@@ -10048,6 +10535,32 @@ static int iw_set_band_config(struct net_device *dev,
     vos_ssr_unprotect(__func__);
 
     return ret;
+}
+
+static int get_fwr_memdump(struct net_device *dev,
+                            struct iw_request_info *info,
+                            union iwreq_data *wrqu, char *extra)
+{
+    hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+    int ret;
+    ENTER();
+   // HddCtx sanity
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+      return ret;
+   }
+   if( !pHddCtx->cfg_ini->enableFwrMemDump ||
+      (FALSE == sme_IsFeatureSupportedByFW(MEMORY_DUMP_SUPPORTED)))
+   {
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("FW dump Logging not supported"));
+      return -EINVAL;
+   }
+   ret = wlan_hdd_fw_mem_dump_req(pHddCtx);
+
+   EXIT();
+   return ret;
 }
 
 static int __iw_set_power_params_priv(struct net_device *dev,
@@ -10505,6 +11018,10 @@ static const iw_handler we_private[] = {
 #ifdef WLAN_FEATURE_PACKET_FILTERING
    ,
    [WLAN_SET_PACKET_FILTER_PARAMS       - SIOCIWFIRSTPRIV]   = iw_set_packet_filter_params
+#endif
+#ifdef FEATURE_WLAN_SCAN_PNO
+   ,
+   [WLAN_SET_PNO                        - SIOCIWFIRSTPRIV]   = iw_set_pno_priv
 #endif
    ,
    [WLAN_SET_BAND_CONFIG                - SIOCIWFIRSTPRIV]   = iw_set_band_config,

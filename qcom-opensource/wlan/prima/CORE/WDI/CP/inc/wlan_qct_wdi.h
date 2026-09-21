@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2012-2017, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -585,7 +584,6 @@ typedef struct
   /* Indicates the RSSI */
   wpt_uint8     rssi;
   wpt_uint16    frameLength;
-  wpt_uint32    freq;
   wpt_uint8     *pData;
 } WDI_PrefNetworkFoundInd;
 #endif // FEATURE_WLAN_SCAN_PNO
@@ -6015,9 +6013,6 @@ typedef struct
   /* MAC Address for the adapter  */
   wpt_macAddr macAddr;
 
-  /* BSSID */
-  wpt_macAddr bss_address;
-
   wpt_uint8  ucPtrnId;           // Pattern ID
   wpt_uint16 ucPtrnSize;         // Pattern size
   wpt_uint32 usPtrnIntervalMs;   // In msec
@@ -6062,17 +6057,6 @@ typedef struct
     wpt_uint8 request_data[1];
 } WDI_NanRequestType;
 
-/*---------------------------------------------------------------------------
-  WDI_BlackListReqType
----------------------------------------------------------------------------*/
-#define MAX_BSSID_AVOID_LIST 16
-
-typedef struct
-{
-    wpt_uint8 blacklist_timedout;
-    wpt_uint8 num_bssid_avoid_list;
-    wpt_macAddr bssid_avoid_list[MAX_BSSID_AVOID_LIST];
-} WDI_BlackListReqType;
 
 /*---------------------------------------------------------------------------
   WDI_DelPeriodicTxPtrnParamsType
@@ -6682,24 +6666,6 @@ struct WDI_sap_ofl_enable_params{
     wpt_uint32 tsf_hi;
 } wdi_cap_tsf_rsp_t;
 
-#ifdef FEATURE_WLAN_SW_PTA
-/**
- * wdi_sw_pta_req - SW PTA coex params request
- * @bt_enabled: BT status
- * @bt_adv: BT advertisement status
- * @ble_enabled: BLE status
- * @bt_a2dp: BT A2DP status
- * @bt_sco: BT SCO status
- */
-struct wdi_sw_pta_req {
-	bool bt_enabled;
-	bool bt_adv;
-	bool ble_enabled;
-	bool bt_a2dp;
-	bool bt_sco;
-};
-#endif
-
 /*----------------------------------------------------------------------------
  *   WDI callback types
  *--------------------------------------------------------------------------*/
@@ -6814,6 +6780,7 @@ typedef void  (*WDI_StartScanRspCb)(WDI_StartScanRspParamsType*  wdiParams,
 ---------------------------------------------------------------------------*/
 typedef void  (*WDI_EndScanRspCb)(WDI_Status   wdiStatus,
                                   void*        pUserData);
+
 
 /*---------------------------------------------------------------------------
    WDI_StartRspCb
@@ -12311,23 +12278,6 @@ WDI_NanRequest
 );
 
 /**
- @brief WDI_BlackListReq
-        BlackList request
-
- @param pwdiBlackListReq: data
-
-        usrData: user data will be passed back with the
-        callback
-
- @return Result of the function call
-*/
-WDI_Status
-WDI_BlackListReq
-(
-    WDI_BlackListReqType          *pwdiBlackListReq,
-    void                         *usrData
-);
-/**
  @brief WDI_SetRtsCtsHTVhtInd
         Set RTS/CTS indication for diff modes.
 
@@ -12360,14 +12310,6 @@ WDI_Status WDI_set_vowifi_mode_ind(wpt_boolean enable);
  */
 WDI_Status WDI_set_qpower(uint8_t enable);
 
-/*
- * WDI_set_low_power_mode_req() - Set OLPC (low power) mode request
- *
- * @enable - boolean value that determins the state
- *
- * Return: success if the value is sent
- */
-WDI_Status WDI_set_low_power_mode_req(wpt_boolean enable);
 
 WDI_Status
 WDI_FWLoggingDXEdoneInd
@@ -12583,21 +12525,5 @@ wdi_process_get_tsf_req (wdi_cap_tsf_params_t *wdi_get_tsf_req,
                          wdi_tsf_rsp_cb wdi_tsf_rsp_callback,
                          void *user_data);
 
-#ifdef FEATURE_WLAN_SW_PTA
-typedef void (*WDI_sw_pta_resp_cb)(uint8_t status, void *user_data);
 
-/**
- * @WDI_sw_pta_req - SW PTA request
- *
- * @wdi_sw_pta_resp_cb: WDI sw pta response callback
- * @wdi_sw_pta_req: sw pta request params
- * @user_data: user data
- *
- * @Return: WDI_Status
- */
-WDI_Status
-WDI_sw_pta_req(WDI_sw_pta_resp_cb wdi_sw_pta_resp_cb,
-	       struct wdi_sw_pta_req *wdi_sw_pta_req,
-	       void *user_data);
-#endif /* FEATURE_WLAN_SW_PTA */
 #endif /* #ifndef WLAN_QCT_WDI_H */

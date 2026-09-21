@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -582,7 +582,7 @@ void __hdd_processSpoofMacAddrRequest(struct work_struct *work)
         hddLog(LOG1, FL("Processing Spoof request now"));
         /* Inform SME about spoof mac addr request*/
         if ( eHAL_STATUS_SUCCESS != sme_SpoofMacAddrReq(pHddCtx->hHal,
-                &pHddCtx->spoofMacAddr.randomMacAddr, true))
+                &pHddCtx->spoofMacAddr.randomMacAddr))
         {
             hddLog(LOGE, FL("Sending Spoof request failed - Disable spoofing"));
             pHddCtx->spoofMacAddr.isEnabled = FALSE;

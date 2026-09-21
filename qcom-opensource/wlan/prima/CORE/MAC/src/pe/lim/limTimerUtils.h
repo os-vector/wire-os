@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015, 2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -81,8 +81,7 @@ enum
     eLIM_AP_ECSA_TIMER,
 #ifdef WLAN_FEATURE_LFR_MBB
     eLIM_PREAUTH_MBB_RSP_TIMER,
-    eLIM_REASSOC_MBB_RSP_TIMER,
-    eLIM_AUTH_SAE_TIMER
+    eLIM_REASSOC_MBB_RSP_TIMER
 #endif
 };
 

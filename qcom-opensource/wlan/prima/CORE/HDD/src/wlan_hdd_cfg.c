@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -1108,14 +1108,6 @@ REG_TABLE_ENTRY g_registry_table[] =
                  CFG_LFR_MAWC_FEATURE_ENABLED_MIN,
                  CFG_LFR_MAWC_FEATURE_ENABLED_MAX,
                  NotifyIsMAWCIniFeatureEnabled, 0 ),
-
-   /* flag to turn ON/OFF Motion assistance for Legacy Fast Roaming */
-   REG_VARIABLE( CFG_PER_BSSID_BLACKLIST_TIMEOUT_NAME, WLAN_PARAM_Integer,
-                 hdd_config_t, bssid_blacklist_timeout,
-                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_DEFAULT,
-                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_MIN,
-                 CFG_PER_BSSID_BLACKLIST_TIMEOUT_MAX ),
 
 #endif // FEATURE_WLAN_LFR
 
@@ -2493,12 +2485,6 @@ REG_TABLE_ENTRY g_registry_table[] =
               CFG_ENABLE_RX_STBC_DEFAULT,
               CFG_ENABLE_RX_STBC_MIN,
               CFG_ENABLE_RX_STBC_MAX ),
-   REG_VARIABLE( CFG_ENABLE_TX_STBC, WLAN_PARAM_Integer,
-              hdd_config_t, enableTxSTBC,
-              VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-              CFG_ENABLE_TX_STBC_DEFAULT,
-              CFG_ENABLE_TX_STBC_MIN,
-              CFG_ENABLE_TX_STBC_MAX ),
 #ifdef FEATURE_WLAN_TDLS
    REG_VARIABLE( CFG_TDLS_SUPPORT_ENABLE, WLAN_PARAM_Integer,
               hdd_config_t, fEnableTDLSSupport,
@@ -3606,6 +3592,13 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                  CFG_OPTIMIZE_CA_EVENT_DISABLE,
                  CFG_OPTIMIZE_CA_EVENT_ENABLE ),
 
+   REG_VARIABLE(CFG_FWR_MEM_DUMP_NAME, WLAN_PARAM_Integer,
+                 hdd_config_t,enableFwrMemDump,
+                 VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+                 CFG_FWR_MEM_DUMP_DEF,
+                 CFG_FWR_MEM_DUMP_MIN,
+                 CFG_FWR_MEM_DUMP_MAX),
+
    REG_VARIABLE( CFG_ACTIVE_PASSIVE_CHAN_CONV_NAME, WLAN_PARAM_Integer,
                  hdd_config_t, gActivePassiveChCon,
                  VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -4042,41 +4035,6 @@ REG_VARIABLE( CFG_EXTSCAN_ENABLE, WLAN_PARAM_Integer,
                 CFG_FORCE_RSNE_OVERRIDE_MIN,
                 CFG_FORCE_RSNE_OVERRIDE_MAX),
 
-  REG_VARIABLE_STRING(CFG_ENABLE_DEFAULT_SAP, WLAN_PARAM_String,
-                      hdd_config_t, enabledefaultSAP,
-                      VAR_FLAGS_NONE,
-                      (void *)CFG_ENABLE_DEFAULT_SAP_DEFAULT),
-
-#ifdef WLAN_FEATURE_SAE
-  REG_VARIABLE(CFG_IS_SAE_ENABLED_NAME, WLAN_PARAM_Integer,
-               hdd_config_t, is_sae_enabled,
-               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-               CFG_IS_SAE_ENABLED_DEFAULT,
-               CFG_IS_SAE_ENABLED_MIN,
-               CFG_IS_SAE_ENABLED_MAX),
-
-  REG_VARIABLE(CFG_ENABLE_SAE_FOR_SAP_NAME, WLAN_PARAM_Integer,
-               hdd_config_t, enable_sae_for_sap,
-               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-               CFG_ENABLE_SAE_FOR_SAP_DEFAULT,
-               CFG_ENABLE_SAE_FOR_SAP_MIN,
-               CFG_ENABLE_SAE_FOR_SAP_MAX),
-#endif
-
-#ifdef FEATURE_WLAN_SW_PTA
-  REG_VARIABLE(CFG_SW_PTA_ENABLE_NAME, WLAN_PARAM_Integer,
-               hdd_config_t, is_sw_pta_enabled,
-               VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-               CFG_SW_PTA_ENABLE_DEFAULT,
-               CFG_SW_PTA_ENABLE_MIN,
-               CFG_SW_PTA_ENABLE_MAX),
-#endif
-  REG_VARIABLE(CFG_PERIODIC_ROAM_SCAN_ENABLED, WLAN_PARAM_Integer,
-              hdd_config_t, isPeriodicRoamScanEnabled,
-              VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-              CFG_PERIODIC_ROAM_SCAN_ENABLED_DEFAULT,
-              CFG_PERIODIC_ROAM_SCAN_ENABLED_MIN,
-              CFG_PERIODIC_ROAM_SCAN_ENABLED_MAX)
 };
 
 /*
@@ -4293,41 +4251,6 @@ config_exit:
    return vos_status;
 }
 
-#ifdef WLAN_FEATURE_SAE
-static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
-{
-   hddLog(LOG2, "Name = [%s] value = [%u]", CFG_IS_SAE_ENABLED_NAME,
-          hdd_ctx->cfg_ini->is_sae_enabled);
-}
-
-static void hdd_cfg_print_sae_sap(hdd_context_t *hdd_ctx)
-{
-   hddLog(LOG2, "Name = [%s] value = [%u]",
-          CFG_ENABLE_SAE_FOR_SAP_NAME,
-          hdd_ctx->cfg_ini->enable_sae_for_sap);
-}
-#else
-static void hdd_cfg_print_sae(hdd_context_t *hdd_ctx)
-{
-}
-
-static void hdd_cfg_print_sae_sap(hdd_context_t *hdd_ctx)
-{
-}
-#endif
-
-#ifdef FEATURE_WLAN_SW_PTA
-static void hdd_cfg_print_sw_pta(hdd_context_t* hdd_ctx)
-{
-   hddLog(LOG2, "Name = [%s] value = [%u]",
-          CFG_SW_PTA_ENABLE_NAME,
-          hdd_ctx->cfg_ini->is_sw_pta_enabled);
-}
-#else
-static void hdd_cfg_print_sw_pta(hdd_context_t* hdd_ctx)
-{
-}
-#endif
 
 static void print_hdd_cfg(hdd_context_t *pHddCtx)
 {
@@ -4785,16 +4708,6 @@ static void print_hdd_cfg(hdd_context_t *pHddCtx)
             "Name = [%s] Value = [%u] ",
             CFG_FORCE_RSNE_OVERRIDE_NAME,
             pHddCtx->cfg_ini->force_rsne_override);
-    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
-            "Name = [%s] Value = [%s] ",
-            CFG_ENABLE_DEFAULT_SAP,
-            pHddCtx->cfg_ini->enabledefaultSAP);
-    VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
-            "Name = [gPeriodicRoamScanEnabled] Value = [%u] ",
-            pHddCtx->cfg_ini->isPeriodicRoamScanEnabled);
-    hdd_cfg_print_sae(pHddCtx);
-    hdd_cfg_print_sae_sap(pHddCtx);
-    hdd_cfg_print_sw_pta(pHddCtx);
 }
 
 
@@ -5943,14 +5856,6 @@ v_BOOL_t hdd_update_config_dat( hdd_context_t *pHddCtx )
          hddLog(LOGE, "Could not pass on WNI_CFG_VHT_RXSTBC to CCM");
      }
 
-     if (ccmCfgSetInt(pHddCtx->hHal, WNI_CFG_VHT_TXSTBC,
-                     pConfig->enableTxSTBC, NULL, eANI_BOOLEAN_FALSE)
-         == eHAL_STATUS_FAILURE)
-     {
-         fStatus = FALSE;
-         hddLog(LOGE, "Could not pass on WNI_CFG_VHT_TXSTBC to CCM");
-     }
-
 #ifdef WLAN_SOFTAP_VSTA_FEATURE
      if(pConfig->fEnableVSTASupport)
      {
@@ -6857,8 +6762,6 @@ VOS_STATUS hdd_set_sme_config( hdd_context_t *pHddCtx )
                         pHddCtx->cfg_ini->edca_bk_aifs;
    smeConfig->csrConfig.edca_be_aifs =
                         pHddCtx->cfg_ini->edca_be_aifs;
-   smeConfig->csrConfig.isPeriodicRoamScanEnabled =
-                        pHddCtx->cfg_ini->isPeriodicRoamScanEnabled;
 
    smeConfig->csrConfig.sta_auth_retries_for_code17 =
                         pHddCtx->cfg_ini->sta_auth_retries_for_code17;

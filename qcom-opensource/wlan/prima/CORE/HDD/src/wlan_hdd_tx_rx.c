@@ -2532,12 +2532,6 @@ static void hdd_mon_add_rx_radiotap_hdr (struct sk_buff *skb,
     memcpy(skb_push(skb, rtap_len), &rtap_temp[0], rtap_len);
 }
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
-void hdd_fill_last_rx(hdd_adapter_t *adapter)
-{
-    adapter->dev->last_rx = jiffies;
-}
-#endif
 
 VOS_STATUS  hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket, int conversion)
 {
@@ -2632,7 +2626,7 @@ VOS_STATUS  hdd_rx_packet_monitor_cbk(v_VOID_t *vosContext,vos_pkt_t *pVosPacket
    {
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,"%s: Failure returning vos pkt", __func__);
    }
-   hdd_fill_last_rx(pAdapter);
+   pAdapter->dev->last_rx = jiffies;
 
 return status;
 }
@@ -2918,7 +2912,7 @@ VOS_STATUS hdd_rx_packet_cbk( v_VOID_t *vosContext,
       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,"%s: Failure returning vos pkt", __func__);
    }
    
-   hdd_fill_last_rx(pAdapter);
+   pAdapter->dev->last_rx = jiffies;
 
    return status;   
 }

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -393,7 +392,7 @@ eHalStatus csrQueueScanRequest( tpAniSirGlobal pMac, tSmeCmd *pScanCmd )
      * candidates and resulting in disconnects.
      */
 
-    if (csrIsInfraApStarted(pMac) && !csrIsP2pGoSessionConnected(pMac))
+    if (csrIsInfraApStarted(pMac))
     {
       nNumChanCombinedConc = 1;
     }
@@ -4219,6 +4218,31 @@ void csrApplyChannelPowerCountryInfo( tpAniSirGlobal pMac, tCsrChannel *pChannel
     csrSetCfgCountryCode(pMac, countryCode);
 }
 
+void csrUpdateFCCChannelList(tpAniSirGlobal pMac)
+{
+    tCsrChannel ChannelList;
+    tANI_U8 chnlIndx = 0;
+    int i;
+
+    for ( i = 0; i < pMac->scan.base20MHzChannels.numChannels; i++ )
+    {
+        if (pMac->scan.fcc_constraint &&
+            ((pMac->scan.base20MHzChannels.channelList[i] == 12) ||
+            (pMac->scan.base20MHzChannels.channelList[i] == 13)))
+        {
+                    VOS_TRACE(VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_INFO,
+                        FL("removing channel %d"),
+                        pMac->scan.base20MHzChannels.channelList[i]);
+            continue;
+        }
+        ChannelList.channelList[chnlIndx] =
+        pMac->scan.base20MHzChannels.channelList[i];
+        chnlIndx++;
+    }
+    csrSetCfgValidChannelList(pMac, ChannelList.channelList, chnlIndx);
+    csrScanFilterResults(pMac);
+}
+
 void csrResetCountryInformation( tpAniSirGlobal pMac, tANI_BOOLEAN fForce, tANI_BOOLEAN updateRiva )
 {
     if( fForce || (csrIs11dSupported( pMac ) && (!pMac->scan.f11dInfoReset)))
@@ -6428,8 +6452,6 @@ eHalStatus csrSendMBScanReq( tpAniSirGlobal pMac, tANI_U16 sessionId,
                               pScanReq->uIEFieldLen);
             }
             pMsg->p2pSearch = pScanReq->p2pSearch;
-            pMsg->scan_randomize= pScanReq->scan_randomize;
-            pMsg->nl_scan = pScanReq->nl_scan;
 
             if (pScanReq->requestType == eCSR_SCAN_HO_BG_SCAN) 
             {
@@ -6644,11 +6666,6 @@ eHalStatus csrProcessMacAddrSpoofCommand( tpAniSirGlobal pMac, tSmeCmd *pCommand
       // spoof mac address
       vos_mem_copy((tANI_U8 *)pMsg->macAddr,
            (tANI_U8 *)pCommand->u.macAddrSpoofCmd.macAddr, sizeof(tSirMacAddr));
-      vos_mem_copy((tANI_U8 *)pMac->roam.spoof_mac_addr,
-           (tANI_U8 *)pCommand->u.macAddrSpoofCmd.macAddr, sizeof(tSirMacAddr));
-      pMsg->spoof_mac_oui =
-       pal_cpu_to_be16(pCommand->u.macAddrSpoofCmd.spoof_mac_oui);
-
       status = palSendMBMessage(pMac->hHdd, pMsg);
    } while( 0 );
    return( status );
@@ -7128,8 +7145,6 @@ eHalStatus csrScanCopyRequest(tpAniSirGlobal pMac, tCsrScanRequest *pDstReq, tCs
                     break;
                 }
             }//Allocate memory for SSID List
-            pDstReq->scan_randomize = pSrcReq->scan_randomize;
-            pDstReq->nl_scan = pSrcReq->nl_scan;
             pDstReq->p2pSearch = pSrcReq->p2pSearch;
             pDstReq->skipDfsChnlInP2pSearch = pSrcReq->skipDfsChnlInP2pSearch;
 
@@ -7288,7 +7303,7 @@ static void csrStaApConcTimerHandler(void *pv)
          * candidates and resulting in disconnects.
          */
 
-        if (csrIsInfraApStarted(pMac) && !csrIsP2pGoSessionConnected(pMac))
+        if (csrIsInfraApStarted(pMac))
         {
             nNumChanCombinedConc = 1;
         }
@@ -8142,6 +8157,7 @@ eHalStatus csrScanForSSID(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfi
     tANI_U32 numSsid = pProfile->SSIDs.numOfSSIDs;
     struct csr_scan_for_ssid_context *context;
 
+    smsLog(pMac, LOG2, FL("called"));
     //For WDS, we use the index 0. There must be at least one in there
     if( CSR_IS_WDS_STA( pProfile ) && numSsid )
     {
@@ -8233,9 +8249,15 @@ eHalStatus csrScanForSSID(tpAniSirGlobal pMac, tANI_U32 sessionId, tCsrRoamProfi
                                    pMac->roam.configParam.max_chntime_btc_esco;
             pScanCmd->u.scanCmd.u.scanRequest.min_chntime_btc_esco =
                                    pMac->roam.configParam.min_chntime_btc_esco;
-
-            vos_mem_copy(pScanCmd->u.scanCmd.u.scanRequest.bssid, bAddr, 6);
-
+            if(pProfile->BSSIDs.numOfBSSIDs == 1)
+            {
+                vos_mem_copy(pScanCmd->u.scanCmd.u.scanRequest.bssid,
+                             pProfile->BSSIDs.bssid, sizeof(tCsrBssid));
+            }
+            else
+            {
+                vos_mem_copy(pScanCmd->u.scanCmd.u.scanRequest.bssid, bAddr, 6);
+            }
             if(pProfile->ChannelInfo.numOfChannels)
             {
                 pScanCmd->u.scanCmd.u.scanRequest.ChannelInfo.ChannelList = vos_mem_malloc(
@@ -9251,28 +9273,22 @@ eHalStatus csrScanSavePreferredNetworkFound(tpAniSirGlobal pMac,
    }
    else
    {
-      pBssDescr->channelId = vos_freq_to_chan(pPrefNetworkFoundInd->freq);
-
-      /* If probe response received in PNO indication does not
-       * contain DSParam IE or HT Info IE, and if the pref
-       * network indication also doesn't give proper channel,
-       * then add dummy channel to the received BSS info so
-       * that the Scan result received as a part of PNO is
-       * updated to the supplicant. Specially applicable
-       * in case of AP configured in 11a only mode.
-       */
-      if (!pBssDescr->channelId) {
-          if ((pMac->roam.configParam.bandCapability == eCSR_BAND_ALL) ||
-             (pMac->roam.configParam.bandCapability == eCSR_BAND_24))
-          {
-              pBssDescr->channelId = 1;
-          }
-          else if(pMac->roam.configParam.bandCapability == eCSR_BAND_5G)
-          {
-              pBssDescr->channelId = 36;
-          }
+      /**
+        * If Probe Responce received in PNO indication does not
+        * contain DSParam IE or HT Info IE then add dummy channel
+        * to the received BSS info so that Scan result received as
+        * a part of PNO is updated to the supplicant. Specially
+        * applicable in case of AP configured in 11A only mode.
+        */
+      if ((pMac->roam.configParam.bandCapability == eCSR_BAND_ALL) ||
+          (pMac->roam.configParam.bandCapability == eCSR_BAND_24))
+      {
+          pBssDescr->channelId = 1;
       }
-
+      else if(pMac->roam.configParam.bandCapability == eCSR_BAND_5G)
+      {
+         pBssDescr->channelId = 36;
+      }
       /* Restrict the logic to ignore the pno indication for invalid channel
        * only if valid channel info is present in beacon/probe resp.
        * If no channel info is present in beacon/probe resp, always process

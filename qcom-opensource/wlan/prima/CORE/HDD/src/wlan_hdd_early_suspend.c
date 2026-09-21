@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -443,6 +443,7 @@ VOS_STATUS hdd_enter_deep_sleep(hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter)
 VOS_STATUS hdd_exit_deep_sleep(hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter)
 {
    VOS_STATUS vosStatus;
+   eHalStatus halStatus;
 
    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
       "%s: calling hdd_set_sme_config",__func__);
@@ -479,7 +480,23 @@ VOS_STATUS hdd_exit_deep_sleep(hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter)
       goto err_voss_stop;
    }
 
+
+   //Open a SME session for future operation
+   halStatus = sme_OpenSession( pHddCtx->hHal, hdd_smeRoamCallback, pHddCtx,
+                                (tANI_U8 *)&pAdapter->macAddressCurrent,
+                                &pAdapter->sessionId);
+   if ( !HAL_STATUS_SUCCESS( halStatus ) )
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"sme_OpenSession() failed with status code %08d [x%08x]",
+                    halStatus, halStatus );
+      goto err_voss_stop;
+
+   }
+
    pHddCtx->hdd_ps_state = eHDD_SUSPEND_NONE;
+
+   //Trigger the initial scan
+   hdd_wlan_initial_scan(pAdapter);
 
    return VOS_STATUS_SUCCESS;
 
@@ -1660,7 +1677,6 @@ void hdd_suspend_wlan(void)
            pAdapterNode = pNext;
            continue;
        }
-       dev_hold(pAdapter->dev);
        /* Avoid multiple enter/exit BMPS in this while loop using
         * hdd_enter_bmps flag
         */
@@ -1705,7 +1721,6 @@ void hdd_suspend_wlan(void)
                  __func__, ret);
        }
        status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
-       dev_put(pAdapter->dev);
        pAdapterNode = pNext;
    }
 
@@ -2146,20 +2161,17 @@ void hdd_set_wlan_suspend_mode(bool suspend)
     vos_ssr_unprotect(__func__);
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
-static void hdd_ssr_timer_cb(struct timer_list *data)
+static void hdd_ssr_timer_init(void)
 {
-	hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD SSR timer expired", __func__);
-
-#ifdef WCN_PRONTO
-	if (wcnss_hardware_type() == WCNSS_PRONTO_HW)
-		wcnss_pronto_log_debug_regs();
-#endif
-
-	VOS_BUG(0);
+    init_timer(&ssr_timer);
 }
 
-#else
+static void hdd_ssr_timer_del(void)
+{
+    del_timer(&ssr_timer);
+    ssr_timer_started = false;
+}
+
 static void hdd_ssr_timer_cb(unsigned long data)
 {
     hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD SSR timer expired", __func__);
@@ -2170,26 +2182,6 @@ static void hdd_ssr_timer_cb(unsigned long data)
 #endif
 
     VOS_BUG(0);
-}
-#endif
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
-static void hdd_ssr_timer_init(void)
-{
-	timer_setup(&ssr_timer, hdd_ssr_timer_cb, 0);
-}
-
-#else
-static void hdd_ssr_timer_init(void)
-{
-	init_timer(&ssr_timer);
-}
-#endif
-
-static void hdd_ssr_timer_del(void)
-{
-    del_timer(&ssr_timer);
-    ssr_timer_started = false;
 }
 
 static void hdd_ssr_timer_start(int msec)
@@ -2888,17 +2880,12 @@ err_re_init:
    return -EPERM;
 
 success:
-   pHddCtx->isLogpInProgress = FALSE;
-   vos_set_logp_in_progress(VOS_MODULE_ID_VOSS, FALSE);
-
    hdd_wlan_ssr_reinit_event();
    /* Trigger replay of BTC events */
    send_btc_nlink_msg(WLAN_MODULE_DOWN_IND, 0);
 
    if (pHddCtx->cfg_ini->sap_internal_restart)
        hdd_ssr_restart_sap(pHddCtx);
-
-   wcnss_update_bt_profile();
 
    return VOS_STATUS_SUCCESS;
 }

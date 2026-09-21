@@ -482,27 +482,11 @@ VOS_STATUS vos_spin_lock_destroy(vos_spin_lock_t *pLock)
    return VOS_STATUS_SUCCESS;
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 110)) || \
-	defined(WAKEUP_SOURCE_DEV)
-VOS_STATUS vos_wake_lock_init(vos_wake_lock_t *lock, const char *name)
-{
-	vos_mem_zero(lock, sizeof(*lock));
-	lock->priv = wakeup_source_register(lock->lock.dev, name);
-	if (!(lock->priv)) {
-		VOS_BUG(0);
-		return VOS_STATUS_E_FAILURE;
-	}
-
-	lock->lock = *(lock->priv);
-
-	return VOS_STATUS_SUCCESS;
-}
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && \
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && \
 	defined(WLAN_OPEN_SOURCE)
 VOS_STATUS vos_wake_lock_init(vos_wake_lock_t *pLock, const char *name)
 {
-	wakeup_source_init(&pLock->lock, name);
-	pLock->priv = &(pLock->lock);
+	wakeup_source_init(pLock, name);
 	return VOS_STATUS_SUCCESS;
 }
 #else
@@ -529,8 +513,8 @@ VOS_STATUS vos_wake_lock_init(vos_wake_lock_t *pLock, const char *name)
 	defined(WLAN_OPEN_SOURCE)
 static const char *vos_wake_lock_name(vos_wake_lock_t *pLock)
 {
-	if (pLock)
-		return pLock->lock.name;
+	if (pLock->name)
+		return pLock->name;
 
 	return "UNNAMED_WAKELOCK";
 }
@@ -564,7 +548,7 @@ VOS_STATUS vos_wake_lock_acquire(vos_wake_lock_t *pLock, uint32_t reason)
 	vos_log_wlock_diag(reason, vos_wake_lock_name(pLock),
 			   WIFI_POWER_EVENT_DEFAULT_WAKELOCK_TIMEOUT,
 			   WIFI_POWER_EVENT_WAKELOCK_TAKEN);
-	__pm_stay_awake(pLock->priv);
+	__pm_stay_awake(pLock);
 	return VOS_STATUS_SUCCESS;
 }
 #else
@@ -602,7 +586,7 @@ VOS_STATUS vos_wake_lock_timeout_release(vos_wake_lock_t *pLock, v_U32_t msec,
 	 * Wakelock for Rx is frequent.
 	 * It is reported only during active debug
 	 */
-	__pm_wakeup_event(pLock->priv, msec);
+	__pm_wakeup_event(pLock, msec);
 	return VOS_STATUS_SUCCESS;
 }
 #else
@@ -646,7 +630,7 @@ VOS_STATUS vos_wake_lock_release(vos_wake_lock_t *pLock, uint32_t reason)
 	vos_log_wlock_diag(reason, vos_wake_lock_name(pLock),
 			   WIFI_POWER_EVENT_DEFAULT_WAKELOCK_TIMEOUT,
 			   WIFI_POWER_EVENT_WAKELOCK_RELEASED);
-	__pm_relax(pLock->priv);
+	__pm_relax(pLock);
 	return VOS_STATUS_SUCCESS;
 }
 #else
@@ -676,19 +660,11 @@ VOS_STATUS vos_wake_lock_release(vos_wake_lock_t *pLock, uint32_t reason)
 }
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 110)) || \
-	defined(WAKEUP_SOURCE_DEV)
-VOS_STATUS vos_wake_lock_destroy(vos_wake_lock_t *lock)
-{
-	wakeup_source_unregister(lock->priv);
-	return VOS_STATUS_SUCCESS;
-}
-
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && \
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)) && \
 	defined(WLAN_OPEN_SOURCE)
 VOS_STATUS vos_wake_lock_destroy(vos_wake_lock_t *pLock)
 {
-	wakeup_source_trash(pLock->priv);
+	wakeup_source_trash(pLock);
 	return VOS_STATUS_SUCCESS;
 }
 #else
@@ -715,7 +691,7 @@ VOS_STATUS vos_wake_lock_destroy(vos_wake_lock_t *pLock)
 	defined(WLAN_OPEN_SOURCE)
 bool vos_wake_lock_active(vos_wake_lock_t *lock)
 {
-	return lock->priv->active;
+	return lock->active;
 }
 #else
 bool vos_wake_lock_active(vos_wake_lock_t *lock)

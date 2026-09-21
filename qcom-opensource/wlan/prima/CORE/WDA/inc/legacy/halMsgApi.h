@@ -1445,12 +1445,5 @@ struct sap_offload_del_sta_req
 };
 #endif /* SAP_AUTH_OFFLOAD */
 
-#define MAX_BSSID_AVOID_LIST 16
-
-typedef struct roam_params {
-    uint8_t blacklist_timedout;
-    uint8_t num_bssid_avoid_list;
-    tSirMacAddr bssid_avoid_list[MAX_BSSID_AVOID_LIST];
-} tRoamParams, *tpRoamParams;
 #endif /* _HALMSGAPI_H_ */
 

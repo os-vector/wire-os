@@ -63,12 +63,7 @@
 #ifdef EXISTS_MSM_SMSM
 #include <mach/msm_smsm.h>
 #else
-#include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-#include <linux/soc/qcom/smem_state.h>
-#else
 #include <soc/qcom/smsm.h>
-#endif
 #endif
 #include "wlan_qct_pal_api.h"
 #include "wlan_qct_pal_device.h"
@@ -113,13 +108,6 @@ typedef struct {
 
 static wcnss_env  gEnv;
 static wcnss_env *gpEnv = NULL;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-struct smem_state {
-	struct qcom_smem_state *tx_enable_state;
-	unsigned tx_enable_state_bit;
-} g_smem_state;
-#endif
 
 #define WPAL_READ_REGISTER_RATELIMIT_INTERVAL 20*HZ
 #define WPAL_READ_REGISTER_RATELIMIT_BURST    1
@@ -218,7 +206,7 @@ wpt_status wpalRegisterInterrupt
 )
 {
    if (NULL == gpEnv) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return eWLAN_PAL_STATUS_E_INVAL;
@@ -284,7 +272,7 @@ void wpalUnRegisterInterrupt
 )
 {
    if (NULL == gpEnv) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return;
@@ -486,7 +474,7 @@ wpt_status wpalWriteRegister
    if (NULL == gpEnv || wcnss_device_is_shutdown() ||
         (vos_is_logp_in_progress(VOS_MODULE_ID_WDI, NULL) &&
             !vos_is_reinit_in_progress(VOS_MODULE_ID_WDI, NULL))) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return eWLAN_PAL_STATUS_E_INVAL;
@@ -543,7 +531,7 @@ wpt_status wpalReadRegister
         * wpalRegisterInterrupt() call to wpalReadRegister is
         * likely to cause flooding. */
        if (__ratelimit(&wpalReadRegister_rs)) {
-           WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+           WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                    "%s: invoked before subsystem initialized",
                    __func__);
        }
@@ -598,7 +586,7 @@ wpt_status wpalWriteDeviceMemory
    if (NULL == gpEnv || wcnss_device_is_shutdown() ||
         (vos_is_logp_in_progress(VOS_MODULE_ID_WDI, NULL) &&
             !vos_is_reinit_in_progress(VOS_MODULE_ID_WDI, NULL))) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return eWLAN_PAL_STATUS_E_INVAL;
@@ -646,7 +634,7 @@ wpt_status wpalReadDeviceMemory
    if (NULL == gpEnv || wcnss_device_is_shutdown() ||
         (vos_is_logp_in_progress(VOS_MODULE_ID_WDI, NULL) &&
             !vos_is_reinit_in_progress(VOS_MODULE_ID_WDI, NULL))) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return eWLAN_PAL_STATUS_E_INVAL;
@@ -760,18 +748,6 @@ wpt_status wpalDeviceInit
    gpEnv->tx_registered = 0;
    gpEnv->rx_registered = 0;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   g_smem_state.tx_enable_state = qcom_smem_state_get(wcnss_device,
-                                      "tx-enable",
-                                      &g_smem_state.tx_enable_state_bit);
-   if (IS_ERR(g_smem_state.tx_enable_state)) {
-       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                 "%s: qcom_smem_state_get failed", __func__);
-
-      goto err_ioremap;
-   }
-#endif
-
    /* successfully allocated environment, memory and IRQs */
    return eWLAN_PAL_STATUS_SUCCESS;
 
@@ -799,16 +775,11 @@ wpt_status wpalDeviceClose
  )
 {
    if (NULL == gpEnv) {
-      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_INFO,
+      WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: invoked before subsystem initialized",
                  __func__);
       return eWLAN_PAL_STATUS_E_INVAL;
    }
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   qcom_smem_state_put(g_smem_state.tx_enable_state);
-   memset(&g_smem_state, 0, sizeof(g_smem_state));
-#endif
 
    if (gpEnv->rx_registered)
    {
@@ -841,12 +812,7 @@ wpt_status wpalNotifySmsm
 )
 {
    int rc;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   rc =  qcom_smem_state_update_bits(g_smem_state.tx_enable_state,
-                                     clrSt, setSt);
-#else
    rc = smsm_change_state(SMSM_APPS_STATE, clrSt, setSt);
-#endif
    if(0 != rc) 
    {
       WPAL_TRACE(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,

@@ -603,9 +603,6 @@ typedef struct
   /* Pointer to the root of the chain */
   vos_pkt_t*                    vosAMSDUChain;
 
-  /* Drop any invalid amsdu */
-  bool drop_amsdu;
-
   /* Used for saving/restoring frame header for 802.3/11 AMSDU sub-frames */
   v_U8_t                        aucMPDUHeader[WLANTL_MPDU_HEADER_LEN];
 

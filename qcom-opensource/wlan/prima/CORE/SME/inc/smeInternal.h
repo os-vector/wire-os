@@ -78,7 +78,6 @@ typedef enum eSmeCommandType
     eSmeCommandSetMaxTxPower,
     eSmeCommandSetMaxTxPowerPerBand,
     eSmeCommandUpdateChannelList,
-    eSmeCommandOlpcMode,
 #ifdef FEATURE_WLAN_TDLS
     //eSmeTdlsCommandMask = 0x80000,  //To identify TDLS commands <TODO>
     //These can be considered as csr commands. 
@@ -109,10 +108,6 @@ typedef enum eSmeCommandType
 #endif
     eSmeCommandRemainOnChannel,
     eSmeCommandNoAUpdate,
-    eSmeCommandBlackList,
-#ifdef FEATURE_WLAN_SW_PTA
-    eSmeCommandSwPTAReq,
-#endif
 } eSmeCommandType;
 
 
@@ -197,9 +192,6 @@ typedef struct tagSmeStruct
 #ifdef WLAN_FEATURE_LFR_MBB
    void (*roaming_mbb_callback)(void* mac, tANI_U32 session_id,
           void* bss_description, void *reassoc_req, tANI_U32 csr_roam_op_code);
-#endif
-#ifdef FEATURE_WLAN_SW_PTA
-    void (*sw_pta_resp_cb)(uint8_t status);
 #endif
 } tSmeStruct, *tpSmeStruct;
 

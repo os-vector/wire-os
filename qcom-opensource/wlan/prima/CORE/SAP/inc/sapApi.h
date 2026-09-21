@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -98,8 +98,6 @@ when           who                what, where, why
 #define       MAX_ACL_MAC_ADDRESS          16
 #define       AUTO_CHANNEL_SELECT          0
 #define       MAX_ASSOC_IND_IE_LEN         255
-#define       MAX_ASSOC_REQ_IE_LEN         2000
-#define       ASSOC_REQ_IE_OFFSET          4
 
 /* defines for WPS config states */
 #define       SAP_WPS_DISABLED             0
@@ -278,7 +276,7 @@ typedef struct sap_StationAssocReassocCompleteEvent_s {
     v_MACADDR_t  staMac;
     v_U8_t       staId;
     v_U8_t       status;
-    v_U8_t       *ies;
+    v_U8_t       ies[MAX_ASSOC_IND_IE_LEN];
     v_U16_t      iesLen;
     v_U32_t      statusCode; 
     eSapAuthType SapAuthType;
@@ -452,7 +450,6 @@ typedef struct sap_Config {
     v_U8_t          RSNEncryptType;
     v_U8_t          mcRSNEncryptType;
     eSapAuthType    authType;
-    tCsrAuthList    akm_list;
     v_BOOL_t        privacy;
     v_BOOL_t        UapsdEnable;
     v_BOOL_t        fwdWPSPBCProbeReq;
@@ -473,7 +470,7 @@ typedef struct sap_Config {
 #endif
     eCsrBand        scanBandPreference;
     v_U16_t         acsBandSwitchThreshold;
-    bool            require_h2e;
+
 } tsap_Config_t;
 
 typedef enum {

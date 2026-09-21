@@ -134,8 +134,6 @@
 #define FW_STATE_WAIT_TIME 500
 #define FW_STATE_RSP_LEN 100
 
-#define WLAN_WAIT_TIME_FEATURE_CAPS 300
-
 /* Amount of time to wait for sme close session callback.
    This value should be larger than the timeout used by WDI to wait for
    a response from WCNSS */
@@ -601,7 +599,6 @@ typedef struct WLAN_WAPI_KEY *pWLAN_WAPI_KEY;
 #define WPA_GET_LE16(a) ((u16) (((a)[1] << 8) | (a)[0]))
 #define WPA_GET_BE24(a) ((u32) ( (a[0] << 16) | (a[1] << 8) | a[2]))
 #define WLAN_EID_WAPI 68
-#define WLAN_ELEMID_RSNXE 244
 #define WAPI_PSK_AKM_SUITE  0x02721400
 #define WAPI_CERT_AKM_SUITE 0x01721400
 
@@ -864,7 +861,6 @@ typedef struct hdd_hostapd_state_s
     int bssState;
     vos_event_t vosEvent;
     VOS_STATUS vosStatus;
-    vos_event_t sta_discon_event;
     v_BOOL_t bCommit; 
 
 } hdd_hostapd_state_t;
@@ -1370,7 +1366,7 @@ struct hdd_adapter_s
    v_BOOL_t isLinkLayerStatsSet;
 #endif
    /* DSCP to UP QoS Mapping */
-   sme_QosWmmUpType hddWmmDscpToUpMap[WLAN_MAX_DSCP+1];
+   sme_QosWmmUpType hddWmmDscpToUpMap[WLAN_HDD_MAX_DSCP+1];
    /* Lock for active sessions while processing deauth/Disassoc */
    spinlock_t lock_for_active_session;
    tSirFwStatsResult  fwStatsRsp;
@@ -1489,6 +1485,8 @@ struct hdd_fw_mem_dump_req_ctx {
  */
 typedef void (*hdd_fw_mem_dump_req_cb)(void *context);
 
+int memdump_init(void);
+int memdump_deinit(void);
 void wlan_hdd_fw_mem_dump_cb(void *,tAniFwrDumpRsp *);
 int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx);
 void wlan_hdd_fw_mem_dump_req_cb(void *context);
@@ -1572,10 +1570,6 @@ struct hdd_cache_channels {
 	int num_channels;
 	struct hdd_cache_channel_info *channel_info;
 };
-
-#ifdef FEATURE_WLAN_SW_PTA
-#define WLAN_WAIT_TIME_SW_PTA 1000
-#endif
 
 struct hdd_context_s
 {
@@ -1796,8 +1790,6 @@ struct hdd_context_s
 
     v_BOOL_t btCoexModeSet;
     v_BOOL_t isPnoEnable;
-    bool     is_sco_enabled;
-    bool     is_bt_enabled;
     macAddrSpoof_t spoofMacAddr;
     /* flag to decide if driver need to scan DFS channels or not */
     v_BOOL_t  disable_dfs_flag;
@@ -1870,9 +1862,6 @@ struct hdd_context_s
     struct hdd_cache_channels *original_channels;
     struct mutex cache_channel_lock;
     bool force_rsne_override;
-#ifdef FEATURE_WLAN_SW_PTA
-    struct completion sw_pta_comp;
-#endif
 };
 
 /* Use to notify the TDLS or BTCOEX is mode enable */
@@ -2324,24 +2313,6 @@ void hdd_disable_roaming(hdd_context_t *hdd_ctx);
  */
 void hdd_restore_roaming(hdd_context_t *hdd_ctx);
 
-/**
- * hdd_chan_change_notify() - Function to notify about channel change
- * @adapter: pointer to adapter
- * @dev: Net device structure
- * @oper_chan: New operating channel
- * @phy_mode: phy mode
- *
- * This function is used to notify hostapd/supplicant about the channel change
- *
- * Return: Success on intimating userspace
- *
- */
-VOS_STATUS hdd_chan_change_notify(hdd_adapter_t *adapter,
-        struct net_device *dev,
-        uint8_t oper_chan,
-        eCsrPhyMode phy_mode);
-
-
 int wlan_hdd_check_and_stop_mon(hdd_adapter_t *sta_adapter, bool wait);
 
 /**
@@ -2377,18 +2348,6 @@ hdd_wlan_nla_put_u64(struct sk_buff *skb, int attrtype, u64 value)
 }
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0))
-static inline void hdd_dev_setup_destructor(struct net_device *dev)
-{
-   dev->destructor = free_netdev;
-}
-#else
-static inline void hdd_dev_setup_destructor(struct net_device *dev)
-{
-   dev->needs_free_netdev = true;
-}
-#endif /* KERNEL_VERSION(4, 12, 0) */
-
 /*
  * hdd_parse_disable_chn_cmd() - Parse the channel list received
  * in command.
@@ -2410,6 +2369,15 @@ int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr);
 int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
                             uint32_t buf_len);
 
+/**
+ * hdd_is_memdump_supported() - to check if memdump feature support
+ *
+ * This function is used to check if memdump feature is supported in
+ * the host driver
+ *
+ * Return: true if supported and false otherwise
+ */
+bool hdd_is_memdump_supported(void);
 
 /**
  * hdd_is_cli_iface_up() - check if there is any cli iface up
@@ -2420,59 +2388,4 @@ int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
  */
 bool hdd_is_cli_iface_up(hdd_context_t *hdd_ctx);
 
-/**
- * wlan_hdd_free_cache_channels() - Free the cache channels list
- * @hdd_ctx: Pointer to HDD context
- *
- * Return: None
- */
-void wlan_hdd_free_cache_channels(hdd_context_t *hdd_ctx);
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-static inline void hdd_fill_last_rx(hdd_adapter_t *adapter)
-{
-}
-#else
-void hdd_fill_last_rx(hdd_adapter_t *adapter);
-static inline int wcnss_update_bt_profile(void)
-{
-	return 0;
-}
-
-static inline int wcnss_is_sw_pta_enabled(void)
-{
-	return 0;
-}
-#endif
-
-#ifdef FEATURE_WLAN_SW_PTA
-/**
- * hdd_process_bt_sco_profile - process BT SCO profile
- * @hdd_ctx: pointer to HDD context
- * @bt_enabled: BT status
- * @bt_adv: BT advertisement status
- * @ble_enabled: BLE status
- * @bt_a2dp: BT A2DP status
- * @bt_sco: BT SCO status
- *
- * Return: 0 on success, error on failure
- */
-int hdd_process_bt_sco_profile(hdd_context_t *hdd_ctx,
-			       bool bt_enabled, bool bt_adv,
-			       bool ble_enabled, bool bt_a2dp,
-			       bool bt_sco);
-
-/**
- * hdd_is_sw_pta_enabled - is sw pta enabled
- * @hdd_ctx: pointer to HDD context
- *
- * Return: bool
- */
-bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx);
-#else
-static inline bool hdd_is_sw_pta_enabled(hdd_context_t *hdd_ctx)
-{
-	return 0;
-}
-#endif
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

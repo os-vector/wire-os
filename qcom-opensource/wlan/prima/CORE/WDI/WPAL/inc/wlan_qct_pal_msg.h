@@ -42,10 +42,6 @@
 
 #include "wlan_qct_pal_type.h"
 #include "wlan_qct_pal_status.h"
-#include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-#include <linux/spinlock_types.h>
-#endif
 
 /* Random signature to detect SMD OPEN NOTIFY */
 #define WPAL_MC_MSG_SMD_NOTIF_OPEN_SIG   0x09E2
@@ -57,14 +53,6 @@ typedef struct swpt_msg wpt_msg;
 
 typedef void (*wpal_msg_callback)(wpt_msg *pMsg);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-struct data_msg {
-   struct list_head  list;
-   void *buffer;
-   int buf_len;
-};
-#endif
-
 struct swpt_msg
 {
    wpt_uint16 type;
@@ -73,10 +61,6 @@ struct swpt_msg
    wpt_uint32 val;
    wpal_msg_callback callback;
    void *pContext;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   struct list_head data_queue;
-   spinlock_t data_queue_lock;
-#endif
 }; 
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016, 2017, 2019-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2016, 2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -300,7 +300,7 @@
 #define SIR_MAC_SSID_EID_MAX               32
 #define SIR_MAC_RATESET_EID            1
 #define SIR_MAC_RATESET_EID_MIN            1
-#define SIR_MAC_RATESET_EID_MAX            13
+#define SIR_MAC_RATESET_EID_MAX            12
 #define SIR_MAC_FH_PARAM_SET_EID       2
 #define SIR_MAC_FH_PARAM_SET_EID_MIN       5
 #define SIR_MAC_FH_PARAM_SET_EID_MAX       5
@@ -463,9 +463,6 @@
 
 #define SIR_MAC_OUI_VERSION_1         1
 
-/* OWE DH Parameter element https://tools.ietf.org/html/rfc8110 */
-#define SIR_DH_PARAMETER_ELEMENT_EXT_EID 32
-
 // OUI and type definition for WPA IE in network byte order
 #define SIR_MAC_WPA_OUI             0x01F25000
 #define SIR_MAC_WME_OUI             0x02F25000
@@ -478,8 +475,6 @@
 #define SIR_MAX_NOA_ATTR_LEN        31
 #define SIR_MAX_NOA_DESCR           2
 #define SIR_P2P_IE_HEADER_LEN       6
-
-#define SIR_MAC_RSNXE 0xf4
 
 #define SIR_MAC_CISCO_OUI "\x00\x40\x96"
 #define SIR_MAC_CISCO_OUI_SIZE 3
@@ -605,7 +600,7 @@
 /// Protocol defined MAX definitions
 #define SIR_MAC_ADDR_LENGTH                  6
 #define SIR_MAC_MAX_SSID_LENGTH              32
-#define SIR_MAC_MAX_NUMBER_OF_RATES          13
+#define SIR_MAC_MAX_NUMBER_OF_RATES          12
 #define SIR_MAC_MAX_NUM_OF_DEFAULT_KEYS      4
 #define SIR_MAC_KEY_LENGTH                   13   // WEP Maximum key length size
 #define SIR_MAC_AUTH_CHALLENGE_LENGTH        253
@@ -672,7 +667,6 @@
 #define BA_BOTH_DIRECTIONS 3
 
 /// Status Code (present in Management response frames) enum
-/* (IEEE Std 802.11-2016, 9.4.1.9, Table 9-46) */
 
 typedef enum eSirMacStatusCodes
 {
@@ -718,9 +712,7 @@ typedef enum eSirMacStatusCodes
     eSIR_MAC_DSSS_OFDM_NOT_SUPPORTED_STATUS       = 26, //Association denied due to requesting station not supporting the DSSS-OFDM option
     // reserved                                     27-29
     eSIR_MAC_TRY_AGAIN_LATER                      = 30, //Association request rejected temporarily, try again later
-#ifdef WLAN_FEATURE_11W
-    eSIR_MAC_ROBUST_MGMT_FRAMES_POLICY_VIOLATION_STATUS = 31,    /* Robust management frames policy violation */
-#endif
+    // reserved                                     31
     eSIR_MAC_QOS_UNSPECIFIED_FAILURE_STATUS       = 32, //Unspecified, QoS-related failure
     eSIR_MAC_QAP_NO_BANDWIDTH_STATUS              = 33, //Association denied because QoS AP has insufficient bandwidth to handle another
                                                         //QoS STA
@@ -749,9 +741,9 @@ typedef enum eSirMacStatusCodes
     eSIR_MAC_DEST_STA_NOT_QSTA_STATUS             = 50, //The Destination STA is not a QoS STA
     eSIR_MAC_INVALID_LISTEN_INTERVAL_STATUS       = 51, //Association denied because the ListenInterval is too large
 
-    eSIR_MAC_INVALID_FT_ACTION_FRAME_COUNT        = 52,
-    eSIR_MAC_INVALID_PMKID                        = 53,
-
+    eSIR_MAC_DSSS_CCK_RATE_MUST_SUPPORT_STATUS    = 52, //FIXME: 
+    eSIR_MAC_DSSS_CCK_RATE_NOT_SUPPORT_STATUS     = 53,
+    eSIR_MAC_PSMP_CONTROLLED_ACCESS_ONLY_STATUS   = 54,
 #ifdef FEATURE_WLAN_ESE
     eSIR_MAC_ESE_UNSPECIFIED_QOS_FAILURE_STATUS   = 200, //ESE-Unspecified, QoS related failure in (Re)Assoc response frames
     eSIR_MAC_ESE_TSPEC_REQ_REFUSED_STATUS         = 201, //ESE-TSPEC request refused due to AP's policy configuration in AddTs Rsp, (Re)Assoc Rsp.
@@ -1108,11 +1100,11 @@ typedef __ani_attr_pre_packed struct sSirMacRateSet
     tANI_U8  rate[SIR_MAC_RATESET_EID_MAX];
 } __ani_attr_packed tSirMacRateSet;
 
-//Reserve 1 byte for NULL character in the SSID name field to print in %s
+
 typedef __ani_attr_pre_packed struct sSirMacSSid
 {
     tANI_U8        length;
-    tANI_U8        ssId[SIR_MAC_MAX_SSID_LENGTH + 1];
+    tANI_U8        ssId[32];
 } __ani_attr_packed tSirMacSSid;
 
 typedef __ani_attr_pre_packed struct sSirMacWpaInfo
@@ -2796,7 +2788,6 @@ typedef __ani_attr_pre_packed struct sSirMacQoSDelBARsp
 #define SIR_MAC_RATE_36  0x48
 #define SIR_MAC_RATE_48  0x60
 #define SIR_MAC_RATE_54  0x6C
-#define SIR_MAC_RATE_SAE_H2E 0xF6
 
 // ANI legacy supported rates
 #define SIR_MAC_RATE_72  0x01
@@ -2825,10 +2816,6 @@ typedef __ani_attr_pre_packed struct sSirMacQoSDelBARsp
 #define SIR_MAC_RATE_36_BITMAP   (1<<9)
 #define SIR_MAC_RATE_48_BITMAP   (1<<10)
 #define SIR_MAC_RATE_54_BITMAP   (1<<11)
-#define SIR_MAC_RATE_SAE_H2E_BITMAP   (1<<12)
-
-#define SIR_BSS_MEMBERSHIP_SELECTOR_SAE_H2E 123
-#define SIR_RATE_MASK 0x80
 
 #define sirIsArate(x) ((((tANI_U8)x)==SIR_MAC_RATE_6) || \
                        (((tANI_U8)x)==SIR_MAC_RATE_9) || \
@@ -2837,14 +2824,12 @@ typedef __ani_attr_pre_packed struct sSirMacQoSDelBARsp
                        (((tANI_U8)x)==SIR_MAC_RATE_24)|| \
                        (((tANI_U8)x)==SIR_MAC_RATE_36)|| \
                        (((tANI_U8)x)==SIR_MAC_RATE_48)|| \
-                       (((tANI_U8)x)==SIR_MAC_RATE_54)|| \
-                       (((tANI_U8)x)==SIR_MAC_RATE_SAE_H2E))
+                       (((tANI_U8)x)==SIR_MAC_RATE_54))
 
 #define sirIsBrate(x) ((((tANI_U8)x)==SIR_MAC_RATE_1)  || \
                        (((tANI_U8)x)==SIR_MAC_RATE_2)  || \
                        (((tANI_U8)x)==SIR_MAC_RATE_5_5)|| \
-                       (((tANI_U8)x)==SIR_MAC_RATE_11) || \
-                       (((tANI_U8)x)==SIR_MAC_RATE_SAE_H2E))
+                       (((tANI_U8)x)==SIR_MAC_RATE_11))
 
 #define sirIsGrate(x) ((((tANI_U8)x)==SIR_MAC_RATE_1)  || \
                        (((tANI_U8)x)==SIR_MAC_RATE_2)  || \
@@ -2857,8 +2842,7 @@ typedef __ani_attr_pre_packed struct sSirMacQoSDelBARsp
                        (((tANI_U8)x)==SIR_MAC_RATE_24) || \
                        (((tANI_U8)x)==SIR_MAC_RATE_36) || \
                        (((tANI_U8)x)==SIR_MAC_RATE_48) || \
-                       (((tANI_U8)x)==SIR_MAC_RATE_54) || \
-                       (((tANI_U8)x)==SIR_MAC_RATE_SAE_H2E))
+                       (((tANI_U8)x)==SIR_MAC_RATE_54))
 
 #define sirIsProprate(x) ((((tANI_U8)x)==SIR_MAC_RATE_72) || \
                           (((tANI_U8)x)==SIR_MAC_RATE_96) || \

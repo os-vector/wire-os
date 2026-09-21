@@ -60,7 +60,6 @@
 #include <linux/spinlock.h>
 #include <linux/kthread.h>
 #include <linux/wcnss_wlan.h>
-#include "wlan_qct_pal_device.h"
 
 /*---------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -972,6 +971,8 @@ VosWDThread
         else
         {
           pWdContext->isFatalError = false;
+          pHddCtx->isLogpInProgress = FALSE;
+          vos_set_logp_in_progress(VOS_MODULE_ID_VOSS, FALSE);
         }
         atomic_set(&pHddCtx->isRestartInProgress, 0);
         pWdContext->resetInProgress = false;
@@ -2038,11 +2039,6 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
        return VOS_STATUS_E_FAILURE;
     }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
-    wpalUnRegisterInterrupt(DXE_INTERRUPT_RX_READY);
-    wpalUnRegisterInterrupt(DXE_INTERRUPT_TX_COMPLE);
-#endif
-
     /* Take the lock here */
     spin_lock(&gpVosWatchdogContext->wdLock);
 
@@ -2229,14 +2225,4 @@ void vos_dump_thread_stacks(int threadId)
    vos_dump_stack(MC_Thread);
    vos_dump_stack(TX_Thread);
    vos_dump_stack(RX_Thread);
-}
-
-int vos_get_gfp_flags(void)
-{
-   int flags = GFP_KERNEL;
-
-   if (in_interrupt() || in_atomic() || irqs_disabled())
-      flags = GFP_ATOMIC;
-
-   return flags;
 }

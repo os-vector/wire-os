@@ -43,10 +43,12 @@
 
 #include "aniGlobal.h"
 
+
+#ifdef TRACE_RECORD
+
 #define MAC_TRACE_GET_MODULE_ID(data) ((data >> 8) & 0xff)
 #define MAC_TRACE_GET_MSG_ID(data)       (data & 0xffff)
 
-#ifdef TRACE_RECORD
 
 #define eLOG_NODROP_MISSED_BEACON_SCENARIO 0
 #define eLOG_PROC_DEAUTH_FRAME_SCENARIO 1
@@ -60,8 +62,8 @@ tANI_U8* macTraceGetWdaMsgString( tANI_U16 wdaMsg );
 tANI_U8* macTraceGetSmeMsgString( tANI_U16 smeMsg );
 tANI_U8* macTraceGetModuleString( tANI_U8 moduleId);
 tANI_U8* macTraceGetInfoLogString( tANI_U16 infoLog );
-//eHalStatus pe_AcquireGlobalLock( tAniSirLim *psPe);
-//eHalStatus pe_ReleaseGlobalLock( tAniSirLim *psPe);
+eHalStatus pe_AcquireGlobalLock( tAniSirLim *psPe);
+eHalStatus pe_ReleaseGlobalLock( tAniSirLim *psPe);
 
 tANI_U8* macTraceGetHDDWlanConnState(tANI_U16 connState);
 
@@ -76,27 +78,7 @@ tANI_U8* macTraceGetLimSmeState(tANI_U16 limState);
 tANI_U8* macTraceGetLimMlmState(tANI_U16 mlmState);
 tANI_U8* macTraceGetTLState(tANI_U16 tlState);
 
-#else
-
-#define DEFINE_DUMMY_TRACE_FUNC(_func) \
-	static inline tANI_U8* _func(tANI_U16 dummy) { \
-		return "\0"; \
-	}
-
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetHDDWlanConnState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetNeighbourRoamState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetcsrRoamState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetcsrRoamSubState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetTLState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetLimSmeState);
-DEFINE_DUMMY_TRACE_FUNC(macTraceGetLimMlmState);
-
-#undef DEFINE_DUMMY_TRACE_FUNC
-
 #endif
-
-eHalStatus pe_AcquireGlobalLock( tAniSirLim *psPe);
-eHalStatus pe_ReleaseGlobalLock( tAniSirLim *psPe);
 
 #endif
 

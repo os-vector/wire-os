@@ -2156,14 +2156,6 @@ ProcDnldRsp(tpAniSirGlobal pMac, tANI_U16 length, tANI_U32 *pParam)
     PELOGW(cfgLog(pMac, LOGW, FL("CFG hdr totParams %d intParams %d strBufSize %d/%d"),
            pHdr->controlSize, pHdr->iBufSize, pHdr->sBufSize, pMac->cfg.gCfgMaxSBufSize);)
 
-    if (pHdr->sBufSize > (UINT_MAX -
-        (((CFG_PARAM_MAX_NUM + 3 * pMac->cfg.gCfgMaxIBufSize) << 2) +
-        sizeof(tCfgBinHdr)))) {
-        PELOGW(cfgLog(pMac, LOGW, FL("Invalid sBufSize coming from fw %d"),
-               pHdr->sBufSize);)
-        retVal = WNI_CFG_INVALID_LEN;
-        goto end;
-    }
     expLen = ((CFG_PARAM_MAX_NUM + 3 * pMac->cfg.gCfgMaxIBufSize) << 2) +
              pHdr->sBufSize + sizeof(tCfgBinHdr);
 

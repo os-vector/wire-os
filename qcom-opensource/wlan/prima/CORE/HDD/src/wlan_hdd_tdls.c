@@ -1382,8 +1382,6 @@ hddTdlsPeer_t *wlan_hdd_tdls_get_peer(hdd_adapter_t *pAdapter,
 
     vos_mem_zero(peer, sizeof(hddTdlsPeer_t));
     vos_mem_copy(peer->peerMac, mac, sizeof(peer->peerMac));
-    if (pHddCtx->cfg_ini->fTDLSExternalControl)
-        peer->isForcedPeer = 1;
     peer->pHddTdlsCtx = pHddTdlsCtx;
     list_add_tail(&peer->node, head);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2015-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2015-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -110,8 +110,9 @@ static void tryAllowingSleep( VOS_TIMER_TYPE type )
 
   --------------------------------------------------------------------------*/
 
-static void vos_linux_timer_callback(vos_timer_t *timer)
+static void vos_linux_timer_callback (unsigned long data)
 {
+   vos_timer_t *timer = ( vos_timer_t *)data; 
    vos_msg_t msg;
    VOS_STATUS vStatus;
    unsigned long flags;
@@ -374,47 +375,6 @@ void vos_timer_exit()
 }
 #endif
   
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
-static void vos_timer_shim(struct timer_list *vos_timer)
-{
-	vos_timer_platform_t *platformInfo_ptr = container_of(vos_timer,
-							vos_timer_platform_t,
-							Timer);
-
-	vos_timer_t *timer = container_of(platformInfo_ptr, vos_timer_t,
-						platformInfo);
-
-	vos_linux_timer_callback(timer);
-}
-
-static void vos_timer_setup(vos_timer_t *timer, bool deferrable)
-{
-	uint32_t flags = 0;
-
-	if (deferrable)
-		flags |= TIMER_DEFERRABLE;
-	timer_setup(&(timer->platformInfo.Timer), vos_timer_shim,
-		    flags);
-}
-#else
-static void vos_timer_shim(unsigned long data)
-{
-	vos_timer_t *timer = (vos_timer_t *)data;
-
-	vos_linux_timer_callback(timer);
-}
-
-static void vos_timer_setup(vos_timer_t *timer, bool deferrable)
-{
-	if (deferrable)
-		init_timer_deferrable(&timer->platformInfo.Timer);
-	else
-		init_timer(&timer->platformInfo.Timer);
-	timer->platformInfo.Timer.function = vos_timer_shim;
-	timer->platformInfo.Timer.data = (unsigned long)timer;
-}
-#endif
-
 /*--------------------------------------------------------------------------
   
   \brief vos_timer_init() - Initialize a vOSS timer.
@@ -524,7 +484,12 @@ static inline VOS_STATUS __vos_timer_init_debug(vos_timer_t *timer,
     * with arguments passed or with default values
     */
    spin_lock_init(&timer->platformInfo.spinlock);
-   vos_timer_setup(timer, deferrable);
+   if(deferrable)
+     init_timer_deferrable(&(timer->platformInfo.Timer));
+   else
+     init_timer(&(timer->platformInfo.Timer));
+   timer->platformInfo.Timer.function = vos_linux_timer_callback;
+   timer->platformInfo.Timer.data = (unsigned long)timer;
    timer->callback = callback;
    timer->userData = userData;
    timer->type = timerType;
@@ -576,7 +541,12 @@ static inline VOS_STATUS __vos_timer_init(vos_timer_t *timer,
     * with arguments passed or with default values
     */
    spin_lock_init(&timer->platformInfo.spinlock);
-   vos_timer_setup(timer, deferrable);
+   if(deferrable)
+     init_timer_deferrable(&(timer->platformInfo.Timer));
+   else
+     init_timer(&(timer->platformInfo.Timer));
+   timer->platformInfo.Timer.function = vos_linux_timer_callback;
+   timer->platformInfo.Timer.data = (unsigned long)timer;
    timer->callback = callback;
    timer->userData = userData;
    timer->type = timerType;

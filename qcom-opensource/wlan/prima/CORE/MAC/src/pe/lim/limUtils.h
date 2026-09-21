@@ -572,19 +572,9 @@ void limInitOperatingClasses(tHalHandle hHal);
 tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
                                  tANI_U8 channel,
                                  tANI_U8 offset);
-
-/**
- * lim_get_channel_width_from_opclass() - get the channel offset for the opclass
- * @country: current country code
- * @channel: channel for which width is required
- * @peer_vht_capable: if peer is VHT capable
- * @op_class: Opclass provided
- *
- * Return: channel offset for the opclass
- */
-offset_t lim_get_channel_width_from_opclass(tANI_U8 *country, tANI_U8 channel,
-                                            tANI_U8 peer_vht_capable,
-                                            tANI_U8 op_class);
+tANI_U8 limGetOffChMaxBwOffsetFromChannel(tANI_U8 *country,
+                                          tANI_U8 channel,
+                                          tANI_U8 peerVHTCapability);
 
 void limParseBeaconForTim(tpAniSirGlobal pMac, tANI_U8* pRxPacketInfo,
                           tpPESession psessionEntry);

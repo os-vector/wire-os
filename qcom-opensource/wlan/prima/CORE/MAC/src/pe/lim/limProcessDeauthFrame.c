@@ -71,18 +71,14 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     tpDphHashNode     pStaDs;
     tpPESession       pRoamSessionEntry=NULL;
     tANI_U8           roamSessionId;
+#ifdef WLAN_FEATURE_11W
     tANI_U32          frameLen;
+#endif
+
 
     pHdr = WDA_GET_RX_MAC_HEADER(pRxPacketInfo);
 
     pBody = WDA_GET_RX_MPDU_DATA(pRxPacketInfo);
-
-    frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
-    if (frameLen < sizeof(reasonCode)) {
-        PELOGE(limLog(pMac, LOGE,
-                      FL("received invalid framelen %d"), frameLen);)
-        return;
-    }
 
     if ((eLIM_STA_ROLE == psessionEntry->limSystemRole) &&
         ((eLIM_SME_WT_DISASSOC_STATE == psessionEntry->limSmeState) ||
@@ -130,6 +126,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
         PELOGE(limLog(pMac, LOGE, FL("received an unprotected deauth from AP"));)
         // If the frame received is unprotected, forward it to the supplicant to initiate
         // an SA query
+        frameLen = WDA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 
         //send the unprotected frame indication to SME
         limSendSmeUnprotectedMgmtFrameInd( pMac, pHdr->fc.subType,
@@ -470,8 +467,7 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
     }
 
     if ((pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_STA_RSP_STATE) ||
-        (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_BSS_RSP_STATE) ||
-         pStaDs->sta_deletion_in_progress)
+        (pStaDs->mlmStaContext.mlmState == eLIM_MLM_WT_DEL_BSS_RSP_STATE))
     {
         /**
          * Already in the process of deleting context for the peer
@@ -480,15 +476,13 @@ limProcessDeauthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession p
         PELOGE(limLog(pMac, LOGE,
            FL("received Deauth frame from peer that is in state %d, addr "
            MAC_ADDRESS_STR", isDisassocDeauthInProgress : %d\n"),
-
            pStaDs->mlmStaContext.mlmState,MAC_ADDR_ARRAY(pHdr->sa),
            pStaDs->isDisassocDeauthInProgress);)
-
         return;
     } 
     pStaDs->mlmStaContext.disassocReason = (tSirMacReasonCodes)reasonCode;
     pStaDs->mlmStaContext.cleanupTrigger = eLIM_PEER_ENTITY_DEAUTH;
-    pStaDs->sta_deletion_in_progress = true;
+
 
     /* send the LOST_LINK_PARAMS_IND to SME*/
     limUpdateLostLinkParams(pMac, psessionEntry, pRxPacketInfo);

@@ -72,18 +72,6 @@ when        who    what, where, why
  * Include Files
  * -------------------------------------------------------------------------*/
 #include "wlan_qct_pal_type.h" 
-#include "wlan_qct_pal_msg.h"
-#include "wlan_qct_os_sync.h"
-#include "wlan_qct_os_list.h"
-#ifdef EXISTS_MSM_SMD
-#include <mach/msm_smd.h>
-#else
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
-#include <linux/rpmsg.h>
-#else
-#include <soc/qcom/smd.h>
-#endif
-#endif
 
 /*----------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
@@ -91,9 +79,6 @@ when        who    what, where, why
  #ifdef __cplusplus
  extern "C" {
  #endif 
-
-/* time to wait for SMD channel to open (in msecs) */
-#define WCTS_SMD_OPEN_TIMEOUT 5000
 
 /*----------------------------------------------------------------------------
  *  Type Declarations
@@ -188,43 +173,6 @@ typedef struct
      void*                  wctsRxMsgCBData;
 } WCTS_TransportCBsType;
 
-/*---------------------------------------------------------------------------
-   WCTS_StateType
- ---------------------------------------------------------------------------*/
-typedef enum
-{
-   WCTS_STATE_CLOSED,       /* Closed */
-   WCTS_STATE_OPEN_PENDING, /* Waiting for the OPEN event from SMD */
-   WCTS_STATE_OPEN,         /* Open event received from SMD */
-   WCTS_STATE_DEFERRED,     /* Write pending, SMD chennel is full */
-   WCTS_STATE_REM_CLOSED,   /* Remote end closed the SMD channel */
-   WCTS_STATE_MAX
-} WCTS_StateType;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
-#define wcts_channel struct rpmsg_endpoint
-#else
-#define wcts_channel smd_channel_t
-#endif
-/*---------------------------------------------------------------------------
-   Control Transport Control Block Type
- ---------------------------------------------------------------------------*/
-typedef struct
-{
-   WCTS_NotifyCBType      wctsNotifyCB;
-   void*                  wctsNotifyCBData;
-   WCTS_RxMsgCBType       wctsRxMsgCB;
-   void*                  wctsRxMsgCBData;
-   WCTS_StateType         wctsState;
-   vos_spin_lock_t        wctsStateLock;
-   wcts_channel            *wctsChannel;
-   wpt_list               wctsPendingQueue;
-   wpt_uint32             wctsMagic;
-   wpt_msg                wctsOpenMsg;
-   wpt_msg                wctsDataMsg;
-   wpt_event              wctsEvent;
-} WCTS_ControlBlockType;
-
 /*========================================================================
  *     Function Declarations and Documentation
  ==========================================================================*/
@@ -317,64 +265,4 @@ WCTS_ClearPendingQueue
 );
 
 void WCTS_Dump_Smd_status(void);
-
-/**
- * Notification callback when SMD needs to communicate asynchronously with
- * the client.
- *
- * This callback function may be called from interrupt context; clients must
- * not block or call any functions that block.
- *
- * @param[in] data   The user-supplied data provided to smd_named_open_on_edge()
- * @param[in] event  The event that occurred
- *
- * @return void
- */
-void WCTS_NotifyCallback( void *data, unsigned event);
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
-/**
- * WCTS_smd_resp_process() - Response callback to process recieved data
- *
- * @rpdev: rpmsg device
- * @buf: received data
- * @len: received data length
- * @priv: The user-supplied data provided to wcnss_open_channel()
- * @addr: address
- *
- * @return status
- */
-int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
-			  void *buf, int len, void *priv, u32 addr);
-
-enum wcnss_driver_state;
-/**
- * WCTS_driver_state_process() - Callback to process driver state info
- *
- * @priv: The user-supplied data provided in wcnss_register_driver()
- * @state: driver state
- *
- * @return status
- */
-int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state);
-
-struct bt_profile_state;
-/**
- * WCTS_bt_profile_state_process() - Callback to process bt state info
- *
- * @priv: The user-supplied data provided in wcnss_register_driver()
- * @state: bt state
- *
- * @return status
- */
-int WCTS_bt_profile_state_process(void *priv, struct bt_profile_state *state);
-
-/**
- * wcts_close_channel() - api to close the smd channel
- * @wctsHandle: transport handle
- *
- * @return none
- */
-void wcts_close_channel(WCTS_HandleType wctsHandle);
-#endif
 #endif /* #ifndef WLAN_QCT_WDI_CTS_H */

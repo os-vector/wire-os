@@ -819,8 +819,8 @@ static int send_fw_log_pkt_to_user(void)
 
 		ret = nl_srv_bcast(skb);
 		if ((ret < 0) && (ret != -ESRCH)) {
-		//	pr_info("%s: Send Failed %d drop_count = %u\n",
-		//		__func__, ret, ++gwlan_logging.fw_log_pkt_drop_cnt);
+			pr_info("%s: Send Failed %d drop_count = %u\n",
+				__func__, ret, ++gwlan_logging.fw_log_pkt_drop_cnt);
 		} else {
 			ret = 0;
 		}
@@ -1072,11 +1072,11 @@ static int send_filled_buffers_to_user(void)
 
 		ret = nl_srv_bcast(skb);
 		if (ret < 0) {
-			//if (__ratelimit(&errCnt))
-			//{
-			//    pr_info("%s: Send Failed %d drop_count = %u\n",
-			//	  __func__, ret, gwlan_logging.drop_count);
-			//}
+			if (__ratelimit(&errCnt))
+			{
+			    pr_info("%s: Send Failed %d drop_count = %u\n",
+				  __func__, ret, gwlan_logging.drop_count);
+			}
 			gwlan_logging.drop_count++;
 			skb = NULL;
 			break;
@@ -1512,8 +1512,8 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
 	{
 		pr_info("%s: Initalizing Pkt stats pkt_stats_buff = %d\n",
 			__func__, pkt_stats_buff);
-		pkt_stats_buffers = (struct pkt_stats_msg *) vos_mem_malloc(
-			 pkt_stats_buff * sizeof(struct pkt_stats_msg));
+		pkt_stats_buffers = (struct pkt_stats_msg *) kzalloc(
+			 pkt_stats_buff * sizeof(struct pkt_stats_msg), GFP_KERNEL);
 		if (!pkt_stats_buffers) {
 			pr_err("%s: Could not allocate memory for Pkt stats\n", __func__);
 			failure = TRUE;
@@ -1537,7 +1537,6 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf,
 					dev_kfree_skb(pkt_stats_buffers[j].skb);
 				}
 			spin_lock_irqsave(&gwlan_logging.spin_lock, irq_flag);
-			gwlan_logging.pkt_stat_num_buf = 0;
 			vos_mem_free(pkt_stats_buffers);
 			pkt_stats_buffers = NULL;
 			spin_unlock_irqrestore(&gwlan_logging.spin_lock, irq_flag);
@@ -1666,7 +1665,7 @@ int wlan_logging_sock_deactivate_svc(void)
 	/* free allocated skb */
 	for (i = 0; i < gwlan_logging.pkt_stat_num_buf; i++)
 	{
-		if (pkt_stats_buffers && pkt_stats_buffers[i].skb)
+		if (pkt_stats_buffers[i].skb)
 			dev_kfree_skb(pkt_stats_buffers[i].skb);
 	}
 	if(pkt_stats_buffers)
@@ -2156,7 +2155,73 @@ void wlan_store_fwr_mem_dump_size(uint32 dump_size)
 	gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size = dump_size;
 	spin_unlock_irqrestore(&gwlan_logging.fw_mem_dump_ctx.fw_mem_dump_lock, flags);
 }
+/**
+ * wlan_indicate_mem_dump_complete() -  When H2H for mem
+ * dump finish invoke the handler.
+ *
+ * This is a handler used to indicate user space about the
+ * availability for firmware memory dump via vendor event.
+ *
+ * Return: None
+ */
+void wlan_indicate_mem_dump_complete(bool status )
+{
+	hdd_context_t *hdd_ctx;
+	void *vos_ctx;
+	int ret;
+	struct sk_buff *skb = NULL;
+	vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	if (!vos_ctx) {
+		pr_err("Invalid VOS context");
+		return;
+	}
 
+	hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+	if(!hdd_ctx) {
+		pr_err("Invalid HDD context");
+		return;
+	}
+
+	ret = wlan_hdd_validate_context(hdd_ctx);
+	if (0 != ret) {
+		pr_err("HDD context is not valid");
+		return;
+	}
+
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy,
+		sizeof(uint32_t) + NLA_HDRLEN + NLMSG_HDRLEN);
+
+	if (!skb) {
+		pr_err("cfg80211_vendor_event_alloc failed");
+		return;
+	}
+	if(status)
+	{
+		if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE,
+				gwlan_logging.fw_mem_dump_ctx.fw_dump_max_size)) {
+			pr_err("nla put fail");
+			goto nla_put_failure;
+		}
+	}
+	else
+	{
+		pr_err("memdump failed.Returning size 0 to user");
+		if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_MEMDUMP_SIZE,
+				0)) {
+			pr_err("nla put fail");
+			goto nla_put_failure;
+		}
+	}
+	/*indicate mem dump complete*/
+	cfg80211_vendor_cmd_reply(skb);
+	pr_info("Memdump event sent successfully to user space : recvd size %d",(int)(gwlan_logging.fw_mem_dump_ctx.fw_dump_current_loc - gwlan_logging.fw_mem_dump_ctx.fw_dump_start_loc));
+	return;
+
+nla_put_failure:
+	kfree_skb(skb);
+	return;
+}
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 /**
  * wlan_report_log_completion() - Report bug report completion to userspace

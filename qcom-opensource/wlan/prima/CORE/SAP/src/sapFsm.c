@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2016-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2016-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -817,7 +817,6 @@ sapSignalHDDevent
             break;
 
         case eSAP_STA_ASSOC_EVENT:
-        case eSAP_STA_REASSOC_EVENT:
         {
             tSap_StationAssocReassocCompleteEvent *event =
                      &sapApAppEvent.sapevt.sapStationAssocReassocCompleteEvent;
@@ -841,30 +840,26 @@ sapSignalHDDevent
                          pCsrRoamInfo->peerMac,sizeof(tSirMacAddr));
             event->staId = pCsrRoamInfo->staId ;
             event->statusCode = pCsrRoamInfo->statusCode;
+            event->iesLen = pCsrRoamInfo->rsnIELen;
+            vos_mem_copy(event->ies, pCsrRoamInfo->prsnIE,
+                        pCsrRoamInfo->rsnIELen);
 
-            if (pCsrRoamInfo->assocReqLength < ASSOC_REQ_IE_OFFSET) {
-                VOS_TRACE(VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                            FL("Invalid assoc request length:%d"),
-                            pCsrRoamInfo->assocReqLength);
-                return VOS_STATUS_E_FAILURE;
+            if(pCsrRoamInfo->addIELen)
+            {
+                v_U8_t  len = event->iesLen;
+                event->iesLen += pCsrRoamInfo->addIELen;
+                vos_mem_copy(&event->ies[len], pCsrRoamInfo->paddIE,
+                            pCsrRoamInfo->addIELen);
             }
-            event->iesLen = (pCsrRoamInfo->assocReqLength -
-                                    ASSOC_REQ_IE_OFFSET);
-            event->ies = (pCsrRoamInfo->assocReqPtr +
-                                    ASSOC_REQ_IE_OFFSET);
 
             event->rate_flags = pCsrRoamInfo->maxRateFlags;
+
             event->wmmEnabled = pCsrRoamInfo->wmmEnabledSta;
             event->status = (eSapStatus )context;
             event->ch_width = pCsrRoamInfo->ch_width;
             event->chan_info = pCsrRoamInfo->chan_info;
             event->HTCaps = pCsrRoamInfo->ht_caps;
             event->VHTCaps = pCsrRoamInfo->vht_caps;
-
-            if (pCsrRoamInfo->fReassocReq) {
-                event->iesLen -= VOS_MAC_ADDR_SIZE;
-                event->ies += VOS_MAC_ADDR_SIZE;
-            }
 
             //TODO: Need to fill sapAuthType
             //event->SapAuthType = pCsrRoamInfo->pProfile->negotiatedAuthType;
@@ -1450,7 +1445,6 @@ sapconvertToCsrProfile(tsap_Config_t *pconfig_params, eCsrRoamBssType bssType, t
 
     profile->AuthType.numEntries = 1;
     profile->AuthType.authType[0] = eCSR_AUTH_TYPE_OPEN_SYSTEM;
-    profile->akm_list = pconfig_params->akm_list;
 
     //Always set the Encryption Type
     profile->EncryptionType.numEntries = 1;
@@ -1533,8 +1527,6 @@ sapconvertToCsrProfile(tsap_Config_t *pconfig_params, eCsrRoamBssType bssType, t
     profile->MFPCapable = pconfig_params->mfpCapable ? 1 : 0;
     profile->MFPRequired = pconfig_params->mfpRequired ? 1 : 0;
 #endif
-
-    profile->require_h2e = pconfig_params->require_h2e;
 
     return eSAP_STATUS_SUCCESS; /* Success.  */
 }

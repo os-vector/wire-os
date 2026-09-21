@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015, 2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2015 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -46,8 +46,6 @@
 #include "vos_status.h"
 #include "wlan_nv.h"
 #include "wlan_nv2.h"
-
-extern bool init_by_reg_core_user;
 
 /* Maximum number of channels per country can be ignored */
 #define MAX_CHANNELS_IGNORE 10

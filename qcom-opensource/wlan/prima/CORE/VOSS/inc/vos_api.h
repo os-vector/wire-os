@@ -74,9 +74,7 @@
 #include <vos_threads.h>
 #include <vos_timer.h>
 #include <vos_pack_align.h>
-#include <vos_diag_core_log.h>
 #include <asm/arch_timer.h>
-#include <wlan_qct_wdi_cts.h>
 
 /**
  * enum userspace_log_level - Log level at userspace
@@ -594,39 +592,4 @@ void vos_get_recovery_reason(enum vos_hang_reason *reason);
  * Return: None
  */
 void vos_reset_recovery_reason(void);
-
-/**
- * vos_smd_open - open smd channel
- * @szname: channel name
- * @wcts_cb: WCTS control block
- *
- * Return: VOS_STATUS
- */
-VOS_STATUS vos_smd_open(const char *szname, WCTS_ControlBlockType* wcts_cb);
-
-void wlan_unregister_driver(void);
-
-#ifdef FEATURE_WLAN_SW_PTA
-/**
- * vos_process_bt_profile - process BT profile
- * @bt_enabled: BT status
- * @bt_adv: BT advertisement status
- * @ble_enabled: BLE status
- * @bt_a2dp: BT A2DP status
- * @bt_sco: BT SCO status
- *
- * Return: 0 on success and error on failure
- */
-int vos_process_bt_profile(bool bt_enabled, bool bt_adv,
-			   bool ble_enabled, bool bt_a2dp,
-			   bool bt_sco);
-#else
-static inline int
-vos_process_bt_profile(bool bt_enabled, bool bt_adv,
-		       bool ble_enabled, bool bt_a2dp,
-		       bool bt_sco);
-{
-	return -ENOTSUPP;
-}
-#endif /* FEATURE_WLAN_SW_PTA */
 #endif // if !defined __VOS_NVITEM_H

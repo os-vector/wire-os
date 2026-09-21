@@ -105,10 +105,6 @@ void macTraceMsgRx(tpAniSirGlobal pMac, tANI_U8 session, tANI_U32 data);
 
 void macTraceMsgRxNew(tpAniSirGlobal pMac, tANI_U8 module, tANI_U8 session, tANI_U32 data);
 void macTraceMsgTxNew(tpAniSirGlobal pMac, tANI_U8 module, tANI_U8 session, tANI_U32 data);
-#else
-
-static inline void lim_register_debug_callback(void) {};
-
 #endif //endof LIM_TRACE_RECORD MACRO
 
 #endif

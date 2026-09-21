@@ -23,15 +23,6 @@ ifeq ($(KERNEL_BUILD), 0)
 #Flag to enable Legacy Fast Roaming(LFR)
     CONFIG_PRIMA_WLAN_LFR := y
 
-#Flag to enable SAE
-    CONFIG_WLAN_FEATURE_SAE := y
-
-#Flag to enable SW PTA
-    CONFIG_WLAN_FEATURE_SW_PTA := y
-
-#Flag to enable OWE
-    CONFIG_WLAN_AKM_SUITE_OWE := y
-
 #Flag to enable Legacy Fast Roaming(LFR) Make Before Break
     CONFIG_PRIMA_WLAN_LFR_MBB := y
 
@@ -76,7 +67,7 @@ CONFIG_QCOM_ESE_UPLOAD := n
 # Feature flags which are not (currently) configurable via Kconfig
 
 #Whether to build debug version
-BUILD_DEBUG_VERSION := 0
+BUILD_DEBUG_VERSION := 1
 
 #Enable this flag to build driver in diag version
 BUILD_DIAG_VERSION := 1
@@ -97,35 +88,6 @@ HAVE_CFG80211 := 0
 endif
 endif
 
-ifeq ($(KERNEL_BUILD), 0)
-ifeq ($(WLAN_PROPRIETARY),1)
-    WLAN_BLD_DIR := vendor/qcom/proprietary/wlan
-else
-ifneq ($(TARGET_SUPPORTS_WEARABLES),true)
-ifneq ($(ANDROID_BUILD_TOP),)
-    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/wlan
-else
-    WLAN_BLD_DIR := vendor/qcom/opensource/wlan
-endif # ANDROID_BUILD_TOP
-else
-ifneq ($(ANDROID_BUILD_TOP),)
-ifeq ($(TARGET_PRODUCT),sdm429w)
-    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/$(BOARD_OPENSOURCE_DIR)/wlan
-else
-    WLAN_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/wlan
-endif #TARGET_PRODUCT
-else
-    WLAN_BLD_DIR := $(BOARD_OPENSOURCE_DIR)/wlan
-endif # ANDROID_BUILD_TOP
-endif # TARGET_SUPPORTS_WEARABLES
-endif # WLAN_PROPRIETARY
-
-ifneq ($(ANDROID_BUILD_TOP),)
-WLAN_ROOT=$(WLAN_BLD_DIR)/prima
-else
-WLAN_ROOT=$(KERNEL_TO_BUILD_ROOT_OFFSET)$(WLAN_BLD_DIR)/prima
-endif # ANDROID_BUILD_TOP
-endif # KERNEL_BUILD
 
 ifeq ($(CONFIG_PRIMA_WLAN_BTAMP),y)
 ############ BAP ############
@@ -690,18 +652,6 @@ ifeq ($(CONFIG_PRIMA_WLAN_LFR),y)
 CDEFINES += -DFEATURE_WLAN_LFR
 endif
 
-ifeq ($(CONFIG_WLAN_FEATURE_SAE),y)
-CDEFINES += -DWLAN_FEATURE_SAE
-endif
-
-ifeq ($(CONFIG_WLAN_FEATURE_SW_PTA),y)
-CDEFINES += -DFEATURE_WLAN_SW_PTA
-endif
-
-ifeq ($(CONFIG_WLAN_AKM_SUITE_OWE),y)
-CDEFINES += -DWLAN_AKM_SUITE_OWE
-endif
-
 ifeq ($(CONFIG_PRIMA_WLAN_LFR_MBB),y)
 CDEFINES += -DWLAN_FEATURE_LFR_MBB
 endif
@@ -771,7 +721,7 @@ CDEFINES += -DEXISTS_MSM_SMSM
 endif
 
 # Fix build for GCC 4.7
-EXTRA_CFLAGS += $(call cc-option,-Wno-maybe-uninitialized) -Wno-unused-function -Wno-enum-conversion -Wno-array-bounds -Wno-pointer-bool-conversion -Wno-parentheses-equality -Wno-typedef-redefinition -Wno-empty-body -Wno-non-literal-null-conversion -Wno-implicit-function-declaration
+EXTRA_CFLAGS += -Wno-maybe-uninitialized -Wno-unused-function
 
 ifeq ($(CONFIG_WLAN_OFFLOAD_PACKETS),y)
 CDEFINES += -DWLAN_FEATURE_OFFLOAD_PACKETS

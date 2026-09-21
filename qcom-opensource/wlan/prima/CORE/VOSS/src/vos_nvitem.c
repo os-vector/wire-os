@@ -60,8 +60,6 @@
 #define IEEE80211_CHAN_NO_80MHZ		1<<7
 #endif
 
-bool init_by_reg_core_user;
-
 #ifdef CONFIG_ENABLE_LINUX_REG
 
 static v_REGDOMAIN_t cur_reg_domain = REGDOMAIN_COUNT;
@@ -4066,9 +4064,6 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
     VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
                "cfg80211 reg notifier callback for country for initiator %d", request->initiator);
 
-    pr_info("country: %c%c and initiator %d", request->alpha2[0],
-            request->alpha2[1], request->initiator);
-
     if (NULL == pHddCtx)
     {
        VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
@@ -4209,9 +4204,6 @@ int __wlan_hdd_linux_reg_notifier(struct wiphy *wiphy,
         }
         else
         {
-           if (WLAN_HDD_IS_LOAD_IN_PROGRESS(pHddCtx))
-              init_by_reg_core_user = true;
-
            sme_GenericChangeCountryCode(pHddCtx->hHal, country_code,
                                     temp_reg_domain);
         }

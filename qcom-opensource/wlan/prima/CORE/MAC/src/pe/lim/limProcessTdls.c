@@ -3565,44 +3565,6 @@ tANI_U8 limGetOffChMaxBwOffsetFromChannel(tANI_U8 *country,
     return offset;
 }
 
-offset_t lim_get_channel_width_from_opclass(tANI_U8 *country, tANI_U8 channel,
-                                            tANI_U8 peer_vht_capable,
-                                            tANI_U8 op_class)
-{
-    op_class_map_t *class;
-    tANI_U16 i = 0;
-    offset_t offset, max_allowed;
-
-    if (peer_vht_capable &&
-        IS_FEATURE_SUPPORTED_BY_FW(DOT11AC) &&
-        IS_FEATURE_SUPPORTED_BY_DRIVER(DOT11AC))
-        max_allowed = BW80;
-    else
-        max_allowed = BW40MINUS;
-
-    if (vos_mem_compare(country,"US", 2))
-        class = us_op_class;
-    else if (vos_mem_compare(country,"EU", 2))
-        class = euro_op_class;
-    else if (vos_mem_compare(country,"JP", 2))
-        class = japan_op_class;
-    else
-        class = global_op_class;
-
-    while (class->op_class) {
-        if (op_class == class->op_class) {
-            for (i = 0; (i < 25 && class->channels[i]); i++) {
-                 if (channel == class->channels[i]) {
-                     offset = class->offset;
-                     return (offset <= max_allowed) ? offset: BW20;
-                 }
-            }
-        }
-        class++;
-    }
-
-    return BW20;
-}
 
 tANI_U8 limGetOPClassFromChannel(tANI_U8 *country,
                                          tANI_U8 channel,

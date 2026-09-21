@@ -3213,9 +3213,7 @@ v_VOID_t vos_recover_tail(vos_pkt_t *pPacket)
    shinfo = skb_shinfo(skb);
    memset(shinfo, 0, sizeof(struct skb_shared_info));
    atomic_set(&shinfo->dataref, 1);
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    kmemcheck_annotate_variable(shinfo->destructor_arg);
-#endif
 
    return;
 }

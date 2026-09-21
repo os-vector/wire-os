@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017, 2019-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -253,7 +253,6 @@ typedef struct sLimMlmAssocInd
     tSirMacAddr          peerMacAddr;
     tANI_U16                  aid;
     tAniAuthType         authType;
-    enum ani_akm_type    akm_type;
     tAniSSID             ssId;
     tSirRSNie            rsnIE;
     tSirAddie            addIE; // additional IE received from the peer, which possibly includes WSC IE and/or P2P IE.
@@ -279,7 +278,6 @@ typedef struct sLimMlmAssocInd
     tSirMacHTChannelWidth ch_width;
     tDot11fIEHTCaps HTCaps;
     tDot11fIEVHTCaps VHTCaps;
-    bool                 is_sae_authenticated;
 } tLimMlmAssocInd, *tpLimMlmAssocInd;
 
 typedef struct sLimMlmReassocReq
@@ -677,7 +675,7 @@ tSirRetStatus limProcessAuthFrameNoSession(tpAniSirGlobal pMac, tANI_U8 *, void 
 #endif
 
 void limProcessAssocReqFrame(tpAniSirGlobal, tANI_U8 *, tANI_U8, tpPESession);
-tSirRetStatus limSendMlmAssocInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpPESession psessionEntry);
+void limSendMlmAssocInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpPESession psessionEntry);
 
 
 void limProcessAssocRspFrame(tpAniSirGlobal, tANI_U8 *, tANI_U8,tpPESession);
@@ -1074,8 +1072,7 @@ limChangeChannelWithCallback(tpAniSirGlobal pMac, tANI_U8 newChannel,
 void limSendSmeMgmtFrameInd(
                     tpAniSirGlobal pMac, tANI_U16 sessionId,
                     tANI_U8 *pRxPacketInfo,
-                    tpPESession psessionEntry, tANI_S8 rxRssi,
-                    enum rxmgmt_flags rx_flags);
+                    tpPESession psessionEntry, tANI_S8 rxRssi);
 void limProcessRemainOnChnTimeout(tpAniSirGlobal pMac);
 void limProcessInsertSingleShotNOATimeout(tpAniSirGlobal pMac);
 void limConvertActiveChannelToPassiveChannel(tpAniSirGlobal pMac);
@@ -1145,57 +1142,6 @@ tSirRetStatus lim_process_sme_del_ba_ses_req(tpAniSirGlobal pMac,
 void lim_send_chan_switch_action_frame(tpAniSirGlobal mac_ctx,
      uint16_t new_channel, tpPESession session_entry);
 
-/**
- * lim_send_mgmt_frame_tx() - Sends mgmt frame
- * @mac_ctx Pointer to Global MAC structure
- * @msg: Received message info
- *
- * Return: None
- */
-void lim_send_mgmt_frame_tx(tpAniSirGlobal mac_ctx, tpSirMsgQ msg);
-
-/**
- * lim_process_assoc_cleanup() - frees up resources used in function
- * lim_process_assoc_req_frame()
- * @mac_ctx: pointer to Global MAC structure
- * @session: pointer to pe session entry
- * @assoc_req: pointer to ASSOC/REASSOC Request frame
- * @sta_ds: station dph entry
- * @assoc_req_copied: boolean to indicate if assoc req was copied to tmp above
- *
- * Frees up resources used in function lim_process_assoc_req_frame
- *
- * Return: void
- */
-void lim_process_assoc_cleanup(tpAniSirGlobal mac_ctx,
-                               tpPESession session,
-                               tpSirAssocReq assoc_req,
-                               tpDphHashNode sta_ds,
-                               bool assoc_req_copied);
-
-/**
- * lim_send_assoc_ind_to_sme() - Initialize PE data structures and send assoc
- *                               indication to SME.
- * @mac_ctx: Pointer to Global MAC structure
- * @session: pe session entry
- * @sub_type: Indicates whether it is Association Request(=0) or Reassociation
- *            Request(=1) frame
- * @hdr: A pointer to the MAC header
- * @assoc_req: pointer to ASSOC/REASSOC Request frame
- * @akm_type: AKM type
- * @pmf_connection: flag indicating pmf connection
- * @assoc_req_copied: boolean to indicate if assoc req was copied to tmp above
- *
- * Return: void
- */
-bool lim_send_assoc_ind_to_sme(tpAniSirGlobal mac_ctx,
-                               tpPESession session,
-                               uint8_t sub_type,
-                               tpSirMacMgmtHdr hdr,
-                               tpSirAssocReq assoc_req,
-                               enum ani_akm_type akm_type,
-                               bool pmf_connection,
-                               bool *assoc_req_copied);
 
 #endif /* __LIM_TYPES_H */
 

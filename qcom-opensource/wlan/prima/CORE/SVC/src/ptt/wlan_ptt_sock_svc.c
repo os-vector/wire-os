@@ -297,11 +297,6 @@ static int ptt_sock_rx_nlink_msg (struct sk_buff * skb)
    wnl = (tAniNlHdr *) skb->data;
    radio = wnl->radio;
    type = wnl->nlh.nlmsg_type;
-
-   if (wnl->nlh.nlmsg_len < (sizeof(struct nlmsghdr) +
-       sizeof(int) + sizeof(tAniHdr) + be16_to_cpu(wnl->wmsg.length)))
-	   return -EINVAL;
-
    switch (type) {
       case ANI_NL_MSG_PUMAC:  //Message from the PTT socket APP
          PTT_TRACE(VOS_TRACE_LEVEL_INFO, "%s: Received ANI_NL_MSG_PUMAC Msg [0x%X]\n",

@@ -209,11 +209,6 @@ typedef struct tagSmeCmd
         tpNanRequest pNanReq;
         struct csr_set_tx_max_pwr_per_band set_tx_max_pwr_per_band;
         tpSirUpdateChanList chan_list;
-        tpRoamParams RoamParams;
-        bool olpc_mode_enable;
-#ifdef FEATURE_WLAN_SW_PTA
-	struct sir_sw_pta_req *sw_pta_req;
-#endif
     }u;
 }tSmeCmd;
 

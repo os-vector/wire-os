@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, 2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2873,37 +2873,11 @@ static v_U32_t UnpackTlvCore( void *   pCtx,
         else { 
             id = *pBufRemaining; 
         }
-	if ( sType > nBufRemaining )
-	{
-            FRAMES_LOG0( pCtx, FRLOGE, FRFL( "This frame reports "
-                         "fewer sType byte(s) remaining.\n" ) );
-            status |= BTAMP_INCOMPLETE_TLV;
-            FRAMES_DBG_BREAK();
-            goto MandatoryCheck;
-	}
         pBufRemaining += sType;
         nBufRemaining -= sType;
         // & length,
-	if ( 2 > nBufRemaining )
-	{
-	    FRAMES_LOG0( pCtx, FRLOGE, FRFL( "This frame reports "
-			 "fewer two byte(s) remaining.\n" ) );
-	    status |= BTAMP_INCOMPLETE_TLV;
-	    FRAMES_DBG_BREAK();
-	    goto MandatoryCheck;
-	}
-
-	framesntohs(pCtx, &len, pBufRemaining, 1);
-
-	if ( sLen > nBufRemaining )
-	{
-	    FRAMES_LOG0( pCtx, FRLOGE, FRFL( "This frame reports "
-			 "fewer sLen byte(s) remaining.\n" ) );
-	    status |= BTAMP_INCOMPLETE_TLV;
-	    FRAMES_DBG_BREAK();
-	    goto MandatoryCheck;
-	}
-	pBufRemaining += sLen;
+        framesntohs(pCtx, &len, pBufRemaining, 1);
+        pBufRemaining += sLen;
         nBufRemaining -= sLen;
 
         if ( pTlv && pTlv->pec )

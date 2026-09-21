@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -253,11 +253,13 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
        )
     {
         tANI_U8 sessionId = pAdapter->sessionId;
-            wlan_hdd_cfg80211_deregister_frames(pAdapter);
+        if( REMAIN_ON_CHANNEL_REQUEST == req_type )
+        {
             sme_DeregisterMgmtFrame(
                        hHal, sessionId,
                       (SIR_MAC_MGMT_FRAME << 2) | ( SIR_MAC_MGMT_PROBE_REQ << 4),
                        NULL, 0 );
+        }
     }
     else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
     {
@@ -659,6 +661,8 @@ static int wlan_hdd_p2p_start_remain_on_channel(
             return -EINVAL;
         }
 
+        if( REMAIN_ON_CHANNEL_REQUEST == request_type)
+        {
             if( eHAL_STATUS_SUCCESS != sme_RegisterMgmtFrame(
                         WLAN_HDD_GET_HAL_CTX(pAdapter),
                         sessionId, (SIR_MAC_MGMT_FRAME << 2) |
@@ -666,7 +670,7 @@ static int wlan_hdd_p2p_start_remain_on_channel(
             {
                 hddLog(VOS_TRACE_LEVEL_ERROR,    "sme_RegisterMgmtFrame returned fail");
             }
-	    wlan_hdd_cfg80211_register_frames(pAdapter);
+        }
 
     }
     else if (WLAN_HDD_P2P_GO == pAdapter->device_mode)
@@ -1285,7 +1289,6 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
     uint8_t home_ch = 0;
 #endif
-    eHalStatus hal_status;
 
     ENTER();
 
@@ -1310,19 +1313,6 @@ int __wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
     hddLog(VOS_TRACE_LEVEL_INFO, "%s: device_mode = %d type: %d",
                             __func__, pAdapter->device_mode, type);
 
-    /* When frame to be transmitted is auth mgmt, then trigger
-     * sme_send_mgmt_tx to send auth frame.
-     */
-    if ((WLAN_HDD_INFRA_STATION == pAdapter->device_mode ||
-         WLAN_HDD_SOFTAP == pAdapter->device_mode) &&
-        (type == SIR_MAC_MGMT_FRAME && subType == SIR_MAC_MGMT_AUTH)) {
-         hal_status = sme_send_mgmt_tx(WLAN_HDD_GET_HAL_CTX(pAdapter),
-                                       pAdapter->sessionId, buf, len);
-         if (HAL_STATUS_SUCCESS(hal_status))
-              return 0;
-         else
-              return -EINVAL;
-    }
 
     if ((type == SIR_MAC_MGMT_FRAME) &&
             (subType == SIR_MAC_MGMT_ACTION) &&
@@ -2557,7 +2547,6 @@ hdd_delete_adapter(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter,
 {
 	wlan_hdd_release_intf_addr(hdd_ctx, adapter->macAddressCurrent.bytes);
 	hdd_stop_adapter(hdd_ctx, adapter, VOS_TRUE);
-	hdd_deinit_adapter(hdd_ctx, adapter, TRUE);
 	hdd_close_adapter(hdd_ctx, adapter, rtnl_held);
 }
 
@@ -2728,54 +2717,12 @@ void hdd_sendMgmtFrameOverMonitorIface( hdd_adapter_t *pMonAdapter,
      return ;
 }
 
-#if defined(WLAN_FEATURE_SAE) && defined(CFG80211_EXTERNAL_AUTH_AP_SUPPORT)
-/**
- * wlan_hdd_set_rxmgmt_external_auth_flag() - Set the EXTERNAL_AUTH flag
- * @nl80211_flag: flags to be sent to nl80211 from enum nl80211_rxmgmt_flags
- *
- * Set the flag NL80211_RXMGMT_FLAG_EXTERNAL_AUTH if supported.
- */
-static void
-wlan_hdd_set_rxmgmt_external_auth_flag(enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-    *nl80211_flag |= NL80211_RXMGMT_FLAG_EXTERNAL_AUTH;
-}
-#else
-static void
-wlan_hdd_set_rxmgmt_external_auth_flag(enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-}
-#endif
-
-/**
- * wlan_hdd_cfg80211_convert_rxmgmt_flags() - Convert RXMGMT value
- * @nl80211_flag: Flags to be sent to nl80211 from enum nl80211_rxmgmt_flags
- * @flag: flags set by driver(SME/PE) from enum rxmgmt_flags
- *
- * Convert driver internal RXMGMT flag value to nl80211 defined RXMGMT flag
- * Return: 0 on success, -EINVAL on invalid value
- */
-static int
-wlan_hdd_cfg80211_convert_rxmgmt_flags(enum rxmgmt_flags flag,
-                                       enum nl80211_rxmgmt_flags *nl80211_flag)
-{
-    int ret = -EINVAL;
-
-    if (flag & RXMGMT_FLAG_EXTERNAL_AUTH) {
-            wlan_hdd_set_rxmgmt_external_auth_flag(nl80211_flag);
-            ret = 0;
-    }
-
-    return ret;
-}
-
 void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
                             tANI_U32 nFrameLength,
                             tANI_U8* pbFrames,
                             tANI_U8 frameType,
                             tANI_U32 rxChan,
-                            tANI_S8 rxRssi,
-                            enum rxmgmt_flags rx_flags)
+                            tANI_S8 rxRssi)
 {
     tANI_U16 freq;
     tANI_U16 extend_time;
@@ -2787,7 +2734,6 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
     hdd_context_t *pHddCtx = NULL;
     VOS_STATUS status;
     hdd_remain_on_chan_ctx_t* pRemainChanCtx = NULL;
-    enum nl80211_rxmgmt_flags nl80211_flag = 0;
 
     hddLog(VOS_TRACE_LEVEL_INFO, FL("Frame Type = %d Frame Length = %d"),
                      frameType, nFrameLength);
@@ -2808,6 +2754,31 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
     {
         hddLog(LOGE, FL("pbFrames is NULL"));
         return;
+    }
+
+    type = WLAN_HDD_GET_TYPE_FRM_FC(pbFrames[0]);
+    subType = WLAN_HDD_GET_SUBTYPE_FRM_FC(pbFrames[0]);
+
+    /* Get pAdapter from Destination mac address of the frame */
+    if ((type == SIR_MAC_MGMT_FRAME) &&
+        (subType != SIR_MAC_MGMT_PROBE_REQ) &&
+        !vos_is_macaddr_broadcast(
+         (v_MACADDR_t *)&pbFrames[WLAN_HDD_80211_FRM_DA_OFFSET]))
+    {
+         pAdapter = hdd_get_adapter_by_macaddr( WLAN_HDD_GET_CTX(pAdapter),
+                            &pbFrames[WLAN_HDD_80211_FRM_DA_OFFSET]);
+         if (NULL == pAdapter)
+         {
+             /* Under assumtion that we don't receive any action frame
+              * with BCST as destination we dropping action frame
+              */
+             hddLog(VOS_TRACE_LEVEL_FATAL,"pAdapter for action frame is NULL Macaddr = "
+                               MAC_ADDRESS_STR ,
+                               MAC_ADDR_ARRAY(&pbFrames[WLAN_HDD_80211_FRM_DA_OFFSET]));
+             hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Frame Type = %d Frame Length = %d"
+                              " subType = %d",__func__,frameType,nFrameLength,subType);
+             return;
+         }
     }
 
 
@@ -2861,16 +2832,12 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
     cfgState = WLAN_HDD_GET_CFG_STATE_PTR( pAdapter );
 
     if ((type == SIR_MAC_MGMT_FRAME) &&
-        (subType == SIR_MAC_MGMT_ACTION) &&
-        (nFrameLength > WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET + 1))
+        (subType == SIR_MAC_MGMT_ACTION))
     {
         if(pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET] == WLAN_HDD_PUBLIC_ACTION_FRAME)
         {
             // public action frame
-            if((WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET + SIR_MAC_P2P_OUI_SIZE + 2 <
-                nFrameLength) &&
-               (pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET+1] ==
-                SIR_MAC_ACTION_VENDOR_SPECIFIC) &&
+            if((pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET+1] == SIR_MAC_ACTION_VENDOR_SPECIFIC) &&
                 vos_mem_compare(&pbFrames[WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET+2], SIR_MAC_P2P_OUI, SIR_MAC_P2P_OUI_SIZE))
             // P2P action frames
             {
@@ -3042,14 +3009,11 @@ void __hdd_indicate_mgmt_frame(hdd_adapter_t *pAdapter,
         }
     }
 
-    if (wlan_hdd_cfg80211_convert_rxmgmt_flags(rx_flags, &nl80211_flag))
-        hddLog(LOG1, "Failed to convert RXMGMT flags :0x%x to nl80211 format",
-               rx_flags);
     //Indicate Frame Over Normal Interface
     hddLog( LOG1, FL("Indicate Frame over NL80211 Interface"));
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0))
     cfg80211_rx_mgmt(pAdapter->dev->ieee80211_ptr, freq, rxRssi * 100, pbFrames,
-                     nFrameLength, NL80211_RXMGMT_FLAG_ANSWERED | nl80211_flag);
+                     nFrameLength, NL80211_RXMGMT_FLAG_ANSWERED);
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0))
     cfg80211_rx_mgmt(pAdapter->dev->ieee80211_ptr, freq, rxRssi * 100, pbFrames,
                      nFrameLength, NL80211_RXMGMT_FLAG_ANSWERED, GFP_ATOMIC);

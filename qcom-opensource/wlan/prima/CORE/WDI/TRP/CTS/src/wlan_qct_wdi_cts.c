@@ -85,18 +85,11 @@
 #ifdef EXISTS_MSM_SMD
 #include <mach/msm_smd.h>
 #else
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
 #include <soc/qcom/smd.h>
-#endif
 #endif
 #include <linux/delay.h>
 #else
 #include "msm_smd.h"
-#endif
-#include "vos_api.h"
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-#include <linux/wcnss_wlan.h>
 #endif
 
 /* Global context for CTS handle, it is required to keep this 
@@ -109,19 +102,48 @@ static WCTS_HandleType gwctsHandle;
 /* Magic value to validate a WCTS CB (value is little endian ASCII: WCTS */
 #define WCTS_CB_MAGIC     0x53544357
 
+/* time to wait for SMD channel to open (in msecs) */
+#define WCTS_SMD_OPEN_TIMEOUT 5000
+
 /* time to wait for SMD channel to close (in msecs) */
 #define WCTS_SMD_CLOSE_TIMEOUT 5000
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-#define smd_disable_read_intr(a)
-#define smd_enable_read_intr(a)
-#endif
 
 /* Global Variable for WDI SMD stats */
 static struct WdiSmdStats gWdiSmdStats;
 /*----------------------------------------------------------------------------
  * Type Declarations
  * -------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------
+   WCTS_StateType
+ ---------------------------------------------------------------------------*/
+typedef enum
+{
+   WCTS_STATE_CLOSED,       /* Closed */
+   WCTS_STATE_OPEN_PENDING, /* Waiting for the OPEN event from SMD */
+   WCTS_STATE_OPEN,         /* Open event received from SMD */
+   WCTS_STATE_DEFERRED,     /* Write pending, SMD chennel is full */
+   WCTS_STATE_REM_CLOSED,   /* Remote end closed the SMD channel */
+   WCTS_STATE_MAX
+} WCTS_StateType;
+
+/*---------------------------------------------------------------------------
+   Control Transport Control Block Type
+ ---------------------------------------------------------------------------*/
+typedef struct
+{
+   WCTS_NotifyCBType      wctsNotifyCB;
+   void*                  wctsNotifyCBData;
+   WCTS_RxMsgCBType       wctsRxMsgCB;
+   void*                  wctsRxMsgCBData;
+   WCTS_StateType         wctsState;
+   vos_spin_lock_t        wctsStateLock;
+   smd_channel_t*         wctsChannel;
+   wpt_list               wctsPendingQueue;
+   wpt_uint32             wctsMagic;
+   wpt_msg                wctsOpenMsg;
+   wpt_msg                wctsDataMsg;
+   wpt_event              wctsEvent;
+} WCTS_ControlBlockType;
 
 /*---------------------------------------------------------------------------
    WDI CTS Buffer Type
@@ -221,12 +243,8 @@ WCTS_PALReadCallback
 {
    void* buffer;
    int packet_size;
-   int bytes_read;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   struct data_msg *msg;
-#else
    int available;
-#endif
+   int bytes_read;
 
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -241,26 +259,6 @@ WCTS_PALReadCallback
 
    /* iterate until no more packets are available */
    while (1) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-      unsigned long flags;
-
-      spin_lock_irqsave(&pWCTSCb->wctsDataMsg.data_queue_lock, flags);
-      if (list_empty(&pWCTSCb->wctsDataMsg.data_queue)) {
-	      spin_unlock_irqrestore(&pWCTSCb->wctsDataMsg.data_queue_lock,
-                                     flags);
-	      return;
-      }
-
-      msg = list_first_entry(&pWCTSCb->wctsDataMsg.data_queue,
-                             struct data_msg, list);
-      list_del(&msg->list);
-      spin_unlock_irqrestore(&pWCTSCb->wctsDataMsg.data_queue_lock, flags);
-
-      buffer = msg->buffer;
-      packet_size = msg->buf_len;
-      bytes_read = msg->buf_len;
-      wpalMemoryFree(msg);
-#else
       /* check the length of the next packet */
       packet_size = smd_cur_packet_size(pWCTSCb->wctsChannel);
       if (0 == packet_size) {
@@ -296,7 +294,6 @@ WCTS_PALReadCallback
          WPAL_ASSERT(0);
          return;
       }
-#endif
 
       /* forward the message to the registered handler */
       pWCTSCb->wctsRxMsgCB((WCTS_HandleType)pWCTSCb,
@@ -332,10 +329,8 @@ WCTS_PALWriteCallback
    WCTS_BufferType*    pBufferQueue;
    void*               pBuffer;
    int                 len;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    int                 available;
    int                 written;
-#endif
 
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -364,23 +359,16 @@ WCTS_PALWriteCallback
       pBuffer = pBufferQueue->pBuffer;
       len = pBufferQueue->bufferSize;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-      if (wcnss_smd_tx(pWCTSCb->wctsChannel, pBuffer, len))
-         WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-                    "WCTS_PALWriteCallback: channel write failure");
-#else
       available = smd_write_avail(pWCTSCb->wctsChannel);
       if (available < len) {
          /* channel has no room for the next packet so we are done */
          return;
       }
-#endif
 
       /* there is room for the next message, so we can now remove
          it from the deferred message queue and send it */
       wpal_list_remove_front(&pWCTSCb->wctsPendingQueue, &pNode);
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
       /* note that pNode will be the same as when we peeked, so
          there is no need to update pBuffer or len */
 
@@ -397,7 +385,6 @@ WCTS_PALWriteCallback
             hopefully the client can recover from this since there is
             nothing else we can do here */
       }
-#endif
 
       /* whether we had success or failure, reclaim all memory */
       wpalMemoryZero(pBuffer, len);
@@ -488,120 +475,21 @@ WCTS_ClearPendingQueue
 
 }/*WCTS_ClearPendingQueue*/
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-int WCTS_smd_resp_process(struct rpmsg_device *rpdev,
-			  void *data, int len, void *priv, u32 addr)
-{
-	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
-	struct data_msg *msg;
 
-	if (WCTS_CB_MAGIC != wcts_cb->wctsMagic) {
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-			   "%s: Received smd data in invalid state", __func__);
-		return 0;
-	}
+/**
+ * Notification callback when SMD needs to communicate asynchronously with
+ * the client.
+ *
+ * This callback function may be called from interrupt context; clients must
+ * not block or call any functions that block.
+ *
+ * @param[in] data   The user-supplied data provided to smd_named_open_on_edge()
+ * @param[in] event  The event that occurred
+ *
+ * @return void
+ */
 
-	if (WCTS_STATE_REM_CLOSED == wcts_cb->wctsState) {
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-			"%s: received SMD data when wcts state is closed ",
-			__func__);
-		/* we should not be getting any data now */
-		return 0;
-	}
-
-	gWdiSmdStats.smd_event_data++;
-
-	msg = wpalMemoryAllocate(sizeof(*msg));
-	if (!msg) {
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-			   "WCTS_smd_resp_process: Memory allocation failed");
-		return 0;
-	}
-
-	msg->buf_len = len;
-	msg->buffer = wpalMemoryAllocate(len);
-	if (!msg->buffer) {
-		wpalMemoryFree(msg);
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-			   "WCTS_smd_resp_process: Memory allocation failure");
-		WPAL_ASSERT(0);
-		return 0;
-	}
-
-	vos_mem_copy(msg->buffer, data, msg->buf_len);
-
-	spin_lock(&wcts_cb->wctsDataMsg.data_queue_lock);
-	list_add_tail(&msg->list, &wcts_cb->wctsDataMsg.data_queue);
-	spin_unlock(&wcts_cb->wctsDataMsg.data_queue_lock);
-
-	wpalPostCtrlMsg(WDI_GET_PAL_CTX(), &wcts_cb->wctsDataMsg);
-
-	return 0;
-}
-
-int WCTS_driver_state_process(void *priv, enum wcnss_driver_state state)
-{
-	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) priv;
-	wpt_msg *pal_msg;
-
-	switch (state) {
-	case WCNSS_SMD_OPEN:
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
-			   "%s: received WCNSS_SMD_OPEN from SMD", __func__);
-		/* If the prev state was 'remote closed' then it is a Riva 'restart',
-		 * subsystem restart re-init
-		 */
-		if (WCTS_STATE_REM_CLOSED == wcts_cb->wctsState) {
-			WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
-				   "%s: received WCNSS_SMD_OPEN in WCTS_STATE_REM_CLOSED state",
-				   __func__);
-			/* call subsystem restart re-init function */
-			wpalDriverReInit();
-			return 0;
-		}
-		gWdiSmdStats.smd_event_open++;
-		pal_msg = &wcts_cb->wctsOpenMsg;
-		break;
-	case WCNSS_SMD_CLOSE:
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
-			   "%s: received WCNSS_SMD_CLOSE from SMD", __func__);
-		/* SMD channel was closed from the remote side,
-		 * this would happen only when Riva crashed and SMD is
-		 * closing the channel on behalf of Riva */
-		vos_spin_lock_acquire(&wcts_cb->wctsStateLock);
-		wcts_cb->wctsState = WCTS_STATE_REM_CLOSED;
-		WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
-			   "%s: received WCNSS_SMD_CLOSE WLAN driver going down now",
-			   __func__);
-		vos_spin_lock_release(&wcts_cb->wctsStateLock);
-
-		/* subsystem restart: shutdown */
-		wpalDriverShutdown();
-		gWdiSmdStats.smd_event_close++;
-		return 0;
-	}
-
-	/* serialize this event */
-	wpalPostCtrlMsg(WDI_GET_PAL_CTX(), pal_msg);
-	return 0;
-}
-
-int WCTS_bt_profile_state_process(void *priv, struct bt_profile_state *state)
-{
-	int ret;
-
-	WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
-		   "%s: Received bt_profile state update %s", __func__,
-		   state->bt_enabled ? "ENABLED" : "DISABLED");
-
-	ret = vos_process_bt_profile(state->bt_enabled, state->bt_adv,
-				     state->bt_ble, state->bt_a2dp,
-				     state->bt_sco);
-
-	return ret;
-}
-#else
-void
+static void
 WCTS_NotifyCallback
 (
    void            *data,
@@ -709,7 +597,8 @@ WCTS_NotifyCallback
    wpalPostCtrlMsg(WDI_GET_PAL_CTX(), palMsg);
 
 } /*WCTS_NotifyCallback*/
-#endif
+
+
 
 /*----------------------------------------------------------------------------
  * Externalized Function Definitions
@@ -743,6 +632,7 @@ WCTS_OpenTransport
 )
 {
    WCTS_ControlBlockType*    pWCTSCb;
+   wpt_status                status;
    int                       smdstatus;
 
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -769,11 +659,7 @@ WCTS_OpenTransport
            WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_FATAL,
                    "WCTS_OpenTransport: Invalid magic.");
            return NULL;
-       }
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-	/* Need to open smd channel in case of SSR in rpmsg */
-	smdstatus = vos_smd_open(szName, pWCTSCb);
-#endif
+       }   
        pWCTSCb->wctsState = WCTS_STATE_OPEN;
 
        pWCTSCb->wctsNotifyCB((WCTS_HandleType)pWCTSCb,
@@ -827,20 +713,38 @@ WCTS_OpenTransport
 
    pWCTSCb->wctsDataMsg.callback = WCTS_PALDataCallback;
    pWCTSCb->wctsDataMsg.pContext = pWCTSCb;
-   pWCTSCb->wctsDataMsg.type = WPAL_MC_MSG_SMD_NOTIF_DATA_SIG;
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-   INIT_LIST_HEAD(&pWCTSCb->wctsDataMsg.data_queue);
-   spin_lock_init(&pWCTSCb->wctsDataMsg.data_queue_lock);
-#endif
+   pWCTSCb-> wctsDataMsg.type= WPAL_MC_MSG_SMD_NOTIF_DATA_SIG;
 
    /*---------------------------------------------------------------------
      Open the SMD channel
      ---------------------------------------------------------------------*/
-   smdstatus = vos_smd_open(szName, pWCTSCb);
+
+   wpalEventReset(&pWCTSCb->wctsEvent);
+   smdstatus = smd_named_open_on_edge(szName,
+                                      SMD_APPS_WCNSS,
+                                      &pWCTSCb->wctsChannel,
+                                      pWCTSCb,
+                                      WCTS_NotifyCallback);
    if (0 != smdstatus) {
       WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
                  "%s: smd_named_open_on_edge failed with status %d",
                  __func__, smdstatus);
+      goto fail;
+   }
+
+   /* wait for the channel to be fully opened before we proceed */
+   status = wpalEventWait(&pWCTSCb->wctsEvent, WCTS_SMD_OPEN_TIMEOUT);
+   if (eWLAN_PAL_STATUS_SUCCESS != status) {
+      WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                 "%s: failed to receive SMD_EVENT_OPEN",
+                 __func__);
+      /* since we opened one end of the channel, close it */
+      smdstatus = smd_close(pWCTSCb->wctsChannel);
+      if (0 != smdstatus) {
+         WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                    "%s: smd_close failed with status %d",
+                    __func__, smdstatus);
+      }
       goto fail;
    }
 
@@ -861,14 +765,7 @@ WCTS_OpenTransport
 }/*WCTS_OpenTransport*/
 
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-void wcts_close_channel(WCTS_HandleType wcts_handle)
-{
-	WCTS_ControlBlockType* wcts_cb = (WCTS_ControlBlockType*) wcts_handle;
 
-	wcnss_close_channel(wcts_cb->wctsChannel);
-}
-#endif
 /**
  @brief    This function is used by the DAL Core to close the
            Control Transport when its services are no longer
@@ -892,10 +789,8 @@ WCTS_CloseTransport
    wpt_list_node*      pNode = NULL;
    WCTS_BufferType*    pBufferQueue = NULL;
    void*               pBuffer = NULL;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    wpt_status          status;
    int                 smdstatus;
-#endif
 
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -917,7 +812,6 @@ WCTS_CloseTransport
    /* Reset the state */
    pWCTSCb->wctsState = WCTS_STATE_CLOSED;
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    wpalEventReset(&pWCTSCb->wctsEvent);
    smdstatus = smd_close(pWCTSCb->wctsChannel);
    if (0 != smdstatus) {
@@ -946,10 +840,6 @@ WCTS_CloseTransport
          that code will crash when the memory is unmapped  */
       msleep(50);
    }
-#else
-   wcts_close_channel(wctsHandle);
-   wlan_unregister_driver();
-#endif
 
    /* channel has (hopefully) been closed */
    pWCTSCb->wctsNotifyCB((WCTS_HandleType)pWCTSCb,
@@ -999,9 +889,7 @@ WCTS_SendMessage
    WCTS_BufferType*          pBufferQueue;
    int                       len;
    int                       written = 0;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0))
    int                       available;
-#endif
 
    /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -1023,17 +911,10 @@ WCTS_SendMessage
    len = (int)uLen;
 
    if (WCTS_STATE_OPEN == pWCTSCb->wctsState) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
-      if (wcnss_smd_tx(pWCTSCb->wctsChannel, pMsg, len))
-         written = -1;
-      else
-         written = len;
-#else
       available = smd_write_avail(pWCTSCb->wctsChannel);
       if (available >= len) {
          written = smd_write(pWCTSCb->wctsChannel, pMsg, len);
       }
-#endif
    } else if (WCTS_STATE_DEFERRED == pWCTSCb->wctsState) {
       WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
                  "WCTS_SendMessage: FIFO space not available, the packets will be queued");

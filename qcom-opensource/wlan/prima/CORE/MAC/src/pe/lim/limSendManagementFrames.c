@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -7333,77 +7333,3 @@ limSendRMCActionFrame(tpAniSirGlobal  pMac,
 } // End limSendRMCActionFrame.
 
 #endif /* WLAN_FEATURE_RMC */
-
-/**
- * lim_tx_mgmt_frame() - Transmits Auth mgmt frame
- * @mac_ctx Pointer to Global MAC structure
- * @mb_msg: Received message info
- * @msg_len: Received message length
- * @packet: Packet to be transmitted
- * @frame: Received frame
- *
- * Return: None
- */
-static void lim_tx_mgmt_frame(tpAniSirGlobal mac_ctx,
-                              struct sir_mgmt_msg *mb_msg, uint32_t msg_len,
-                              void *packet, uint8_t *frame)
-{
-    tpSirMacFrameCtl fc = (tpSirMacFrameCtl)mb_msg->data;
-    eHalStatus hal_status;
-    uint8_t sme_session_id = 0;
-    tpPESession session;
-
-    sme_session_id = mb_msg->session_id;
-    session = pe_find_session_by_sme_session_id(mac_ctx, sme_session_id);
-    if (session == NULL) {
-            limLog(mac_ctx, LOGP,
-                   FL("session not found for given sme session"));
-            return;
-    }
-    MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_MGMT,
-           session->peSessionId, fc->subType));
-    mac_ctx->authAckStatus = LIM_AUTH_ACK_NOT_RCD;
-    hal_status =
-           halTxFrameWithTxComplete(mac_ctx, packet, (uint16_t)msg_len,
-                                    HAL_TXRX_FRM_802_11_MGMT,
-                                    ANI_TXDIR_TODS,
-                                    7, limTxComplete, frame,
-                                    limAuthTxCompleteCnf,
-                                    0, mac_ctx->lim.txBdToken);
-    MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_COMPLETE,
-           session->peSessionId, hal_status));
-    if (!HAL_STATUS_SUCCESS(hal_status)) {
-        limLog(mac_ctx, LOGP,
-               FL("*** Could not send Auth frame, retCode=%X ***"),
-               hal_status);
-        mac_ctx->authAckStatus = LIM_AUTH_ACK_RCD_FAILURE;
-        limDiagEventReport(mac_ctx, WLAN_PE_DIAG_AUTH_REQ_EVENT,
-                           session, eSIR_FAILURE, eSIR_FAILURE);
-        /* Pkt will be freed up by the callback */
-    }
-}
-
-void lim_send_mgmt_frame_tx(tpAniSirGlobal mac_ctx, tpSirMsgQ msg)
-{
-    struct sir_mgmt_msg *mb_msg = (struct sir_mgmt_msg *)msg->bodyptr;
-    uint32_t msg_len;
-    tpSirMacFrameCtl fc = (tpSirMacFrameCtl)mb_msg->data;
-    uint8_t sme_session_id;
-    eHalStatus halstatus;
-    uint8_t *frame;
-    void *packet;
-
-    msg_len = mb_msg->msg_len - sizeof(*mb_msg);
-    limLog(mac_ctx, LOG1, FL("sending fc->type: %d fc->subType: %d"),
-           fc->type, fc->subType);
-    sme_session_id = mb_msg->session_id;
-    halstatus = palPktAlloc(mac_ctx->hHdd, HAL_TXRX_FRM_802_11_MGMT,
-                            (uint16_t)msg_len, (void **)&frame,
-                            (void **)&packet);
-    if (!HAL_STATUS_SUCCESS(halstatus)) {
-        limLog(mac_ctx, LOGP, FL("call to bufAlloc failed for AUTH frame"));
-        return;
-    }
-    vos_mem_copy(frame, mb_msg->data, msg_len);
-    lim_tx_mgmt_frame(mac_ctx, mb_msg, msg_len, packet, frame);
-}

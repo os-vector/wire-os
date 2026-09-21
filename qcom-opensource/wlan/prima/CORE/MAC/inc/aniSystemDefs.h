@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, 2019-2020  The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -84,45 +84,12 @@ typedef enum eAniAuthType
 #if defined WLAN_FEATURE_VOWIFI_11R
     eSIR_FT_AUTH,
 #endif
-    eSIR_AUTH_TYPE_SAE = 3,
-    eSIR_AUTH_TYPE_OWE = 4,
 #if defined FEATURE_WLAN_ESE
     eSIR_LEAP_AUTH = 0x80,
 #endif
     eSIR_AUTO_SWITCH,
     eSIR_DONOT_USE_AUTH_TYPE = SIR_MAX_ENUM_SIZE
 } tAniAuthType;
-
-enum ani_akm_type {
-    ANI_AKM_TYPE_NONE,
-    ANI_AKM_TYPE_RSN,
-    ANI_AKM_TYPE_RSN_PSK,
-    ANI_AKM_TYPE_FT_RSN,
-    ANI_AKM_TYPE_FT_RSN_PSK,
-    ANI_AKM_TYPE_RSN_PSK_SHA256,
-    ANI_AKM_TYPE_RSN_8021X_SHA256,
-#ifdef WLAN_FEATURE_SAE
-    ANI_AKM_TYPE_SAE,
-    ANI_AKM_TYPE_FT_SAE,
-#endif
-    ANI_AKM_TYPE_SUITEB_EAP_SHA256,
-    ANI_AKM_TYPE_SUITEB_EAP_SHA384,
-    ANI_AKM_TYPE_FT_SUITEB_EAP_SHA384,
-    ANI_AKM_TYPE_FILS_SHA256,
-    ANI_AKM_TYPE_FILS_SHA384,
-    ANI_AKM_TYPE_FT_FILS_SHA256,
-    ANI_AKM_TYPE_FT_FILS_SHA384,
-    ANI_AKM_TYPE_OWE,
-#ifdef FEATURE_WLAN_ESE
-    ANI_AKM_TYPE_CCKM,
-#endif
-    ANI_AKM_TYPE_OSEN,
-    ANI_AKM_TYPE_DPP_RSN,
-    ANI_AKM_TYPE_WPA,
-    ANI_AKM_TYPE_WPA_PSK,
-    ANI_NUM_OF_SUPPORT_AKM_TYPE,
-    ANI_AKM_TYPE_UNKNOWN = 0xff,
-};
 
 /// Encryption type enum used with peer
 typedef enum eAniEdType

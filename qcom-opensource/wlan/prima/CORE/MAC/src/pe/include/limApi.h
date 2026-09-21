@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013, 2016, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2013, 2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -256,13 +256,4 @@ tSirRetStatus peProcessMessages(tpAniSirGlobal pMac, tSirMsgQ* pMsg);
 -----------------------------------------------------------------*/
 v_VOID_t peFreeMsg( tpAniSirGlobal pMac, tSirMsgQ* pMsg);
 /************************************************************/
-
-/**
- * lim_translate_rsn_oui_to_akm_type() - translate RSN OUI to AKM type
- * @auth_suite: auth suite
- *
- * Return: AKM type
- */
-enum ani_akm_type lim_translate_rsn_oui_to_akm_type(uint8_t auth_suite[4]);
-
 #endif /* __LIM_API_H */

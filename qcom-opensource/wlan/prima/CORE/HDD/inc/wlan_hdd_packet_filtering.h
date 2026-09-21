@@ -111,7 +111,5 @@ typedef struct
     tHddMacAddr    multicastAddr[HDD_MAX_NUM_MULTICAST_ADDRESS];
 } tRcvFltMcAddrList, *tpRcvFltMcAddrList;
 
-int wlan_hdd_set_filter(hdd_adapter_t *pAdapter, tpPacketFilterCfg pRequest);
-
 #endif
 #endif // __WLAN_HDD_PACKET_FILTERING_H__

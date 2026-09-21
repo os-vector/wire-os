@@ -45,10 +45,6 @@ void smeTraceInit(tpAniSirGlobal pMac)
 {
     return;
 }
-void sme_register_debug_callback()
-{
-    return;
-}
 #endif
 #ifdef SME_TRACE_RECORD
 
