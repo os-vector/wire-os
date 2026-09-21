@@ -36,6 +36,7 @@ export KERNEL=`uname -r`
 case "$1" in
 start)
     echo -n "Starting init_qcom_audio: "
+    modprobe stub_dlkm
     echo 0 > /sys/module/subsystem_restart/parameters/enable_debug
     echo 1 > /sys/kernel/boot_adsp/boot 
     echo "done"

@@ -82,6 +82,8 @@ case "$1" in
 		mkdir functions/ncm.0
 		mkdir functions/qdss.qdss
 		mkdir functions/uac1.uac1
+		echo  "adb" > strings/0x409/configuration
+		ln -s /sys/kernel/config/usb_gadget/g1/functions/ffs.adb configs/c.1/f1
 		echo "$serialno" > strings/0x409/serialnumber
 		echo "QCOM" > strings/0x409/manufacturer
 		echo "$socplatform" > strings/0x409/product

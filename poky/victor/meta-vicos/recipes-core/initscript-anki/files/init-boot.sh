@@ -26,9 +26,10 @@ ROOTFS="${ROOTFS%% *}"
 [ -z "${ROOTFS}" ] && fatal "ERROR: Kernel boot arg root=... not found"
 
 # Enable power rails required for GPIO, LCD, IMU and Camera
-echo 1 > /sys/kernel/debug/regulator/8916_l8/enable
-echo 1 > /sys/kernel/debug/regulator/8916_l17/enable
-echo 1 > /sys/kernel/debug/regulator/8916_l4/enable
+REG_DEBUG_PATH=/sys/kernel/debug/regulator
+echo 1 > $REG_DEBUG_PATH/soc:qcom,rpm-smd:rpm-regulator-ldoa8:regulator-l8-8916_l8/enable
+echo 1 > $REG_DEBUG_PATH/soc:qcom,rpm-smd:rpm-regulator-ldoa17:regulator-l17-8916_l17/enable
+echo 1 > $REG_DEBUG_PATH/soc:qcom,rpm-smd:rpm-regulator-ldoa4:regulator-l4-8916_l4/enable
 
 # in case anyone ever wants to make prod builds again
 # Power on hardware test and led states

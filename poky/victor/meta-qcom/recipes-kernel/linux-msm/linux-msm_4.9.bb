@@ -5,15 +5,12 @@ COMPATIBLE_MACHINE = "(apq8009|apq8053|qcs605|sdm845|sdxpoorwills|mdm9650|mdm960
 KERNEL_IMAGEDEST = "boot"
 
 SRC_DIR   =  "${WORKSPACE}/kernel/msm-4.9"
-S         =  "${WORKDIR}/kernel/msm-4.9"
+S         =  "${UNPACKDIR}/kernel/msm-4.9"
 PR = "r5"
 
 DEPENDS += "dtc-native"
 
 SRC_URI += "file://defconfig"
-
-#KERNEL_CC = "${WORKSPACE}/old-toolchain/arm/bin/arm-linux-gnueabihf-gcc"
-#KERNEL_LD = "${WORKSPACE}/old-toolchain/arm/bin/arm-linux-gnueabihf-ld"
 
 do_compile () {
     if ${@bb.utils.contains('DISTRO_FEATURES', 'avble', 'true', 'false', d)}; then
@@ -79,3 +76,5 @@ do_install:append() {
 do_shared_workdir[dirs] = "${DEPLOY_DIR_IMAGE}"
 KERNEL_VERSION_SANITY_SKIP = "1"
 INSANE_SKIP:${PN} += " installed-vs-shipped"
+INSANE_SKIP:${PN} += "debug-files"
+PACKAGES:prepend = "${KERNEL_PACKAGE_NAME}-dbg "

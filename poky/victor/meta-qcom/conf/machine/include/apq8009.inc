@@ -12,7 +12,7 @@ DEFAULTTUNE ?= "armv7a-neon-vfpv4"
 include conf/machine/include/arm/armv7a/tune-cortexa7.inc
 
 PREFERRED_PROVIDER_virtual/kernel = "linux-msm"
-PREFERRED_VERSION_linux-msm = "3.18"
+PREFERRED_VERSION_linux-msm = "4.9"
 
 MACHINE_DISPLAY_WIDTH_PIXELS ?= "480"
 MACHINE_DISPLAY_HEIGHT_PIXELS ?= "640"
