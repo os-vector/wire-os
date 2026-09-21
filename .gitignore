@@ -10,3 +10,6 @@ bb-files.txt
 /vm-deps-installed
 /anki-deps
 /old-toolchain
+*.o
+*.o.d
+*.o.cmd
