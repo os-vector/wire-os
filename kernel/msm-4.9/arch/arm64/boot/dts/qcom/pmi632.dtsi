@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -44,6 +44,7 @@
 			interrupt-names = "eoc-int-en-set";
 			qcom,adc-vdd-reference = <1875>;
 			qcom,adc-full-scale-code = <0x70e4>;
+			qcom,pmic-revid = <&pmi632_revid>;
 
 			chan@0 {
 				label = "ref_gnd";
@@ -752,6 +753,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&bcl_sensor 0>;
+		wake-capable-sensor;
 
 		trips {
 			pmi632_ibat_lvl0: ibat-lvl0 {
@@ -767,6 +769,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&bcl_sensor 1>;
+		wake-capable-sensor;
 
 		trips {
 			ibat-lvl1 {
@@ -782,6 +785,7 @@
 		polling-delay = <0>;
 		thermal-governor = "low_limits_cap";
 		thermal-sensors = <&bcl_sensor 2>;
+		wake-capable-sensor;
 		tracks-low;
 
 		trips {
@@ -798,6 +802,7 @@
 		polling-delay = <0>;
 		thermal-governor = "low_limits_cap";
 		thermal-sensors = <&bcl_sensor 3>;
+		wake-capable-sensor;
 		tracks-low;
 
 		trips {
@@ -814,6 +819,7 @@
 		polling-delay = <0>;
 		thermal-governor = "low_limits_cap";
 		thermal-sensors = <&bcl_sensor 4>;
+		wake-capable-sensor;
 		tracks-low;
 
 		trips {
@@ -830,6 +836,7 @@
 		polling-delay = <0>;
 		thermal-governor = "low_limits_cap";
 		thermal-sensors = <&bcl_soc>;
+		wake-capable-sensor;
 		tracks-low;
 
 		trips {
@@ -846,6 +853,7 @@
 		polling-delay = <0>;
 		thermal-governor = "step_wise";
 		thermal-sensors = <&pmi632_tz>;
+		wake-capable-sensor;
 
 		trips {
 			pmi632_tz_trip0: pmi632-trip0 {

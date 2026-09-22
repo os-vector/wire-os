@@ -1,0 +1,49 @@
+/* Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+
+#include "sa415m-ccard.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SA415M CCARD USB-EP";
+	compatible = "qcom,sa415m-ccard",
+		"qcom,sdxpoorwills", "qcom,ccard";
+	qcom,board-id = <25 2>, <25 0x102>;
+
+	qcom_gadget {
+		compatible = "qcom,usb-gadget";
+		qcom,vid = <0x05c6>;
+
+		composition1 {
+			qcom,pid = <0x9103>;
+			qcom,composition = "diag.diag,ipc.ipc,gsi.rmnet,gsi.rmnet.v2x,ecm.ecm,gsi.dpl";
+		};
+
+		composition2 {
+			qcom,pid = <0x9107>;
+			qcom,composition = "diag.diag,ipc.ipc,gsi.rmnet.v2x,gsi.ecm,gsi.dpl";
+		};
+	};
+};
+
+&ipa_hw {
+	qcom,ipa-config-is-auto;
+};
+
+&usb {
+	qcom,gadget-imod-val = <250>;
+};
+
+&sdx_ext_ipc {
+	qcom,default-policy-nop;
+};

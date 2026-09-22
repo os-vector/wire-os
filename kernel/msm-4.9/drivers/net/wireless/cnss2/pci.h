@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -31,6 +31,7 @@ enum cnss_mhi_state {
 	CNSS_MHI_RESUME,
 	CNSS_MHI_TRIGGER_RDDM,
 	CNSS_MHI_RDDM,
+	CNSS_MHI_RDDM_DONE,
 };
 
 struct cnss_msi_user {
@@ -43,6 +44,16 @@ struct cnss_msi_config {
 	int total_vectors;
 	int total_users;
 	struct cnss_msi_user *users;
+};
+
+struct cnss_pci_reg {
+	char *name;
+	u32 offset;
+};
+
+struct cnss_pci_debug_reg {
+	u32 offset;
+	u32 val;
 };
 
 struct cnss_pci_data {
@@ -58,6 +69,7 @@ struct cnss_pci_data {
 	struct pci_saved_state *default_state;
 	struct msm_pcie_register_event msm_pci_event;
 	atomic_t auto_suspended;
+	u8 drv_connected_last;
 	bool monitor_wake_intr;
 	struct dma_iommu_mapping *smmu_mapping;
 	bool smmu_s1_enable;
@@ -70,6 +82,10 @@ struct cnss_pci_data {
 	u32 msi_ep_base_data;
 	struct mhi_controller *mhi_ctrl;
 	unsigned long mhi_state;
+	u32 remap_window;
+	struct timer_list dev_rddm_timer;
+	bool disable_pc;
+	struct cnss_pci_debug_reg *debug_reg;
 };
 
 static inline void cnss_set_pci_priv(struct pci_dev *pci_dev, void *data)
@@ -122,6 +138,8 @@ int cnss_resume_pci_link(struct cnss_pci_data *pci_priv);
 int cnss_pci_init(struct cnss_plat_data *plat_priv);
 void cnss_pci_deinit(struct cnss_plat_data *plat_priv);
 int cnss_pci_alloc_fw_mem(struct cnss_pci_data *pci_priv);
+int cnss_pci_alloc_qdss_mem(struct cnss_pci_data *pci_priv);
+void cnss_pci_free_qdss_mem(struct cnss_pci_data *pci_priv);
 int cnss_pci_load_m3(struct cnss_pci_data *pci_priv);
 int cnss_pci_set_mhi_state(struct cnss_pci_data *pci_priv,
 			   enum cnss_mhi_state state);

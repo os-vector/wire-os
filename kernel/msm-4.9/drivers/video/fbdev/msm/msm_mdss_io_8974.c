@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1163,10 +1163,12 @@ static void mdss_dsi_phy_regulator_ctrl(struct mdss_dsi_ctrl_pdata *ctrl,
 			 * regulator if the other dsi controller is still
 			 * active.
 			 */
-			if (!mdss_dsi_is_hw_config_dual(sdata) ||
-				(other_ctrl && (!other_ctrl->is_phyreg_enabled
+				if (!mdss_dsi_is_hw_config_dual(sdata) ||
+						(other_ctrl &&
+						(!other_ctrl->is_phyreg_enabled
 						|| other_ctrl->mmss_clamp)))
-				mdss_dsi_28nm_phy_regulator_enable(ctrl);
+					mdss_dsi_28nm_phy_regulator_enable(
+									ctrl);
 				break;
 			}
 		}
@@ -1925,6 +1927,7 @@ error:
 static int mdss_dsi_clamp_ctrl(struct mdss_dsi_ctrl_pdata *ctrl, int enable)
 {
 	struct mipi_panel_info *mipi = NULL;
+	struct mdss_panel_data *pdata = NULL;
 	u32 clamp_reg, regval = 0;
 	u32 clamp_reg_off, phyrst_reg_off;
 
@@ -1941,6 +1944,7 @@ static int mdss_dsi_clamp_ctrl(struct mdss_dsi_ctrl_pdata *ctrl, int enable)
 	clamp_reg_off = ctrl->shared_data->ulps_clamp_ctrl_off;
 	phyrst_reg_off = ctrl->shared_data->ulps_phyrst_ctrl_off;
 	mipi = &ctrl->panel_data.panel_info.mipi;
+	pdata = &ctrl->panel_data;
 
 	/* clock lane will always be clamped */
 	clamp_reg = BIT(9);
@@ -1970,6 +1974,14 @@ static int mdss_dsi_clamp_ctrl(struct mdss_dsi_ctrl_pdata *ctrl, int enable)
 	pr_debug("%s: called for ctrl%d, enable=%d, clamp_reg=0x%08x\n",
 		__func__, ctrl->ndx, enable, clamp_reg);
 	if (enable && !ctrl->mmss_clamp) {
+		if (!mdss_dsi_ulps_feature_enabled(pdata) &&
+			!pdata->panel_info.ulps_suspend_enabled &&
+			ctrl->shared_data->skip_clamp) {
+
+			ctrl->mmss_clamp = true;
+			return 0;
+		}
+
 		regval = MIPI_INP(ctrl->mmss_misc_io.base + clamp_reg_off);
 		/* Enable MMSS DSI Clamps */
 		if (ctrl->ndx == DSI_CTRL_0) {
@@ -2008,6 +2020,14 @@ static int mdss_dsi_clamp_ctrl(struct mdss_dsi_ctrl_pdata *ctrl, int enable)
 		wmb();
 		ctrl->mmss_clamp = true;
 	} else if (!enable && ctrl->mmss_clamp) {
+		if (!mdss_dsi_ulps_feature_enabled(pdata) &&
+			!pdata->panel_info.ulps_suspend_enabled &&
+			ctrl->shared_data->skip_clamp) {
+
+			ctrl->mmss_clamp = false;
+			return 0;
+		}
+
 		if (IS_MDSS_MAJOR_MINOR_SAME(ctrl->shared_data->hw_rev,
 			MDSS_DSI_HW_REV_104) &&
 			(MDSS_GET_STEP(ctrl->shared_data->hw_rev) !=

@@ -99,6 +99,13 @@ static void __init invoke_init_callbacks(void)
 	}
 }
 
+#if !defined(CONFIG_SPARSEMEM)
+void __init page_ext_init_flatmem_late(void)
+{
+	invoke_init_callbacks();
+}
+#endif
+
 static unsigned long get_entry_size(void)
 {
 	return sizeof(struct page_ext) + extra_mem;
@@ -187,7 +194,6 @@ void __init page_ext_init_flatmem(void)
 			goto fail;
 	}
 	pr_info("allocated %ld bytes of page_ext\n", total_usage);
-	invoke_init_callbacks();
 	return;
 
 fail:
@@ -283,6 +289,7 @@ static void free_page_ext(void *addr)
 		table_size = get_entry_size() * PAGES_PER_SECTION;
 
 		BUG_ON(PageReserved(page));
+		kmemleak_free(addr);
 		free_pages_exact(addr, table_size);
 	}
 }

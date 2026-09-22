@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -54,6 +54,7 @@ int apr_get_dest_id(char *dest)
 	else
 		return APR_DEST_MODEM;
 }
+EXPORT_SYMBOL(apr_get_dest_id);
 
 void subsys_notif_register(char *client_name, int domain,
 			   struct notifier_block *nb)

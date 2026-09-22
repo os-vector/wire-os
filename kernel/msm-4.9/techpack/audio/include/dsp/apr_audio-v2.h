@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -110,6 +110,17 @@ struct adm_cmd_matrix_map_routings_v5 {
  *	COPP ID.
  */
 #define ADM_CMD_DEVICE_OPEN_V6                      0x00010356
+
+/* This command allows a client to open a COPP/Voice Proc the
+*	way as ADM_CMD_DEVICE_OPEN_V8 but supports any number channel
+*	of configuration.
+*
+*	@return
+*	#ADM_CMDRSP_DEVICE_OPEN_V8 with the resulting status and
+*	COPP ID.
+*/
+#define ADM_CMD_DEVICE_OPEN_V8                      0x0001036A
+
 
 /* Definition for a low latency stream session. */
 #define ADM_LOW_LATENCY_DEVICE_SESSION			0x2000
@@ -389,6 +400,110 @@ struct adm_cmd_device_open_v6 {
  */
 } __packed;
 
+
+/* ADM device open endpoint payload the
+ *   #ADM_CMD_DEVICE_OPEN_V8 command.
+ */
+struct adm_device_endpoint_payload {
+	u16                  dev_num_channel;
+/* Number of channels the audio COPP sends to/receives from
+ * the endpoint.
+ * Supported values: 1 to 32.
+ * The value is ignored for the voice processor Tx block,
+ * where channel
+ * configuration is derived from the topology ID.
+ */
+
+	u16                  bit_width;
+/* Bit width (in bits) that the audio COPP sends to/receives
+ * from the
+ * endpoint. The value is ignored for the voice processing
+ * Tx block,
+ * where the PCM width is 16 bits.
+ */
+
+	u32                  sample_rate;
+/* Sampling rate at which the audio COPP/voice processor
+ * Tx block
+ * interfaces with the endpoint.
+ * Supported values for voice processor Tx: 8000, 16000,
+ * 48000 Hz
+ * Supported values for audio COPP: >0 and <=192 kHz
+ */
+
+	u8                    dev_channel_mapping[32];
+} __packed;
+
+/*  ADM device open command payload of the
+ *   #ADM_CMD_DEVICE_OPEN_V8 command.
+ */
+struct adm_cmd_device_open_v8 {
+	struct apr_hdr       hdr;
+	u16                  flags;
+/* Bit width Native mode enabled : 11th bit of flag parameter
+*  If 11th bit of flag is set then that means matrix mixer will be
+*  running in native mode for bit width for this device session.
+*
+*  Channel Native mode enabled : 12th bit of flag parameter
+*  If 12th bit of flag is set then that means matrix mixer will be
+*  running in native mode for channel configuration for this device session.
+*  All other bits are reserved; clients must set them to 0.
+*/
+	u16                  mode_of_operation;
+/* Specifies whether the COPP must be opened on the Tx or Rx
+ * path. Use the ADM_CMD_COPP_OPEN_MODE_OF_OPERATION_* macros for
+ * supported values and interpretation.
+ * Supported values:
+ * - 0x1 -- Rx path COPP
+ * - 0x2 -- Tx path live COPP
+ * - 0x3 -- Tx path nonlive COPP
+ * Live connections cause sample discarding in the Tx device
+ * matrix if the destination output ports do not pull them
+ * fast enough. Nonlive connections queue the samples
+ * indefinitely.
+ */
+	u32                  topology_id;
+/* Audio COPP topology ID; 32-bit GUID. */
+
+
+	u16                  endpoint_id_1;
+/* Logical and physical endpoint ID of the audio path.
+ * If the ID is a voice processor Tx block, it receives near
+ * samples.
+ * Supported values: Any pseudoport, AFE Rx port,
+ * or AFE Tx port For a list of valid IDs, refer to
+ * @xhyperref{Q4,[Q4]}.
+ * Q4 = Hexagon Multimedia: AFE Interface Specification
+ */
+
+	u16                  endpoint_id_2;
+/* Logical and physical endpoint ID 2 for a voice processor
+ * Tx block.
+ * This is not applicable to audio COPP.
+ * Supported values:
+ * - AFE Rx port
+ * - 0xFFFF -- Endpoint 2 is unavailable and the voice
+ * processor Tx
+ * block ignores this endpoint
+ * When the voice processor Tx block is created on the audio
+ * record path,
+ * it can receive far-end samples from an AFE Rx port if the
+ * voice call
+ * is active. The ID of the AFE port is provided in this
+ * field.
+ * For a list of valid IDs, refer @xhyperref{Q4,[Q4]}.
+ */
+
+	u16                  endpoint_id_3;
+/*
+ * Logical and physical endpoint ID of the audio path.
+ * This indicated afe rx port in ADM loopback use cases.
+ * In all other use cases this should be set to 0xffff
+ */
+
+	u16                  reserved;
+} __packed;
+
 /*
  *	This command allows the client to close a COPP and disconnect
  *	the device session.
@@ -529,6 +644,9 @@ struct adm_cmd_rsp_device_open_v5 {
 
 /* Returns the status and COPP ID to an #ADM_CMD_DEVICE_OPEN_V6 command. */
 #define ADM_CMDRSP_DEVICE_OPEN_V6                      0x00010357
+
+/* Returns the status and COPP ID to an #ADM_CMD_DEVICE_OPEN_V8 command. */
+#define ADM_CMDRSP_DEVICE_OPEN_V8                      0x0001036B
 
 /*  Payload of the #ADM_CMDRSP_DEVICE_OPEN_V6 message,
  *	which returns the
@@ -2469,6 +2587,8 @@ struct afe_param_id_internal_bt_fm_cfg {
 
 #define AFE_PORT_MAX_AUDIO_CHAN_CNT	0x8
 
+#define AFE_PORT_MAX_AUDIO_CHAN_CNT_V2	0x20
+
 /* Payload of the #AFE_PORT_CMD_SLIMBUS_CONFIG command's SLIMbus
  * port configuration parameter.
  */
@@ -2941,6 +3061,10 @@ struct afe_param_id_tdm_cfg {
  */
 #define AFE_API_VERSION_SLOT_MAPPING_CONFIG	0x1
 
+/** Version information used to handle future additions to slot mapping
+*	configuration support 32 channels.
+*/
+#define AFE_API_VERSION_SLOT_MAPPING_CONFIG_V2	0x2
 /* Data align type  */
 #define AFE_SLOT_MAPPING_DATA_ALIGN_MSB		0
 #define AFE_SLOT_MAPPING_DATA_ALIGN_LSB		1
@@ -2990,9 +3114,52 @@ struct afe_param_id_slot_mapping_cfg {
 	 */
 } __packed;
 
-/* ID of the parameter used by #AFE_MODULE_TDM to configure
- * the customer TDM header. #AFE_PORT_CMD_SET_PARAM can use this parameter ID.
- */
+/* Payload of the AFE_PARAM_ID_PORT_SLOT_MAPPING_CONFIG_V2
+*  command's TDM configuration parameter.
+*/
+struct afe_param_id_slot_mapping_cfg_v2 {
+	u32	minor_version;
+	/**< Minor version used for tracking TDM slot configuration.
+	 * @values #AFE_API_VERSION_TDM_SLOT_CONFIG
+	 */
+
+	u16	num_channel;
+	/**< number of channel of the audio sample.
+	* @values 1, 2, 4, 6, 8, 16, 32 @tablebulletend
+	*/
+
+	u16	bitwidth;
+	/**< Slot bit width for each channel
+	* @values 16, 24, 32
+	*/
+
+	u32	data_align_type;
+	/**< indicate how data packed from slot_offset for 32 slot bit width
+	* in case of sample bit width is 24.
+	* @values
+	* #AFE_SLOT_MAPPING_DATA_ALIGN_MSB
+	* #AFE_SLOT_MAPPING_DATA_ALIGN_LSB
+	*/
+
+	u16	offset[AFE_PORT_MAX_AUDIO_CHAN_CNT_V2];
+	/**< Array of the slot mapping start offset in bytes for this frame.
+	* The bytes is counted from 0. The 0 is mapped to the 1st byte
+	* in or out of the digital serial data line this sub-frame belong to.
+	* slot_offset[] setting is per-channel based.
+	* The max num of channel supported is 8.
+	* The valid offset value must always be continuly placed in
+	* from index 0.
+	* Set offset as AFE_SLOT_MAPPING_OFFSET_INVALID for not used arrays.
+	* If "slot_bitwidth_per_channel" is 32 and "sample_bitwidth" is 24,
+	* "data_align_type" is used to indicate how 24 bit sample data in
+	* aligning with 32 bit slot width per-channel.
+	* @values, in byte
+	*/
+} __packed;
+
+/** ID of the parameter used by #AFE_MODULE_TDM to configure
+    the customer TDM header. #AFE_PORT_CMD_SET_PARAM can use this parameter ID.
+*/
 #define AFE_PARAM_ID_CUSTOM_TDM_HEADER_CONFIG		0x00010298
 
 /* Version information used to handle future additions to custom TDM header
@@ -3064,6 +3231,13 @@ struct afe_slot_mapping_config_command {
 	struct afe_param_id_slot_mapping_cfg	slot_mapping;
 } __packed;
 
+struct afe_slot_mapping_config_command_v2 {
+	struct apr_hdr	hdr;
+	struct afe_port_cmd_set_param_v2	param;
+	struct afe_port_param_data_v2	pdata;
+	struct afe_param_id_slot_mapping_cfg_v2	slot_mapping;
+} __packed;
+
 struct afe_custom_tdm_header_config_command {
 	struct apr_hdr	hdr;
 	struct afe_port_cmd_set_param_v2	param;
@@ -3074,6 +3248,7 @@ struct afe_custom_tdm_header_config_command {
 struct afe_tdm_port_config {
 	struct afe_param_id_tdm_cfg				tdm;
 	struct afe_param_id_slot_mapping_cfg		slot_mapping;
+	struct afe_param_id_slot_mapping_cfg_v2		slot_mapping_v2;
 	struct afe_param_id_custom_tdm_header_cfg	custom_tdm_header;
 } __packed;
 
@@ -3250,6 +3425,14 @@ struct afe_param_id_aptx_sync_mode {
  */
 #define AFE_DECODER_PARAM_ID_DEPACKETIZER_ID        0x00013235
 
+#define CAPI_V2_PARAM_ID_APTX_ENC_SWITCH_TO_MONO    0x0001332A
+
+struct aptx_channel_mode_param_t {
+	struct apr_hdr hdr;
+	struct afe_port_cmd_set_param_v2 param;
+	struct afe_port_param_data_v2 pdata;
+	u32 channel_mode;
+} __packed;
 /*
  * Data format to send compressed data
  * is transmitted/received over Slimbus lines.
@@ -3630,6 +3813,7 @@ union afe_enc_config_data {
 struct afe_enc_config {
 	u32 format;
 	u32 scrambler_mode;
+	u32 mono_mode;
 	union afe_enc_config_data data;
 };
 
@@ -3668,6 +3852,18 @@ struct avs_enc_set_scrambler_param_t {
 	 *  0 : disable scrambler
 	 */
 	uint32_t enable_scrambler;
+};
+
+/*
+ * Payload of the CAPI_V2_PARAM_ID_APTX_ENC_SWITCH_TO_MONO parameter.
+ */
+struct afe_enc_set_channel_mode_param_t {
+	/*
+	*  Supported values:
+	*  1 : mono
+	*  2 : dual_mono
+	*/
+	u32 channel_mode;
 };
 
 /*
@@ -3725,6 +3921,7 @@ union afe_port_config {
 	struct avs_dec_depacketizer_id_param_t    dec_depkt_id_param;
 	struct afe_enc_level_to_bitrate_map_param_t    map_param;
 	struct afe_enc_dec_imc_info_param_t       imc_info_param;
+	struct afe_enc_set_channel_mode_param_t   channel_mode_param;
 } __packed;
 
 struct afe_audioif_config_command_no_payload {
@@ -4306,16 +4503,86 @@ struct asm_softvolume_params {
 /* Rear left of center. */
 #define PCM_CHANNEL_RLC  15
 
-/* Rear right of center. */
+/* Rear right of center. Update PCM_MAX_CHMAP_ID when
+ * this list is extended.
+ */
 #define PCM_CHANNEL_RRC  16
 
+/* Second low frequency channel. */
+#define PCM_CHANNEL_LFE2 17
+
+/* Side left channel. */
+#define PCM_CHANNEL_SL   18
+
+/* Side right channel. */
+#define PCM_CHANNEL_SR   19
+
+/* Top front left channel. */
+#define PCM_CHANNEL_TFL  20
+
+/* Left vertical height channel. */
+#define PCM_CHANNEL_LVH  20
+
+/* Top front right channel. */
+#define PCM_CHANNEL_TFR  21
+
+/* Right vertical height channel. */
+#define PCM_CHANNEL_RVH  21
+
+/* Top center channel. */
+#define PCM_CHANNEL_TC   22
+
+/* Top back left channel. */
+#define PCM_CHANNEL_TBL  23
+
+/* Top back right channel. */
+#define PCM_CHANNEL_TBR  24
+
+/* Top side left channel. */
+#define PCM_CHANNEL_TSL  25
+
+/* Top side right channel. */
+#define PCM_CHANNEL_TSR  26
+
+/* Top back center channel. */
+#define PCM_CHANNEL_TBC  27
+
+/* Bottom front center channel. */
+#define PCM_CHANNEL_BFC  28
+
+/* Bottom front left channel. */
+#define PCM_CHANNEL_BFL  29
+
+/* Bottom front right channel. */
+#define PCM_CHANNEL_BFR  30
+
+/* Left wide channel. */
+#define PCM_CHANNEL_LW   31
+
+/* Right wide channel. */
+#define PCM_CHANNEL_RW   32
+
+/* Left side direct channel. */
+#define PCM_CHANNEL_LSD  33
+
+
+/* Right side direct channel. */
+#define PCM_CHANNEL_RSD  34
+
+#define PCM_MAX_CHMAP_ID PCM_CHANNEL_RRC
+
 #define PCM_FORMAT_MAX_NUM_CHANNEL  8
+
+/* Used for ADM_CMD_DEVICE_OPEN_V8 */
+#define PCM_FORMAT_MAX_NUM_CHANNEL_V8  32
 
 #define ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V2 0x00010DA5
 
 #define ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V3 0x00010DDC
 
 #define ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V4 0x0001320C
+
+#define ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V5 0x00013222
 
 #define ASM_MEDIA_FMT_EVRCB_FS 0x00010BEF
 
@@ -4531,6 +4798,56 @@ struct asm_multi_channel_pcm_fmt_blk_v4 {
  */
 } __packed;
 
+
+struct asm_multi_channel_pcm_fmt_blk_v5 {
+	uint16_t                num_channels;
+/*
+ * Number of channels
+ * Supported values: 1 to 32
+ */
+
+	uint16_t                bits_per_sample;
+/*
+ * Number of bits per sample per channel
+ * Supported values: 16, 24, 32
+ */
+
+	uint32_t                sample_rate;
+/*
+ * Number of samples per second
+ * Supported values: 2000 to 48000, 96000,192000 Hz
+ */
+
+	uint16_t                is_signed;
+/* Flag that indicates that PCM samples are signed (1) */
+
+	uint16_t                sample_word_size;
+/*
+ * Size in bits of the word that holds a sample of a channel.
+ * Supported values: 12,24,32
+ */
+	uint16_t                endianness;
+/*
+ * Flag to indicate the endianness of the pcm sample
+ * Supported values: 0 - Little endian (all other formats)
+ *                   1 - Big endian (AIFF)
+ */
+	uint16_t                mode;
+/*
+ * Mode to provide additional info about the pcm input data.
+ * Supported values: 0 - Default QFs (Q15 for 16b, Q23 for packed 24b,
+ *                       Q31 for unpacked 24b or 32b)
+ *                  15 - for 16 bit
+ *                  23 - for 24b packed or 8.24 format
+ *                  31 - for 24b unpacked or 32bit
+ */
+
+	uint8_t                 channel_mapping[32];
+/*
+ * Each element, i, in the array describes channel i inside the buffer where
+ * 0 <= i < num_channels. Unused channels are set to 0.
+ */
+} __packed;
 /*
  * Payload of the multichannel PCM configuration parameters in
  * the ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V3 media format.
@@ -4549,6 +4866,16 @@ struct asm_multi_channel_pcm_fmt_blk_param_v4 {
 	struct apr_hdr hdr;
 	struct asm_data_cmd_media_fmt_update_v2 fmt_blk;
 	struct asm_multi_channel_pcm_fmt_blk_v4 param;
+} __packed;
+
+/*
+ * Payload of the multichannel PCM configuration parameters in
+ * the ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V5 media format.
+ */
+struct asm_multi_channel_pcm_fmt_blk_param_v5 {
+	struct apr_hdr hdr;
+	struct asm_data_cmd_media_fmt_update_v2 fmt_blk;
+	struct asm_multi_channel_pcm_fmt_blk_v5 param;
 } __packed;
 
 struct asm_stream_cmd_set_encdec_param {
@@ -4584,6 +4911,78 @@ struct asm_dec_ddp_endp_param_v2 {
 	struct apr_hdr hdr;
 	struct asm_stream_cmd_set_encdec_param  encdec;
 	int endp_param_value;
+} __packed;
+
+/*
+ * Payload of the multichannel PCM encoder configuration parameters in
+ * the ASM_MEDIA_FMT_MULTI_CHANNEL_PCM_V5 media format.
+ */
+struct asm_multi_channel_pcm_enc_cfg_v5 {
+	struct apr_hdr hdr;
+	struct asm_stream_cmd_set_encdec_param encdec;
+	struct asm_enc_cfg_blk_param_v2 encblk;
+	uint16_t num_channels;
+/*
+ * Number of PCM channels.
+ * @values
+ * - 0 -- Native mode
+ * - 1 -- 8 channels
+ * Native mode indicates that encoding must be performed with the number
+ * of channels at the input.
+ */
+	uint16_t  bits_per_sample;
+/*
+ * Number of bits per sample per channel.
+ * @values 16, 24
+ */
+	uint32_t  sample_rate;
+/*
+ * Number of samples per second.
+ * @values 0, 8000 to 48000 Hz
+ * A value of 0 indicates the native sampling rate. Encoding is
+ * performed at the input sampling rate.
+ */
+	uint16_t  is_signed;
+/*
+ * Flag that indicates the PCM samples are signed (1). Currently, only
+ * signed PCM samples are supported.
+ */
+	uint16_t    sample_word_size;
+/*
+ * The size in bits of the word that holds a sample of a channel.
+ * @values 16, 24, 32
+ * 16-bit samples are always placed in 16-bit words:
+ * sample_word_size = 1.
+ * 24-bit samples can be placed in 32-bit words or in consecutive
+ * 24-bit words.
+ * - If sample_word_size = 32, 24-bit samples are placed in the
+ * most significant 24 bits of a 32-bit word.
+ * - If sample_word_size = 24, 24-bit samples are placed in
+ * 24-bit words. @tablebulletend
+ */
+	uint16_t                endianness;
+/*
+ * Flag to indicate the endianness of the pcm sample
+ * Supported values: 0 - Little endian (all other formats)
+ *                   1 - Big endian (AIFF)
+ */
+	uint16_t                mode;
+/*
+ * Mode to provide additional info about the pcm input data.
+ * Supported values: 0 - Default QFs (Q15 for 16b, Q23 for packed 24b,
+ *                       Q31 for unpacked 24b or 32b)
+ *                  15 - for 16 bit
+ *                  23 - for 24b packed or 8.24 format
+ */
+	uint8_t   channel_mapping[PCM_FORMAT_MAX_NUM_CHANNEL_V8];
+/*
+ * Channel mapping array expected at the encoder output.
+ * Channel[i] mapping describes channel i inside the buffer, where
+ * 0 @le i < num_channels. All valid used channels must be present at
+ * the beginning of the array.
+ * If Native mode is set for the channels, this field is ignored.
+ * @values See Section @xref{dox:PcmChannelDefs}
+ */
 } __packed;
 
 /*
@@ -9562,6 +9961,7 @@ struct asm_aptx_dec_fmt_blk_v2 {
 #define AVCS_SERVICE_ID_ALL (0xFFFFFFFF)
 #define AVCS_SERVICE_ID_AFE (0x4)
 #define APRV2_IDS_SERVICE_ID_ADSP_CVP_V	(0xB)
+#define APRV2_IDS_SERVICE_ID_ADSP_AFE_V (0x4)
 
 struct avcs_get_fwk_version {
 	/*
@@ -9627,6 +10027,8 @@ struct avcs_fwk_ver_info {
 /* LSM Specific */
 #define VW_FEAT_DIM					(39)
 
+#define APRV2_IDS_SERVICE_ID_ADSP_ASM_V			(0x7)
+#define APRV2_IDS_SERVICE_ID_ADSP_ADM_V			(0x8)
 #define APRV2_IDS_SERVICE_ID_ADSP_LSM_V			(0xD)
 #define APRV2_IDS_DOMAIN_ID_ADSP_V			(0x4)
 #define APRV2_IDS_DOMAIN_ID_APPS_V			(0x5)

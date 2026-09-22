@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2007 Google, Inc.
- * Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -24,8 +24,186 @@
  * Usually, this is (2 * MAX_CW_PER_PAGE).
  */
 #define MAX_DESC 16
+#define ONE_CODEWORD_SIZE 516
 
 static bool enable_euclean;
+static bool enable_perfstats;
+
+static ssize_t msm_nand_attr_perf_stats_show(struct device *dev,
+					   struct device_attribute *attr,
+					   char *buf);
+static ssize_t msm_nand_attr_perf_stats_store(struct device *dev,
+					    struct device_attribute *attr,
+					    const char *buf, size_t count);
+
+static struct device_attribute dev_msm_nand_perf_stats =
+	__ATTR(perf_stats, 0644,
+		msm_nand_attr_perf_stats_show, msm_nand_attr_perf_stats_store);
+
+#define print_sysfs(fmt, ...) \
+{ \
+	count += scnprintf(buf + count, PAGE_SIZE - count, \
+			fmt, ##__VA_ARGS__); \
+}
+
+static ssize_t msm_nand_attr_perf_stats_show(struct device *dev,
+					   struct device_attribute *attr,
+					   char *buf)
+{
+	ssize_t count = 0;
+	struct msm_nand_info *info = dev_get_drvdata(dev);
+
+	if (!enable_perfstats) {
+		print_sysfs("Performance stats is disabled\n");
+		return count;
+	}
+
+	spin_lock(&info->perf.lock);
+	print_sysfs("total_read_size = %llu\n", info->perf.total_read_size);
+	print_sysfs("total_write_size = %llu\n", info->perf.total_write_size);
+	print_sysfs("total_erase_blks = %llu\n\n", info->perf.total_erase_blks);
+
+	print_sysfs("total_read_time_us = %lld\n",
+			ktime_to_us(info->perf.total_read_time));
+	print_sysfs("total_write_time_us = %lld\n",
+			ktime_to_us(info->perf.total_write_time));
+	print_sysfs("total_erase_time_us = %lld\n\n",
+			ktime_to_us(info->perf.total_erase_time));
+
+	print_sysfs("min_read_time_us = %lld\n",
+			ktime_to_us(info->perf.min_read_time));
+	print_sysfs("min_write_time_us = %lld\n",
+			ktime_to_us(info->perf.min_write_time));
+	print_sysfs("min_erase_time_us = %lld\n\n",
+			ktime_to_us(info->perf.min_erase_time));
+
+	print_sysfs("max_read_time_us = %lld\n",
+			ktime_to_us(info->perf.max_read_time));
+	print_sysfs("max_write_time_us = %lld\n",
+			ktime_to_us(info->perf.max_write_time));
+	print_sysfs("max_erase_time_us = %lld\n\n",
+			ktime_to_us(info->perf.max_erase_time));
+
+	spin_unlock(&info->perf.lock);
+	return count;
+}
+
+static ssize_t msm_nand_attr_perf_stats_store(struct device *dev,
+					    struct device_attribute *attr,
+					    const char *buf, size_t count)
+{
+	struct msm_nand_info *info = dev_get_drvdata(dev);
+
+	if (!enable_perfstats) {
+		pr_err("couldn't write as perf stats is disabled\n");
+		return -EPERM;
+	}
+
+	if (count > 1 || (count == 1 && *buf != '\n')) {
+		pr_err("write not permitted\n");
+		return -EPERM;
+	}
+
+	spin_lock(&info->perf.lock);
+	info->perf.min_read_time = ktime_set(KTIME_MAX, 0);
+	info->perf.min_write_time = ktime_set(KTIME_MAX, 0);
+	info->perf.min_erase_time = ktime_set(KTIME_MAX, 0);
+
+	info->perf.max_read_time = ktime_set(0, 0);
+	info->perf.max_write_time = ktime_set(0, 0);
+	info->perf.max_erase_time = ktime_set(0, 0);
+
+	info->perf.total_read_time = ktime_set(0, 0);
+	info->perf.total_write_time = ktime_set(0, 0);
+	info->perf.total_erase_time = ktime_set(0, 0);
+
+	info->perf.total_read_size = 0;
+	info->perf.total_write_size = 0;
+	info->perf.total_erase_blks = 0;
+	spin_unlock(&info->perf.lock);
+
+	return count;
+}
+
+static void msm_nand_init_perf_stats(struct msm_nand_info *info)
+{
+	spin_lock_init(&info->perf.lock);
+	info->perf.min_read_time = ktime_set(KTIME_MAX, 0);
+	info->perf.min_write_time = ktime_set(KTIME_MAX, 0);
+	info->perf.min_erase_time = ktime_set(KTIME_MAX, 0);
+}
+
+static void msm_nand_init_sysfs(struct device *dev)
+{
+	sysfs_attr_init(&dev_msm_nand_perf_stats);
+	if (device_create_file(dev, &dev_msm_nand_perf_stats))
+		pr_err("Sysfs entry create failed");
+}
+
+static void msm_nand_cleanup_sysfs(struct device *dev)
+{
+	device_remove_file(dev, &dev_msm_nand_perf_stats);
+}
+
+static void msm_nand_update_read_perf_stats(struct msm_nand_info *info,
+					    ktime_t start, u32 size)
+{
+	ktime_t time_delta;
+
+	time_delta = ktime_sub(ktime_get(), start);
+
+	spin_lock(&info->perf.lock);
+	info->perf.total_read_size += size;
+	info->perf.total_read_time = ktime_add(info->perf.total_read_time,
+						time_delta);
+	if (ktime_after(time_delta, info->perf.max_read_time))
+		info->perf.max_read_time = time_delta;
+
+	if (ktime_before(time_delta, info->perf.min_read_time))
+		info->perf.min_read_time = time_delta;
+
+	spin_unlock(&info->perf.lock);
+}
+
+static void msm_nand_update_write_perf_stats(struct msm_nand_info *info,
+					     ktime_t start, u32 size)
+{
+	ktime_t time_delta;
+
+	time_delta = ktime_sub(ktime_get(), start);
+
+	spin_lock(&info->perf.lock);
+	info->perf.total_write_size += size;
+	info->perf.total_write_time = ktime_add(info->perf.total_write_time,
+						time_delta);
+	if (ktime_after(time_delta, info->perf.max_write_time))
+		info->perf.max_write_time = time_delta;
+
+	if (ktime_before(time_delta, info->perf.min_write_time))
+		info->perf.min_write_time = time_delta;
+
+	spin_unlock(&info->perf.lock);
+}
+
+static void msm_nand_update_erase_perf_stats(struct msm_nand_info *info,
+					     ktime_t start, u32 count)
+{
+	ktime_t time_delta;
+
+	time_delta = ktime_sub(ktime_get(), start);
+
+	spin_lock(&info->perf.lock);
+	info->perf.total_erase_blks += count;
+	info->perf.total_erase_time = ktime_add(info->perf.total_erase_time,
+						time_delta);
+	if (ktime_after(time_delta, info->perf.max_erase_time))
+		info->perf.max_erase_time = time_delta;
+
+	if (ktime_before(time_delta, info->perf.min_erase_time))
+		info->perf.min_erase_time = time_delta;
+
+	spin_unlock(&info->perf.lock);
+}
 
 /*
  * Get the DMA memory for requested amount of size. It returns the pointer
@@ -996,10 +1174,16 @@ static int msm_nand_validate_mtd_params(struct mtd_info *mtd, bool read,
 			err = -EINVAL;
 			goto out;
 		}
-		args->page_count = ops->len / (mtd->writesize + mtd->oobsize);
+		if (ops->len <= ONE_CODEWORD_SIZE)
+			args->page_count = 1;
+		else
+			args->page_count = ops->len /
+				(mtd->writesize + mtd->oobsize);
 
 	} else if (ops->mode == MTD_OPS_AUTO_OOB) {
-		if (ops->datbuf && (ops->len % mtd->writesize) != 0) {
+		if (ops->datbuf && (ops->len %
+			((ops->len <= ONE_CODEWORD_SIZE) ?
+			ONE_CODEWORD_SIZE : mtd->writesize)) != 0) {
 			/* when ops->datbuf is NULL, ops->len can be ooblen */
 			pr_err("unsupported data len %d for AUTO mode\n",
 					ops->len);
@@ -1012,7 +1196,10 @@ static int msm_nand_validate_mtd_params(struct mtd_info *mtd, bool read,
 			if ((args->page_count == 0) && (ops->ooblen))
 				args->page_count = 1;
 		} else if (ops->datbuf) {
-			args->page_count = ops->len / mtd->writesize;
+			if (ops->len <= ONE_CODEWORD_SIZE)
+				args->page_count = 1;
+			else
+				args->page_count = ops->len / mtd->writesize;
 		}
 	}
 
@@ -1058,12 +1245,20 @@ static void msm_nand_update_rw_reg_data(struct msm_nand_chip *chip,
 					struct msm_nand_rw_params *args,
 					struct msm_nand_rw_reg_data *data)
 {
+	/*
+	 * While reading one codeword, CW_PER_PAGE bits of QPIC_NAND_DEV0_CFG0
+	 * should be set to 0, which implies 1 codeword per page. 'n' below,
+	 * is used to configure cfg0 for reading one full page or one single
+	 * codeword.
+	 */
+	int n = (ops->len <= ONE_CODEWORD_SIZE) ? args->cwperpage : 1;
+
 	if (args->read) {
 		if (ops->mode != MTD_OPS_RAW) {
 			data->cmd = MSM_NAND_CMD_PAGE_READ_ECC;
 			data->cfg0 =
 			(chip->cfg0 & ~(7U << CW_PER_PAGE)) |
-			(((args->cwperpage-1) - args->start_sector)
+			(((args->cwperpage-n) - args->start_sector)
 			 << CW_PER_PAGE);
 			data->cfg1 = chip->cfg1;
 			data->ecc_bch_cfg = chip->ecc_bch_cfg;
@@ -1071,7 +1266,7 @@ static void msm_nand_update_rw_reg_data(struct msm_nand_chip *chip,
 			data->cmd = MSM_NAND_CMD_PAGE_READ_ALL;
 			data->cfg0 =
 			(chip->cfg0_raw & ~(7U << CW_PER_PAGE)) |
-			(((args->cwperpage-1) - args->start_sector)
+			(((args->cwperpage-n) - args->start_sector)
 			 << CW_PER_PAGE);
 			data->cfg1 = chip->cfg1_raw;
 			data->ecc_bch_cfg = chip->ecc_cfg_raw;
@@ -1115,6 +1310,11 @@ static void msm_nand_prep_rw_cmd_desc(struct mtd_oob_ops *ops,
 	uint32_t offset, size, last_read;
 	struct sps_command_element *curr_ce, *start_ce;
 	uint32_t *flags_ptr, *num_ce_ptr;
+	/*
+	 * Variable to configure read_location register parameters
+	 * while reading one codeword or one full page
+	 */
+	int n = (ops->len <= ONE_CODEWORD_SIZE) ? args->cwperpage : 1;
 
 	if (curr_cw == args->start_sector) {
 		curr_ce = start_ce = &cmd_list->setup_desc.ce[0];
@@ -1195,10 +1395,15 @@ static void msm_nand_prep_rw_cmd_desc(struct mtd_oob_ops *ops,
 	if (ops->mode == MTD_OPS_AUTO_OOB) {
 		if (ops->datbuf) {
 			offset = 0;
-			size = (curr_cw < (args->cwperpage - 1)) ? 516 :
-				(512 - ((args->cwperpage - 1) << 2));
-			last_read = (curr_cw < (args->cwperpage - 1)) ? 1 :
-				(ops->oobbuf ? 0 : 1);
+			if (ops->len <= ONE_CODEWORD_SIZE) {
+				size = ONE_CODEWORD_SIZE;
+				last_read = 1;
+			} else {
+				size = (curr_cw < (args->cwperpage - 1)) ? 516 :
+					(512 - ((args->cwperpage - 1) << 2));
+				last_read = (curr_cw < (args->cwperpage - 1)) ?
+					1 : (ops->oobbuf ? 0 : 1);
+			}
 			rdata = (offset << 0) | (size << 16) |
 				(last_read << 31);
 
@@ -1208,7 +1413,7 @@ static void msm_nand_prep_rw_cmd_desc(struct mtd_oob_ops *ops,
 					rdata);
 			curr_ce++;
 		}
-		if (curr_cw == (args->cwperpage - 1) && ops->oobbuf) {
+		if (curr_cw == (args->cwperpage - n) && ops->oobbuf) {
 			offset = 512 - ((args->cwperpage - 1) << 2);
 			size = (args->cwperpage) << 2;
 			if (size > args->oob_len_cmd)
@@ -1252,6 +1457,11 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 	uint32_t sectordatasize, sectoroobsize;
 	uint32_t sps_flags = 0;
 	int err = 0;
+	/*
+	 * Variable to configure sectordatasize and sectoroobsize
+	 * while reading one codeword or one full page.
+	 */
+	int n = (ops->len <= ONE_CODEWORD_SIZE) ? args->cwperpage : 1;
 
 	if (args->read)
 		data_pipe_handle = info->sps.data_prod.handle;
@@ -1260,7 +1470,7 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 
 	if (ops->mode == MTD_OPS_RAW) {
 		if (ecc_parity_bytes && args->read) {
-			if (curr_cw == (args->cwperpage - 1))
+			if (curr_cw == (args->cwperpage - n))
 				sps_flags |= SPS_IOVEC_FLAG_INT;
 
 			/* read only ecc bytes */
@@ -1275,7 +1485,7 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 			sectordatasize = chip->cw_size;
 			if (!args->read)
 				sps_flags = SPS_IOVEC_FLAG_EOT;
-			if (curr_cw == (args->cwperpage - 1))
+			if (curr_cw == (args->cwperpage - n))
 				sps_flags |= SPS_IOVEC_FLAG_INT;
 
 			err = sps_transfer_one(data_pipe_handle,
@@ -1288,8 +1498,13 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 		}
 	} else if (ops->mode == MTD_OPS_AUTO_OOB) {
 		if (ops->datbuf) {
-			sectordatasize = (curr_cw < (args->cwperpage - 1))
-			? 516 : (512 - ((args->cwperpage - 1) << 2));
+			if (ops->len <= ONE_CODEWORD_SIZE)
+				sectordatasize = ONE_CODEWORD_SIZE;
+			else
+				sectordatasize =
+					(curr_cw < (args->cwperpage - 1))
+					? 516 :
+					(512 - ((args->cwperpage - 1) << 2));
 
 			if (!args->read) {
 				sps_flags = SPS_IOVEC_FLAG_EOT;
@@ -1297,7 +1512,7 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 						ops->oobbuf)
 					sps_flags = 0;
 			}
-			if ((curr_cw == (args->cwperpage - 1)) && !ops->oobbuf)
+			if ((curr_cw == (args->cwperpage - n)) && !ops->oobbuf)
 				sps_flags |= SPS_IOVEC_FLAG_INT;
 
 			err = sps_transfer_one(data_pipe_handle,
@@ -1309,7 +1524,7 @@ static int msm_nand_submit_rw_data_desc(struct mtd_oob_ops *ops,
 			args->data_dma_addr_curr += sectordatasize;
 		}
 
-		if (ops->oobbuf && (curr_cw == (args->cwperpage - 1))) {
+		if (ops->oobbuf && (curr_cw == (args->cwperpage - n))) {
 			sectoroobsize = args->cwperpage << 2;
 			if (sectoroobsize > args->oob_len_data)
 				sectoroobsize = args->oob_len_data;
@@ -1610,6 +1825,7 @@ static int msm_nand_read_oob(struct mtd_info *mtd, loff_t from,
 	struct sps_iovec iovec_temp;
 	bool erased_page;
 	uint64_t fix_data_in_pages = 0;
+	ktime_t start;
 
 	/*
 	 * The following 6 commands will be sent only once for the first
@@ -1633,6 +1849,9 @@ static int msm_nand_read_oob(struct mtd_info *mtd, loff_t from,
 		} result[MAX_CW_PER_PAGE];
 	} *dma_buffer;
 	struct msm_nand_rw_cmd_desc *cmd_list = NULL;
+
+	if (unlikely(enable_perfstats))
+		start = ktime_get();
 
 	memset(&rw_params, 0, sizeof(struct msm_nand_rw_params));
 	err = msm_nand_validate_mtd_params(mtd, true, from, ops, &rw_params);
@@ -1658,6 +1877,9 @@ static int msm_nand_read_oob(struct mtd_info *mtd, loff_t from,
 		erased_page = false;
 		data.addr0 = (rw_params.page << 16) | rw_params.oob_col;
 		data.addr1 = (rw_params.page >> 16) & 0xff;
+
+		if (ops->len <= ONE_CODEWORD_SIZE)
+			cwperpage = 1;
 
 		for (n = rw_params.start_sector; n < cwperpage; n++) {
 			struct sps_command_element *curr_ce, *start_ce;
@@ -1736,7 +1958,7 @@ static int msm_nand_read_oob(struct mtd_info *mtd, loff_t from,
 		} else if (ops->mode == MTD_OPS_AUTO_OOB) {
 			if (ops->datbuf)
 				submitted_num_desc = cwperpage -
-							rw_params.start_sector;
+					rw_params.start_sector;
 			if (ops->oobbuf)
 				submitted_num_desc++;
 		}
@@ -1929,7 +2151,10 @@ free_dma:
 	}
 validate_mtd_params_failed:
 	if (ops->mode != MTD_OPS_RAW)
-		ops->retlen = mtd->writesize * pages_read;
+		if (ops->len <= ONE_CODEWORD_SIZE)
+			ops->retlen = ONE_CODEWORD_SIZE;
+		else
+			ops->retlen = mtd->writesize * pages_read;
 	else
 		ops->retlen = (mtd->writesize +  mtd->oobsize) * pages_read;
 	ops->oobretlen = ops->ooblen - rw_params.oob_len_data;
@@ -1941,6 +2166,8 @@ validate_mtd_params_failed:
 			err, ops->retlen, ops->oobretlen);
 
 	pr_debug("========================================================\n");
+	if (unlikely(enable_perfstats) && likely(!err))
+		msm_nand_update_read_perf_stats(info, start, ops->retlen);
 	return err;
 }
 
@@ -1997,7 +2224,11 @@ static int msm_nand_read_partial_page(struct mtd_info *mtd,
 			no_copy = false;
 
 		ops->datbuf = no_copy ? actual_buf : bounce_buf;
+
+		if ((len <= ONE_CODEWORD_SIZE) && (offset == 0))
+			ops->len = ONE_CODEWORD_SIZE;
 		err = msm_nand_read_oob(mtd, aligned_from, ops);
+
 		if (err == -EUCLEAN) {
 			is_euclean = 1;
 			err = 0;
@@ -2161,6 +2392,8 @@ static int msm_nand_write_oob(struct mtd_info *mtd, loff_t to,
 	struct msm_nand_rw_reg_data data;
 	struct sps_iovec *iovec;
 	struct sps_iovec iovec_temp;
+	ktime_t start;
+
 	/*
 	 * The following 7 commands will be sent only once :
 	 * For first codeword (CW) - addr0, addr1, dev0_cfg0, dev0_cfg1,
@@ -2183,6 +2416,9 @@ static int msm_nand_write_oob(struct mtd_info *mtd, loff_t to,
 		} data[MAX_CW_PER_PAGE];
 	} *dma_buffer;
 	struct msm_nand_rw_cmd_desc *cmd_list = NULL;
+
+	if (unlikely(enable_perfstats))
+		start = ktime_get();
 
 	memset(&rw_params, 0, sizeof(struct msm_nand_rw_params));
 	err = msm_nand_validate_mtd_params(mtd, false, to, ops, &rw_params);
@@ -2359,6 +2595,8 @@ validate_mtd_params_failed:
 			err, ops->retlen, ops->oobretlen);
 
 	pr_debug("================================================\n");
+	if (unlikely(enable_perfstats) && likely(!err))
+		msm_nand_update_write_perf_stats(info, start, ops->retlen);
 	return err;
 }
 
@@ -2456,6 +2694,8 @@ static int msm_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 	struct msm_nand_erase_reg_data data;
 	struct sps_iovec *iovec;
 	struct sps_iovec iovec_temp;
+	ktime_t start;
+
 	/*
 	 * The following 9 commands are required to erase a page -
 	 * flash, addr0, addr1, cfg0, cfg1, exec, flash_status(read),
@@ -2467,6 +2707,9 @@ static int msm_nand_erase(struct mtd_info *mtd, struct erase_info *instr)
 		struct msm_nand_sps_cmd cmd[ERASE_CMDS];
 		uint32_t flash_status;
 	} *dma_buffer;
+
+	if (unlikely(enable_perfstats))
+		start = ktime_get();
 
 	if (mtd->writesize == PAGE_SIZE_2K)
 		page = instr->addr >> 11;
@@ -2582,6 +2825,8 @@ unlock_mutex:
 	mutex_unlock(&info->lock);
 	msm_nand_release_dma_buffer(chip, dma_buffer, sizeof(*dma_buffer));
 out:
+	if (unlikely(enable_perfstats) && likely(!err))
+		msm_nand_update_erase_perf_stats(info, start, 1);
 	return err;
 }
 
@@ -2855,7 +3100,7 @@ static int msm_nand_scan(struct mtd_info *mtd)
 		for (i = 0; !flashman && nand_manuf_ids[i].id; ++i)
 			if (nand_manuf_ids[i].id == manid)
 				flashman = &nand_manuf_ids[i];
-		for (i = 0; !flashdev && nand_flash_ids[i].id; ++i) {
+		for (i = 0; !flashdev && (nand_flash_ids[i].id != NULL); ++i) {
 			/*
 			 * If id_len is specified for an entry in the nand ids
 			 * array, then at least 4 bytes of the nand id is
@@ -3536,6 +3781,8 @@ static int msm_nand_probe(struct platform_device *pdev)
 			info->nand_phys, info->bam_phys, info->bam_irq);
 	pr_info("Allocated DMA buffer at virt_addr 0x%pK, phys_addr 0x%x\n",
 		info->nand_chip.dma_virt_addr, info->nand_chip.dma_phys_addr);
+	msm_nand_init_sysfs(dev);
+	msm_nand_init_perf_stats(info);
 	goto out;
 free_bam:
 	msm_nand_bam_free(info);
@@ -3557,6 +3804,7 @@ static int msm_nand_remove(struct platform_device *pdev)
 {
 	struct msm_nand_info *info = dev_get_drvdata(&pdev->dev);
 
+	msm_nand_cleanup_sysfs(&pdev->dev);
 	if (pm_runtime_suspended(&(pdev)->dev))
 		pm_runtime_resume(&(pdev)->dev);
 
@@ -3600,6 +3848,9 @@ static struct platform_driver msm_nand_driver = {
 
 module_param(enable_euclean, bool, 0644);
 MODULE_PARM_DESC(enable_euclean, "Set this parameter to enable reporting EUCLEAN to upper layer when the correctable bitflips are equal to the max correctable limit.");
+
+module_param(enable_perfstats, bool, 0644);
+MODULE_PARM_DESC(enable_perfstats, "Set this parameter to enable collection and reporting of performance data.");
 
 module_platform_driver(msm_nand_driver);
 

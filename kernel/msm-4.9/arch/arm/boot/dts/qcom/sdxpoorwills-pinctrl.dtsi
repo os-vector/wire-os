@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -154,7 +154,7 @@
 				config {
 					pins = "gpio76", "gpio77";
 					drive-strength = <2>;
-					bias-disable;
+					bias-pull-up;
 				};
 			};
 
@@ -1283,7 +1283,7 @@
 			sec_ws_active_master: sec_ws_active_master {
 				mux {
 					pins = "gpio16";
-					function = "sec_mi2s_ws_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1297,7 +1297,7 @@
 			sec_sck_active_master: sec_sck_active_master {
 				mux {
 					pins = "gpio19";
-					function = "sec_mi2s_sck_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1311,7 +1311,7 @@
 			sec_ws_active_slave: sec_ws_active_slave {
 				mux {
 					pins = "gpio16";
-					function = "sec_mi2s_ws_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1324,7 +1324,7 @@
 			sec_sck_active_slave: sec_sck_active_slave {
 				mux {
 					pins = "gpio19";
-					function = "sec_mi2s_sck_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1337,7 +1337,7 @@
 			sec_dout_active: sec_dout_active {
 				mux {
 					pins = "gpio18";
-					function = "sec_mi2s_data1_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1499,7 +1499,7 @@
 			sec_din_active: sec_din_active {
 				mux {
 					pins = "gpio17";
-					function = "sec_mi2s_data0_a";
+					function = "sec_mi2s";
 				};
 
 				config {
@@ -1699,10 +1699,84 @@
 				};
 			};
 		};
+
+		sensor_int1_default: sensor_int1_default {
+			     mux {
+				     pins = "gpio78";
+				     function = "gpio";
+			     };
+
+			     config {
+				     pins = "gpio78";
+				     drive-strength = <16>; /* 16 mA */
+				     bias-pull-down; /* pull down */
+			     };
+		};
+
+		sensor_int2_default: sensor_int2_default {
+			     mux {
+				     pins = "gpio79";
+				     function = "gpio";
+			     };
+
+			     config {
+				     pins = "gpio79";
+				     drive-strength = <16>; /* 16 mA */
+				     bias-pull-down; /* pull down */
+			     };
+		};
+
+		pinctrl_pps: ppsgrp {
+			mux {
+				pins = "gpio42";
+				function = "nav_dr";
+			};
+
+			config {
+				pins = "gpio42";
+				bias-pull-down;
+			};
+		};
+
+		pmx_can_reset: pmx_can_reset {
+			mux {
+				pins = "gpio99";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio99";
+				drive-strength = <2>;
+				bias-disable;
+				output-high;
+			};
+		};
+
+		sensor_enable_default: sensor_enable_default {
+			mux {
+				pins = "gpio90";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio90";
+				bias-pull-up;
+				drive-strength = <16>;
+				output-low;
+			};
+		};
 	};
 };
 
 &pmxpoorwills_gpios {
+	a2b_cdc_sel {
+		a2b_cdc_sel_default: a2b_cdc_sel_default {
+			pins = "gpio5";
+			power-source = <1>;
+			output-high;
+		};
+	};
+
 	ambient_therm {
 		ambient_therm_default: ambient_therm_default {
 			pins = "gpio2";
@@ -1714,6 +1788,15 @@
 		vdd_wlan_default: vdd_wlan_default {
 			pins = "gpio6";
 			bias-high-impedance;
+		};
+	};
+
+	vreg_rgmii_off {
+		vreg_rgmii_off_default: vreg_rgmii_off_default {
+			pins = "gpio9";
+			bias-pull-down;
+			output-disable;
+			input-enable;
 		};
 	};
 };

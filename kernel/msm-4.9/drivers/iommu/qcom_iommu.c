@@ -290,6 +290,64 @@ static irqreturn_t qcom_iommu_fault(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+/*
+ * Program one context bank from an already-allocated page table.  Split out of
+ * qcom_iommu_init_domain() because detach disables the bank (SCTLR = 0) and
+ * cam_smmu attaches and detaches once per camera session -- so a re-attach has
+ * to program it again or the master streams untranslated, which on this SoC is
+ * an XPU violation and a silent reset to EDL.
+ */
+static void qcom_iommu_program_ctx(struct qcom_iommu_ctx *ctx,
+				   struct io_pgtable_cfg *pgtbl_cfg)
+{
+	u32 reg;
+
+	/* Disable context bank before programming */
+	iommu_writel(ctx, ARM_SMMU_CB_SCTLR, 0);
+
+	/* Clear context bank fault address fault status registers */
+	iommu_writel(ctx, ARM_SMMU_CB_FAR, 0);
+	iommu_writel(ctx, ARM_SMMU_CB_FSR, FSR_FAULT);
+
+	/* TTBRs */
+	iommu_writeq(ctx, ARM_SMMU_CB_TTBR0,
+			pgtbl_cfg->arm_lpae_s1_cfg.ttbr[0] |
+			((u64)ctx->asid << TTBRn_ASID_SHIFT));
+	iommu_writeq(ctx, ARM_SMMU_CB_TTBR1,
+			pgtbl_cfg->arm_lpae_s1_cfg.ttbr[1] |
+			((u64)ctx->asid << TTBRn_ASID_SHIFT));
+
+	/*
+	 * TTBCR.  arm_32_lpae_alloc_pgtable_s1() already folds in TCR_EAE and
+	 * truncates tcr to 32 bits, so TTBCR2 only needs the SEP field.
+	 */
+	iommu_writel(ctx, ARM_SMMU_CB_TTBCR2,
+			(pgtbl_cfg->arm_lpae_s1_cfg.tcr >> 32) |
+			TTBCR2_SEP_UPSTREAM);
+	iommu_writel(ctx, ARM_SMMU_CB_TTBCR,
+			pgtbl_cfg->arm_lpae_s1_cfg.tcr);
+
+	/* MAIRs (stage-1 only) */
+	iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR0,
+			pgtbl_cfg->arm_lpae_s1_cfg.mair[0]);
+	iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR1,
+			pgtbl_cfg->arm_lpae_s1_cfg.mair[1]);
+
+	/*
+	 * SCTLR.  Deliberately no CFCFG: we do not write SMMU_INTR_SEL_NS
+	 * (that lives outside the CB window), so a stalled fault would never
+	 * be resumed and would look exactly like the GR0 bus hang.  Terminate
+	 * instead.  msm_buf_mgr.c asks for stall-disable at attach anyway.
+	 */
+	reg = SCTLR_CFIE | SCTLR_CFRE | SCTLR_AFE | SCTLR_TRE |
+		SCTLR_M | SCTLR_S1_ASIDPNE;
+
+	if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
+		reg |= SCTLR_E;
+
+	iommu_writel(ctx, ARM_SMMU_CB_SCTLR, reg);
+}
+
 static int qcom_iommu_init_domain(struct iommu_domain *domain,
 				  struct qcom_iommu_dev *qcom_iommu,
 				  struct iommu_fwspec *fwspec)
@@ -301,8 +359,27 @@ static int qcom_iommu_init_domain(struct iommu_domain *domain,
 	u32 reg;
 
 	mutex_lock(&qcom_domain->init_mutex);
-	if (qcom_domain->iommu)
+	if (qcom_domain->iommu) {
+		/*
+		 * Re-attach of a domain we already built.  The page table is
+		 * still valid, but detach turned the banks off, so program
+		 * them again from the table io-pgtable is holding.
+		 */
+		struct io_pgtable_cfg *cfg =
+			&io_pgtable_ops_to_pgtable(qcom_domain->pgtbl_ops)->cfg;
+
+		qcom_domain->fwspec = fwspec;
+
+		for (i = 0; i < fwspec->num_ids; i++) {
+			struct qcom_iommu_ctx *ctx =
+				to_ctx(qcom_domain, fwspec->ids[i]);
+
+			qcom_iommu_program_ctx(ctx, cfg);
+			ctx->domain = domain;
+		}
+
 		goto out_unlock;
+	}
 
 	qcom_domain->static_cb = qcom_iommu->static_cb;
 
@@ -349,45 +426,7 @@ static int qcom_iommu_init_domain(struct iommu_domain *domain,
 			ctx->secure_init = true;
 		}
 
-		/* Disable context bank before programming */
-		iommu_writel(ctx, ARM_SMMU_CB_SCTLR, 0);
-
-		/* Clear context bank fault address fault status registers */
-		iommu_writel(ctx, ARM_SMMU_CB_FAR, 0);
-		iommu_writel(ctx, ARM_SMMU_CB_FSR, FSR_FAULT);
-
-		/* TTBRs */
-		iommu_writeq(ctx, ARM_SMMU_CB_TTBR0,
-				pgtbl_cfg.arm_lpae_s1_cfg.ttbr[0] |
-				((u64)ctx->asid << TTBRn_ASID_SHIFT));
-		iommu_writeq(ctx, ARM_SMMU_CB_TTBR1,
-				pgtbl_cfg.arm_lpae_s1_cfg.ttbr[1] |
-				((u64)ctx->asid << TTBRn_ASID_SHIFT));
-
-		/*
-		 * TTBCR.  arm_32_lpae_alloc_pgtable_s1() already folds in
-		 * TCR_EAE and truncates tcr to 32 bits, so TTBCR2 only needs
-		 * the SEP field.
-		 */
-		iommu_writel(ctx, ARM_SMMU_CB_TTBCR2,
-				(pgtbl_cfg.arm_lpae_s1_cfg.tcr >> 32) |
-				TTBCR2_SEP_UPSTREAM);
-		iommu_writel(ctx, ARM_SMMU_CB_TTBCR,
-				pgtbl_cfg.arm_lpae_s1_cfg.tcr);
-
-		/* MAIRs (stage-1 only) */
-		iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR0,
-				pgtbl_cfg.arm_lpae_s1_cfg.mair[0]);
-		iommu_writel(ctx, ARM_SMMU_CB_S1_MAIR1,
-				pgtbl_cfg.arm_lpae_s1_cfg.mair[1]);
-
-		reg = SCTLR_CFIE | SCTLR_CFRE | SCTLR_AFE | SCTLR_TRE |
-			SCTLR_M | SCTLR_S1_ASIDPNE;
-
-		if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
-			reg |= SCTLR_E;
-
-		iommu_writel(ctx, ARM_SMMU_CB_SCTLR, reg);
+		qcom_iommu_program_ctx(ctx, &pgtbl_cfg);
 
 		ctx->domain = domain;
 	}

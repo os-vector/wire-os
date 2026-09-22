@@ -28,6 +28,7 @@
 #include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/ipc_logging.h>
+#include <linux/of_device.h>
 #include <soc/qcom/subsystem_restart.h>
 #include <soc/qcom/scm.h>
 #include <dsp/apr_audio-v2.h>
@@ -56,6 +57,7 @@ struct apr_reset_work {
 };
 
 static bool apr_cf_debug;
+static struct delayed_work add_chld_dev_work;
 
 #ifdef CONFIG_DEBUG_FS
 static struct dentry *debugfs_apr_debug;
@@ -254,6 +256,44 @@ static void apr_modem_up(void)
 	is_modem_up = 1;
 }
 
+/*
+ * The PM8916 analog and digital codecs return -EPROBE_DEFER while the Q6 is
+ * not up (msm-analog-cdc.c, msm-digital-cdc-legacy.c), and on 8909 the Q6 only
+ * starts when userspace writes /sys/kernel/boot_adsp/boot.  Nothing on that
+ * path touches the deferred-probe list, so unless some unrelated device
+ * happens to probe afterwards the codecs are never retried, their DAIs never
+ * register and the sound card never appears -- intermittently, depending on
+ * boot timing.  See HANDOFF.md section 9.17.
+ *
+ * Reaching APR_SUBSYS_LOADED is necessary but not sufficient: the codecs also
+ * gate on q6core_is_adsp_ready(), which is a synchronous APR round-trip with a
+ * timeout rather than an event, so there is nothing to wait on.  Kick the
+ * deferred list a bounded number of times with backoff instead; observed gap
+ * between LOADED and the ADSP answering is a few seconds.  Devices that bind
+ * leave the list, so later kicks cost nothing.
+ */
+#define APR_DEFER_KICKS		6
+
+static void apr_deferred_kick_fn(struct work_struct *work);
+static DECLARE_DELAYED_WORK(apr_deferred_kick, apr_deferred_kick_fn);
+static int apr_deferred_kicks_left;
+
+static void apr_deferred_kick_fn(struct work_struct *work)
+{
+	driver_deferred_probe_trigger();
+
+	if (--apr_deferred_kicks_left > 0)
+		schedule_delayed_work(&apr_deferred_kick,
+			msecs_to_jiffies(500 << (APR_DEFER_KICKS -
+						 apr_deferred_kicks_left)));
+}
+
+static void apr_kick_deferred_probes(void)
+{
+	apr_deferred_kicks_left = APR_DEFER_KICKS;
+	mod_delayed_work(system_wq, &apr_deferred_kick, 0);
+}
+
 enum apr_subsys_state apr_get_q6_state(void)
 {
 	return atomic_read(&q6.q6_state);
@@ -266,6 +306,10 @@ int apr_set_q6_state(enum apr_subsys_state state)
 	if (state < APR_SUBSYS_DOWN || state > APR_SUBSYS_LOADED)
 		return -EINVAL;
 	atomic_set(&q6.q6_state, state);
+
+	if (state == APR_SUBSYS_LOADED)
+		apr_kick_deferred_probes();
+
 	return 0;
 }
 EXPORT_SYMBOL(apr_set_q6_state);
@@ -282,6 +326,17 @@ static void apr_adsp_down(unsigned long opcode)
 	dispatch_event(opcode, APR_DEST_QDSP6);
 }
 
+static void apr_add_child_devices(struct work_struct *work)
+{
+	int ret;
+
+	ret = of_platform_populate(apr_dev_ptr->of_node,
+			NULL, NULL, apr_dev_ptr);
+	if (ret)
+		dev_err(apr_dev_ptr, "%s: failed to add child nodes, ret=%d\n",
+			__func__, ret);
+}
+
 static void apr_adsp_up(void)
 {
 	if (apr_cmpxchg_q6_state(APR_SUBSYS_DOWN, APR_SUBSYS_LOADED) ==
@@ -289,29 +344,8 @@ static void apr_adsp_up(void)
 		wake_up(&dsp_wait);
 
 	if (!is_child_devices_loaded) {
-		struct platform_device *pdev;
-		struct device_node *node;
-		int ret;
-
-		for_each_child_of_node(apr_dev_ptr->of_node, node) {
-			pdev = platform_device_alloc(node->name, -1);
-			if (!pdev) {
-				dev_err(apr_dev_ptr, "%s: pdev memory alloc failed\n",
-					__func__);
-				return;
-			}
-			pdev->dev.parent = apr_dev_ptr;
-			pdev->dev.of_node = node;
-
-			ret = platform_device_add(pdev);
-			if (ret) {
-				dev_err(apr_dev_ptr,
-					"%s: Cannot add platform device\n",
-					__func__);
-				platform_device_put(pdev);
-				return;
-			}
-		}
+		schedule_delayed_work(&add_chld_dev_work,
+				msecs_to_jiffies(100));
 		is_child_devices_loaded = true;
 	}
 }
@@ -1180,6 +1214,7 @@ static int apr_probe(struct platform_device *pdev)
 
 	apr_tal_init();
 	apr_dev_ptr = &pdev->dev;
+	INIT_DELAYED_WORK(&add_chld_dev_work, apr_add_child_devices);
 	return apr_debug_init();
 }
 

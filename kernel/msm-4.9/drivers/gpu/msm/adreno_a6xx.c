@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018,2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -982,6 +982,7 @@ static void _set_ordinals(struct adreno_device *adreno_dev,
 static int a6xx_send_cp_init(struct adreno_device *adreno_dev,
 			 struct adreno_ringbuffer *rb)
 {
+	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	unsigned int *cmds;
 	int ret;
 
@@ -994,9 +995,16 @@ static int a6xx_send_cp_init(struct adreno_device *adreno_dev,
 	_set_ordinals(adreno_dev, cmds, 11);
 
 	ret = adreno_ringbuffer_submit_spin(rb, NULL, 2000);
-	if (ret)
+	if (ret) {
 		adreno_spin_idle_debug(adreno_dev,
 				"CP initialization failed to idle\n");
+
+		if (!adreno_is_a3xx(adreno_dev))
+			kgsl_sharedmem_writel(device, &device->scratch,
+					SCRATCH_RPTR_OFFSET(rb->id), 0);
+		rb->wptr = 0;
+		rb->_wptr = 0;
+	}
 
 	return ret;
 }
@@ -1058,7 +1066,7 @@ static int a6xx_post_start(struct adreno_device *adreno_dev)
 
 	rb->_wptr = rb->_wptr - (42 - (cmds - start));
 
-	ret = adreno_ringbuffer_submit_spin(rb, NULL, 2000);
+	ret = adreno_ringbuffer_submit_spin_nosync(rb, NULL, 2000);
 	if (ret)
 		adreno_spin_idle_debug(adreno_dev,
 			"hw preemption initialization failed to idle\n");
@@ -1165,7 +1173,7 @@ static int _load_firmware(struct kgsl_device *device, const char *fwfile,
 	if (!ret) {
 		memcpy(firmware->memdesc.hostptr, &fw->data[4], fw->size - 4);
 		firmware->size = (fw->size - 4) / sizeof(uint32_t);
-		firmware->version = *(unsigned int *)&fw->data[4];
+		firmware->version = adreno_get_ucode_version((u32 *)fw->data);
 	}
 
 	release_firmware(fw);
@@ -1405,6 +1413,9 @@ static int a6xx_gmu_start(struct kgsl_device *device)
 
 	/* Bring GMU out of reset */
 	kgsl_gmu_regwrite(device, A6XX_GMU_CM3_SYSRESET, 0);
+	/* Make sure the request completes before continuing */
+	wmb();
+
 	if (timed_poll_check(device,
 			A6XX_GMU_CM3_FW_INIT_RESULT,
 			0xBABEFACE,
@@ -1598,6 +1609,18 @@ static bool a6xx_gx_is_on(struct adreno_device *adreno_dev)
 
 	kgsl_gmu_regread(device, A6XX_GMU_SPTPRAC_PWR_CLK_STATUS, &val);
 	return is_on(val);
+}
+
+/*
+ * a6xx_cx_is_on() - Check if CX is on using GPUCC register
+ * @device - Pointer to KGSL device struct
+ */
+static bool a6xx_cx_is_on(struct kgsl_device *device)
+{
+	unsigned int val;
+
+	kgsl_gmu_regread(device, A6XX_GPU_CC_CX_GDSCR, &val);
+	return (val & BIT(31));
 }
 
 /*
@@ -1873,6 +1896,13 @@ static int a6xx_gmu_fw_start(struct kgsl_device *device,
 
 	kgsl_gmu_regwrite(device, A6XX_GMU_AHB_FENCE_RANGE_0,
 			FENCE_RANGE_MASK);
+
+	/*
+	 * Make sure that CM3 state is at reset value. Snapshot is changing
+	 * NMI bit and if we boot up GMU with NMI bit set.GMU will boot straight
+	 * in to NMI handler without executing __main code
+	 */
+	kgsl_gmu_regwrite(device, A6XX_GMU_CM3_CFG, 0x4052);
 
 	/* Pass chipid to GMU FW, must happen before starting GMU */
 
@@ -2263,8 +2293,7 @@ static int a6xx_complete_rpmh_votes(struct kgsl_device *device)
 
 static int a6xx_gmu_suspend(struct kgsl_device *device)
 {
-	/* Max GX clients on A6xx is 2: GMU and KMD */
-	int ret = 0, max_client_num = 2;
+	int ret = 0;
 	struct gmu_device *gmu = &device->gmu;
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 
@@ -2284,7 +2313,7 @@ static int a6xx_gmu_suspend(struct kgsl_device *device)
 	a6xx_complete_rpmh_votes(device);
 
 	if (gmu->gx_gdsc) {
-		if (regulator_is_enabled(gmu->gx_gdsc)) {
+		if (a6xx_gx_is_on(adreno_dev)) {
 			/* Switch gx gdsc control from GMU to CPU
 			 * force non-zero reference count in clk driver
 			 * so next disable call will turn
@@ -2293,18 +2322,16 @@ static int a6xx_gmu_suspend(struct kgsl_device *device)
 			ret = regulator_enable(gmu->gx_gdsc);
 			if (ret)
 				dev_err(&gmu->pdev->dev,
-					"suspend fail: gx enable\n");
+					"suspend fail: gx enable %d\n", ret);
 
-			while ((max_client_num)) {
-				ret = regulator_disable(gmu->gx_gdsc);
-				if (!regulator_is_enabled(gmu->gx_gdsc))
-					break;
-				max_client_num -= 1;
-			}
-
-			if (!max_client_num)
+			ret = regulator_disable(gmu->gx_gdsc);
+			if (ret)
 				dev_err(&gmu->pdev->dev,
-					"suspend fail: cannot disable gx\n");
+					"suspend fail: gx disable %d\n", ret);
+
+			if (a6xx_gx_is_on(adreno_dev))
+				dev_err(&gmu->pdev->dev,
+					"suspend fail: gx is stuck on\n");
 		}
 	}
 
@@ -2368,10 +2395,14 @@ static int a6xx_reset(struct kgsl_device *device, int fault)
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	int ret = -EINVAL;
 	int i = 0;
+	unsigned long flags = device->pwrctrl.ctrl_flags;
 
 	/* Use the regular reset sequence for No GMU */
 	if (!kgsl_gmu_isenabled(device))
 		return adreno_reset(device, fault);
+
+	/* Clear ctrl_flags to ensure clocks and regulators are turned off */
+	device->pwrctrl.ctrl_flags = 0;
 
 	/* Transition from ACTIVE to RESET state */
 	kgsl_pwrctrl_change_state(device, KGSL_STATE_RESET);
@@ -2423,6 +2454,8 @@ static int a6xx_reset(struct kgsl_device *device, int fault)
 	}
 
 	clear_bit(ADRENO_DEVICE_HARD_RESET, &adreno_dev->priv);
+
+	device->pwrctrl.ctrl_flags = flags;
 
 	if (ret)
 		return ret;
@@ -3906,6 +3939,7 @@ struct adreno_gpudev adreno_a6xx_gpudev = {
 	.preemption_context_init = a6xx_preemption_context_init,
 	.preemption_context_destroy = a6xx_preemption_context_destroy,
 	.gx_is_on = a6xx_gx_is_on,
+	.cx_is_on = a6xx_cx_is_on,
 	.sptprac_is_on = a6xx_sptprac_is_on,
 	.ccu_invalidate = a6xx_ccu_invalidate,
 	.perfcounter_update = a6xx_perfcounter_update,

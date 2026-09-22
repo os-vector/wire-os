@@ -735,6 +735,8 @@ hashlimit_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	return hashlimit_mt_common(skb, par, hinfo, &info->cfg, 2);
 }
 
+#define HASHLIMIT_MAX_SIZE 1048576
+
 static int hashlimit_mt_check_common(const struct xt_mtchk_param *par,
 				     struct xt_hashlimit_htable **hinfo,
 				     struct hashlimit_cfg2 *cfg,
@@ -745,6 +747,14 @@ static int hashlimit_mt_check_common(const struct xt_mtchk_param *par,
 
 	if (cfg->gc_interval == 0 || cfg->expire == 0)
 		return -EINVAL;
+	if (cfg->size > HASHLIMIT_MAX_SIZE) {
+		cfg->size = HASHLIMIT_MAX_SIZE;
+		pr_info_ratelimited("size too large, truncated to %u\n", cfg->size);
+	}
+	if (cfg->max > HASHLIMIT_MAX_SIZE) {
+		cfg->max = HASHLIMIT_MAX_SIZE;
+		pr_info_ratelimited("max too large, truncated to %u\n", cfg->max);
+	}
 	if (par->family == NFPROTO_IPV4) {
 		if (cfg->srcmask > 32 || cfg->dstmask > 32)
 			return -EINVAL;
@@ -841,6 +851,7 @@ static struct xt_match hashlimit_mt_reg[] __read_mostly = {
 		.family         = NFPROTO_IPV4,
 		.match          = hashlimit_mt_v1,
 		.matchsize      = sizeof(struct xt_hashlimit_mtinfo1),
+		.usersize	= offsetof(struct xt_hashlimit_mtinfo1, hinfo),
 		.checkentry     = hashlimit_mt_check_v1,
 		.destroy        = hashlimit_mt_destroy_v1,
 		.me             = THIS_MODULE,
@@ -851,6 +862,7 @@ static struct xt_match hashlimit_mt_reg[] __read_mostly = {
 		.family         = NFPROTO_IPV4,
 		.match          = hashlimit_mt,
 		.matchsize      = sizeof(struct xt_hashlimit_mtinfo2),
+		.usersize	= offsetof(struct xt_hashlimit_mtinfo2, hinfo),
 		.checkentry     = hashlimit_mt_check,
 		.destroy        = hashlimit_mt_destroy,
 		.me             = THIS_MODULE,
@@ -862,6 +874,7 @@ static struct xt_match hashlimit_mt_reg[] __read_mostly = {
 		.family         = NFPROTO_IPV6,
 		.match          = hashlimit_mt_v1,
 		.matchsize      = sizeof(struct xt_hashlimit_mtinfo1),
+		.usersize	= offsetof(struct xt_hashlimit_mtinfo1, hinfo),
 		.checkentry     = hashlimit_mt_check_v1,
 		.destroy        = hashlimit_mt_destroy_v1,
 		.me             = THIS_MODULE,
@@ -872,6 +885,7 @@ static struct xt_match hashlimit_mt_reg[] __read_mostly = {
 		.family         = NFPROTO_IPV6,
 		.match          = hashlimit_mt,
 		.matchsize      = sizeof(struct xt_hashlimit_mtinfo2),
+		.usersize	= offsetof(struct xt_hashlimit_mtinfo2, hinfo),
 		.checkentry     = hashlimit_mt_check,
 		.destroy        = hashlimit_mt_destroy,
 		.me             = THIS_MODULE,

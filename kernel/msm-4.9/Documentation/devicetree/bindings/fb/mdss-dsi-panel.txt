@@ -384,6 +384,9 @@ the fps window.
 					--> Sleep value (in ms)
 - qcom,partial-update-enabled:		Boolean used to enable partial
 					panel update for command mode panels.
+- qcom,partial-update-addr-offset:	An array of two values indicate the panel
+					column, row address offset value.
+					Two default values are 0.
 - qcom,mdss-dsi-horizontal-line-idle:	List of width ranges (EC - SC) in pixels indicating
 					additional idle time in dsi clock cycles that is needed
 					to compensate for smaller line width.
@@ -518,6 +521,7 @@ the fps window.
 					in floating state(not LP00 or LP11) to turn on this property. Software
 					turns off PHY pmic power supply, phy ldo and DSI Lane ldo during
 					idle screen (footswitch control off) when this property is enabled.
+- qcom,skip-panel-reset:		Boolean. when set, will skip panel reset during panel ON/OFF.
 [[Optional config sub-nodes]]		These subnodes provide different configurations for a given same panel.
 					Default configuration can be chosen by specifying phandle of the
 					selected subnode in the qcom,config-select.

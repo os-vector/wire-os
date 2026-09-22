@@ -23,7 +23,7 @@
 #include "u_uac2.h"
 
 /* Keep everyone on toes */
-#define USB_XFERS	8
+#define USB_XFERS	32
 
 /*
  * The driver implements a simple UAC_2 topology.
@@ -775,7 +775,7 @@ static struct usb_endpoint_descriptor fs_epout_desc = {
 
 	.bEndpointAddress = USB_DIR_OUT,
 	.bmAttributes = USB_ENDPOINT_XFER_ISOC | USB_ENDPOINT_SYNC_ASYNC,
-	.wMaxPacketSize = cpu_to_le16(1023),
+	/* .wMaxPacketSize = DYNAMIC */
 	.bInterval = 1,
 };
 
@@ -784,7 +784,7 @@ static struct usb_endpoint_descriptor hs_epout_desc = {
 	.bDescriptorType = USB_DT_ENDPOINT,
 
 	.bmAttributes = USB_ENDPOINT_XFER_ISOC | USB_ENDPOINT_SYNC_ASYNC,
-	.wMaxPacketSize = cpu_to_le16(1024),
+	/* .wMaxPacketSize = DYNAMIC */
 	.bInterval = 4,
 };
 
@@ -859,7 +859,7 @@ static struct usb_endpoint_descriptor fs_epin_desc = {
 
 	.bEndpointAddress = USB_DIR_IN,
 	.bmAttributes = USB_ENDPOINT_XFER_ISOC | USB_ENDPOINT_SYNC_ASYNC,
-	.wMaxPacketSize = cpu_to_le16(1023),
+	/* .wMaxPacketSize = DYNAMIC */
 	.bInterval = 1,
 };
 
@@ -868,7 +868,7 @@ static struct usb_endpoint_descriptor hs_epin_desc = {
 	.bDescriptorType = USB_DT_ENDPOINT,
 
 	.bmAttributes = USB_ENDPOINT_XFER_ISOC | USB_ENDPOINT_SYNC_ASYNC,
-	.wMaxPacketSize = cpu_to_le16(1024),
+	/* .wMaxPacketSize = DYNAMIC */
 	.bInterval = 4,
 };
 
@@ -1082,6 +1082,7 @@ static void set_ep_max_packet_size(const struct f_uac2_opts *uac2_opts,
 {
 	int chmask, srate, ssize;
 	u16 max_packet_size;
+	u8 bInterval;
 
 	if (is_playback) {
 		chmask = uac2_opts->p_chmask;
@@ -1095,6 +1096,26 @@ static void set_ep_max_packet_size(const struct f_uac2_opts *uac2_opts,
 
 	max_packet_size = num_channels(chmask) * ssize *
 		DIV_ROUND_UP(srate, factor / (1 << (ep_desc->bInterval - 1)));
+
+	/* max_packet_size can vary based on sample rate, no. of channels &
+	 * sample size. If max_packet_size > ep_desc->wMaxPacketSize(i.e 1024),
+	 * reduce bInterval accordingly & recalculate max_packet_size. Else
+	 * required data rate may not fit per second.
+	 */
+	if (factor == 8000) {
+		if (max_packet_size > ep_desc->wMaxPacketSize) {
+			bInterval = ep_desc->bInterval -
+				(max_packet_size/ep_desc->wMaxPacketSize);
+			if ((bInterval < 1) || (bInterval > ep_desc->bInterval))
+				ep_desc->bInterval = 1;
+			else
+				ep_desc->bInterval = bInterval;
+
+			max_packet_size = num_channels(chmask) * ssize *
+				DIV_ROUND_UP(srate,
+				factor / (1 << (ep_desc->bInterval - 1)));
+		}
+	}
 	ep_desc->wMaxPacketSize = cpu_to_le16(min_t(u16, max_packet_size,
 				le16_to_cpu(ep_desc->wMaxPacketSize)));
 }
@@ -1189,19 +1210,23 @@ afunc_bind(struct usb_configuration *cfg, struct usb_function *fn)
 		agdev->out_ep = usb_ep_autoconfig(gadget, &fs_epout_desc);
 		if (!agdev->out_ep) {
 			dev_err(dev, "%s:%d Error!\n", __func__, __LINE__);
-			return ret;
+			return -ENODEV;
 		}
 	}
 
 	agdev->in_ep = usb_ep_autoconfig(gadget, &fs_epin_desc);
 	if (!agdev->in_ep) {
 		dev_err(dev, "%s:%d Error!\n", __func__, __LINE__);
-		return ret;
+		return -ENODEV;
 	}
 
 	uac2->p_prm.uac2 = uac2;
 	uac2->c_prm.uac2 = uac2;
 
+	hs_epin_desc.bInterval = 4;
+	hs_epout_desc.bInterval = 4;
+	hs_epin_desc.wMaxPacketSize = cpu_to_le16(1024);
+	hs_epout_desc.wMaxPacketSize = cpu_to_le16(1024);
 	/* Calculate wMaxPacketSize according to audio bandwidth */
 	set_ep_max_packet_size(uac2_opts, &fs_epin_desc, 1000, true);
 	set_ep_max_packet_size(uac2_opts, &fs_epout_desc, 1000, false);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2018, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -492,7 +492,7 @@ struct sps_bam_props {
  *
  */
 struct sps_mem_buffer {
-	void *base;
+	void __iomem *base;
 	phys_addr_t phys_base;
 	unsigned long iova;
 	u32 size;

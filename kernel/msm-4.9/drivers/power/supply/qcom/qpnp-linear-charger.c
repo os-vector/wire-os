@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015, 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2015, 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -414,6 +414,7 @@ struct qpnp_lbc_chip {
 	struct qpnp_adc_tm_chip		*adc_tm_dev;
 	struct led_classdev		led_cdev;
 	struct dentry			*debug_root;
+	struct work_struct		debug_board_work;
 
 	/* parallel-chg params */
 	struct power_supply		*parallel_psy;
@@ -1428,6 +1429,16 @@ static void qpnp_lbc_set_appropriate_current(struct qpnp_lbc_chip *chip)
 	qpnp_lbc_ibatmax_set(chip, chg_current);
 }
 
+static void qpnp_batt_external_power_changed(struct power_supply *psy)
+{
+	struct qpnp_lbc_chip *chip = power_supply_get_drvdata(psy);
+
+	if (chip->bat_if_base && chip->batt_psy) {
+		pr_debug("power supply changed batt_psy\n");
+		power_supply_changed(chip->batt_psy);
+	}
+}
+
 static int qpnp_lbc_system_temp_level_set(struct qpnp_lbc_chip *chip,
 								int lvl_sel)
 {
@@ -1496,7 +1507,7 @@ static int qpnp_lbc_configure_jeita(struct qpnp_lbc_chip *chip,
 		return -EINVAL;
 	}
 
-	if (chip->cfg_use_fake_battery)
+	if (chip->cfg_use_fake_battery || chip->debug_board)
 		return 0;
 
 	mutex_lock(&chip->jeita_configure_lock);
@@ -1548,6 +1559,22 @@ static int qpnp_lbc_configure_jeita(struct qpnp_lbc_chip *chip,
 mutex_unlock:
 	mutex_unlock(&chip->jeita_configure_lock);
 	return rc;
+}
+
+static void qpnp_lbc_debug_board_work_fn(struct work_struct *work)
+{
+	struct qpnp_lbc_chip *chip = container_of(work, struct qpnp_lbc_chip,
+						debug_board_work);
+	int rc = 0;
+
+	if (chip->adc_param.channel == LR_MUX1_BATT_THERM
+					&& chip->debug_board) {
+		pr_debug("Disable adc-tm notifications for debug board\n");
+		rc = qpnp_adc_tm_disable_chan_meas(chip->adc_tm_dev,
+							 &chip->adc_param);
+		if (rc < 0)
+			pr_err("failed to disable tm %d\n", rc);
+	}
 }
 
 static int qpnp_batt_property_is_writeable(struct power_supply *psy,
@@ -1663,6 +1690,7 @@ static int qpnp_batt_power_set_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_DEBUG_BATTERY:
 		chip->debug_board = val->intval;
+		schedule_work(&chip->debug_board_work);
 		rc = qpnp_lbc_charger_enable(chip, DEBUG_BOARD,
 						!(val->intval));
 		break;
@@ -1676,7 +1704,9 @@ static int qpnp_batt_power_set_property(struct power_supply *psy,
 		return -EINVAL;
 	}
 
-	power_supply_changed(chip->batt_psy);
+	if (chip->bat_if_base && chip->batt_psy)
+		power_supply_changed(chip->batt_psy);
+
 	return rc;
 }
 
@@ -2639,7 +2669,12 @@ static irqreturn_t qpnp_lbc_usbin_valid_irq_handler(int irq, void *_chip)
 		else
 			extcon_set_cable_state_(chip->extcon,
 						EXTCON_USB, false);
-		power_supply_changed(chip->usb_psy);
+	}
+
+	power_supply_changed(chip->usb_psy);
+	if (chip->bat_if_base) {
+		pr_debug("power supply changed batt_psy\n");
+		power_supply_changed(chip->batt_psy);
 	}
 
 	return IRQ_HANDLED;
@@ -2678,6 +2713,9 @@ static irqreturn_t qpnp_lbc_batt_pres_irq_handler(int irq, void *_chip)
 {
 	struct qpnp_lbc_chip *chip = _chip;
 	int batt_present;
+
+	if (chip->debug_board)
+		return IRQ_HANDLED;
 
 	batt_present = qpnp_lbc_is_batt_present(chip);
 	pr_debug("batt-pres triggered: %d\n", batt_present);
@@ -2768,11 +2806,11 @@ static irqreturn_t qpnp_lbc_fastchg_irq_handler(int irq, void *_chip)
 							kt);
 			}
 		}
+	}
 
-		if (chip->bat_if_base) {
-			pr_debug("power supply changed batt_psy\n");
-			power_supply_changed(chip->batt_psy);
-		}
+	if (chip->bat_if_base) {
+		pr_debug("power supply changed batt_psy\n");
+		power_supply_changed(chip->batt_psy);
 	}
 
 	return IRQ_HANDLED;
@@ -3343,7 +3381,7 @@ static int qpnp_lbc_main_probe(struct platform_device *pdev)
 	alarm_init(&chip->vddtrim_alarm, ALARM_REALTIME, vddtrim_callback);
 	INIT_DELAYED_WORK(&chip->collapsible_detection_work,
 			qpnp_lbc_collapsible_detection_work);
-
+	INIT_WORK(&chip->debug_board_work, qpnp_lbc_debug_board_work_fn);
 	/* Get all device-tree properties */
 	rc = qpnp_charger_read_dt_props(chip);
 	if (rc) {
@@ -3433,6 +3471,8 @@ static int qpnp_lbc_main_probe(struct platform_device *pdev)
 			ARRAY_SIZE(msm_batt_power_props);
 		chip->batt_psy_d.get_property = qpnp_batt_power_get_property;
 		chip->batt_psy_d.set_property = qpnp_batt_power_set_property;
+		chip->batt_psy_d.external_power_changed =
+			qpnp_batt_external_power_changed;
 		chip->batt_psy_d.property_is_writeable =
 			qpnp_batt_property_is_writeable;
 
@@ -3553,6 +3593,7 @@ static int qpnp_lbc_remove(struct platform_device *pdev)
 		alarm_cancel(&chip->vddtrim_alarm);
 		cancel_work_sync(&chip->vddtrim_work);
 	}
+	cancel_work_sync(&chip->debug_board_work);
 	cancel_delayed_work_sync(&chip->collapsible_detection_work);
 	debugfs_remove_recursive(chip->debug_root);
 	if (chip->bat_if_base)

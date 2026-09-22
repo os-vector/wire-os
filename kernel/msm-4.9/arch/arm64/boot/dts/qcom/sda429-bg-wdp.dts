@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 - 2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+
+#include "sdm429-spyro.dtsi"
+#include "sdm429w-bg-pm660.dtsi"
+#include "sdm429-bg-memory.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. SDA429 BG WDP";
+	compatible = "qcom,sdm429w-qrd","qcom,sda429w";
+	qcom,msm-id = <437 0x0>;
+	qcom,board-id = <0x00010b 9>;
+	qcom,pmic-id = <0x0002001b 0x0 0x0 0x0>;
+};

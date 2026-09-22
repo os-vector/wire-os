@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, The Linux Foundation. All rights reserved.
+Copyright (c) 2017, 2020 The Linux Foundation. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2 and
@@ -33,6 +33,9 @@ int msm_pcm_voice_init(void);
 int msm_pcm_voip_init(void);
 int msm_transcode_loopback_init(void);
 int msm_cpe_lsm_init(void);
+#ifdef CONFIG_SND_SOC_MSM8909
+int __init voice_svc_init(void);
+#endif
 
 void msm_cpe_lsm_exit(void);
 void msm_transcode_loopback_exit(void);
@@ -53,6 +56,9 @@ void msm_dai_q6_exit(void);
 void msm_dai_q6_hdmi_exit(void);
 void msm_fe_dai_exit(void);
 void msm_compress_dsp_exit(void);
+#ifdef CONFIG_SND_SOC_MSM8909
+void __exit voice_svc_exit(void);
+#endif
 
 #endif
 

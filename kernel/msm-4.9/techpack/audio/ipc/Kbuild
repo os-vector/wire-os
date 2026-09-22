@@ -32,40 +32,46 @@ endif
 KDIR := $(TOP)/kernel/msm-$(TARGET_KERNEL_VERSION)
 
 ifeq ($(KERNEL_BUILD), 1)
-        # In-tree build: KDIR is not a kbuild variable and is empty here.
         AUDIO_ROOT := $(srctree)/techpack/audio
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
         ifeq ($(CONFIG_ARCH_SDM845), y)
-        include $(AUDIO_ROOT)/config/sdm845auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/sdm845autoconf.h
+        	include $(AUDIO_ROOT)/config/sdm845auto.conf
+        	export
+        	INCS    +=  -include $(AUDIO_ROOT)/config/sdm845autoconf.h
         endif
         ifeq ($(CONFIG_ARCH_SDM670), y)
-        include $(AUDIO_ROOT)/config/sdm710auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/sdm710autoconf.h
+        	include $(AUDIO_ROOT)/config/sdm710auto.conf
+        	export
+        	INCS    +=  -include $(AUDIO_ROOT)/config/sdm710autoconf.h
         endif
         ifeq ($(CONFIG_ARCH_SDM450), y)
-        include $(AUDIO_ROOT)/config/sdm450auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
+        	include $(AUDIO_ROOT)/config/sdm450auto.conf
+        	export
+        	INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
         endif
         ifeq ($(CONFIG_ARCH_SDM439), y)
-        include $(AUDIO_ROOT)/config/sdm450auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
+        	include $(AUDIO_ROOT)/config/sdm450auto.conf
+        	export
+        	INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
         endif
         ifeq ($(CONFIG_ARCH_MSM8909), y)
-        include $(AUDIO_ROOT)/config/msm8909auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/msm8909autoconf.h
+        	ifeq ($(CONFIG_MSM_BGCOM), y)
+        		include $(AUDIO_ROOT)/config/msm8909auto.conf
+        		export
+        		INCS    +=  -include $(AUDIO_ROOT)/config/msm8909autoconf.h
+        	endif
+        	ifeq ($(CONFIG_MSM_8905), m)
+        		include $(AUDIO_ROOT)/config/msm8905auto.conf
+        		export
+        		INCS    +=  -include $(AUDIO_ROOT)/config/msm8905autoconf.h
+        	endif
         endif
         ifeq ($(CONFIG_ARCH_MSM8917), y)
-        include $(AUDIO_ROOT)/config/sdm450auto.conf
-        export
-        INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
+        	include $(AUDIO_ROOT)/config/sdm450auto.conf
+        	export
+        	INCS    +=  -include $(AUDIO_ROOT)/config/sdm450autoconf.h
         endif
 endif
 
@@ -135,26 +141,30 @@ endif
 LINUX_INC +=	-Iinclude/linux
 
 INCS +=		$(COMMON_INC) \
-        $(UAPI_INC)
+        	$(UAPI_INC)
 
 EXTRA_CFLAGS += $(INCS)
 
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
-        -DANI_LITTLE_BIT_ENDIAN \
-        -DDOT11F_LITTLE_ENDIAN_HOST \
-        -DANI_COMPILER_TYPE_GCC \
-        -DANI_OS_TYPE_ANDROID=6 \
-        -DPTT_SOCK_SVC_ENABLE \
-        -Wall\
-        -Werror\
-        -D__linux__
+        	-DANI_LITTLE_BIT_ENDIAN \
+        	-DDOT11F_LITTLE_ENDIAN_HOST \
+        	-DANI_COMPILER_TYPE_GCC \
+        	-DANI_OS_TYPE_ANDROID=6 \
+        	-DPTT_SOCK_SVC_ENABLE \
+        	-Wall\
+        	-Werror\
+        	-D__linux__
 
 KBUILD_CPPFLAGS += $(CDEFINES)
 
 ifeq ($(KERNEL_BUILD), 0)
 
+ifneq ($(TOP), )
 HEADER_INSTALL_DIR := $(TOP)/kernel/msm-$(TARGET_KERNEL_VERSION)/scripts
+else
+HEADER_INSTALL_DIR := $(ANDROID_BUILD_TOP)/kernel/msm-$(TARGET_KERNEL_VERSION)/scripts
+endif
 UAPI_OUT := $(OUT)/obj/vendor/qcom/opensource/audio-kernel/include
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/linux/ $(AUDIO_ROOT)/include/uapi/linux/ avtimer.h;)
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/linux/ $(AUDIO_ROOT)/include/uapi/linux/ msm_audio.h;)
@@ -182,6 +192,7 @@ $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ msmcal-hwdep.h;)
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ voice_params.h;)
 $(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ wcd-dsp-glink.h;)
+$(shell $(HEADER_INSTALL_DIR)/headers_install.sh $(UAPI_OUT)/sound/ $(AUDIO_ROOT)/include/uapi/sound/ voice_svc.h;)
 
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/dsp/Module.symvers
 

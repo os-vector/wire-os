@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -457,6 +457,7 @@ enum sdxpoorwills_functions {
 	msm_mux_dbg_out,
 	msm_mux_gcc_plltest,
 	msm_mux_emac_pps,
+	msm_mux_gps_ext_aggressor,
 	msm_mux_NA,
 };
 
@@ -837,6 +838,10 @@ static const char * const emac_pps_groups[] = {
 	"gpio89",
 };
 
+static const char * const gps_ext_aggressor_groups[] = {
+	"gpio42",
+};
+
 static const struct msm_function sdxpoorwills_functions[] = {
 	FUNCTION(uim2_data),
 	FUNCTION(gpio),
@@ -956,6 +961,7 @@ static const struct msm_function sdxpoorwills_functions[] = {
 	FUNCTION(dbg_out),
 	FUNCTION(gcc_plltest),
 	FUNCTION(emac_pps),
+	FUNCTION(gps_ext_aggressor),
 };
 
 /* Every pin is maintained as a single group, and missing or non-existing pin
@@ -1033,7 +1039,8 @@ static const struct msm_pingroup sdxpoorwills_groups[] = {
 	[39] = PINGROUP(39, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	[40] = PINGROUP(40, NA, NA, cri_trng0, NA, NA, NA, NA, NA, NA),
 	[41] = PINGROUP(41, NA, NA, cri_trng1, NA, NA, NA, NA, NA, NA),
-	[42] = PINGROUP(42, nav_pps, nav_dr, pll_ref, NA, NA, NA, NA, NA, NA),
+	[42] = PINGROUP(42, nav_pps, gps_ext_aggressor, nav_dr, pll_ref, NA,
+			NA, NA, NA, NA),
 	[43] = PINGROUP(43, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	[44] = PINGROUP(44, coex_uart, qdss_tracectl, NA, NA, NA, NA, NA, NA,
 			NA),
@@ -1145,8 +1152,8 @@ static struct msm_gpio_mux_input sdxpoorwills_mux_in[] = {
 	{27, 53},
 	{28, 54},
 	{29, 55},
-	{30, 56},
-	{31, 57},
+	{30, 56, 1},
+	{31, 57, 1},
 	{32, 60},
 	{33, 61},
 	{34, 64},
@@ -1155,7 +1162,7 @@ static struct msm_gpio_mux_input sdxpoorwills_mux_in[] = {
 	{37, 71},
 	{38, 75},
 	{39, 76},
-	{40, 78},
+	{40, 78, 1},
 	{41, 79},
 	{42, 80},
 	{43, 82},
@@ -1169,7 +1176,7 @@ static struct msm_gpio_mux_input sdxpoorwills_mux_in[] = {
 	{51, 93},
 	{52, 94},
 	{53, 95},
-	{54, 97},
+	{54, 97, 1},
 	{55, 98},
 };
 

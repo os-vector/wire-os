@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -207,6 +207,7 @@
 		regulator-name = "gpu_gx_gdsc";
 		reg = <0x509100c 0x4>;
 		qcom,poll-cfg-gdscr;
+		qcom,skip-disable-before-sw-enable;
 		status = "disabled";
 	};
 

@@ -38,13 +38,12 @@ LINECOMMENT	"//".*\n
 #include "srcpos.h"
 #include "dtc-parser.tab.h"
 
-YYLTYPE yylloca;
 extern bool treesource_error;
 
 /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
 #define	YY_USER_ACTION \
 	{ \
-		srcpos_update(&yylloca, yytext, yyleng); \
+		srcpos_update(&yylloc, yytext, yyleng); \
 	}
 
 /*#define LEXDEBUG	1*/
@@ -293,7 +292,7 @@ static void lexical_error(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	srcpos_verror(&yylloca, "Lexical error", fmt, ap);
+	srcpos_verror(&yylloc, "Lexical error", fmt, ap);
 	va_end(ap);
 
 	treesource_error = true;

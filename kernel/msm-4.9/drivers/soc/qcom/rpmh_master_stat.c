@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018, 2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -249,8 +249,11 @@ static int msm_rpmh_master_stats_probe(struct platform_device *pdev)
 	ret = of_property_read_u32(pdev->dev.of_node,
 					"qcom,use-alt-unit",
 					&use_alt_unit);
-	if (ret)
+	if (ret) {
 		use_alt_unit = -1;
+		/* optional property should not fail probe */
+		ret = 0;
+	}
 
 	rpmh_unit_base = of_iomap(pdev->dev.of_node, 0);
 	if (!rpmh_unit_base) {

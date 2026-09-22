@@ -11,8 +11,43 @@
 &apps_iommu {
 	status = "disabled";
 };
+
 &msm_cam_smmu_cb1 {
 	iommus = <&apps_iommu_cb 3>;
+};
+
+&soc {
+	qcom,msm-cpufreq {
+		qcom,cpufreq-table =
+			 <  200000 >,
+			 <  400000 >,
+			 <  533330 >,
+			 <  729600 >,
+			 <  800000 >,
+			 <  998400 >,
+			 < 1094400 >,
+			 < 1190400 >,
+			 < 1248000 >,
+			 < 1267200 >;
+	};
+};
+
+&bluetooth {
+	status = "disabled";
+};
+
+&clock_gcc_mdss {
+	status = "disabled";
+};
+
+&pmic_anlg_codec {
+	status = "disabled";
+};
+
+&soc {
+	qcom,cam_smmu {
+		/delete-node/ msm_cb1;
+	};
 };
 
 &i2c_4 {
@@ -223,7 +258,11 @@
 			 <&clock_gcc clk_gcc_blsp1_qup5_spi_apps_clk>;
 		clock-names = "iface_clk", "core_clk";
 		qcom,infinite-mode = <0>;
-		// enabling PAM here results in a reset to EDL for some reason, so PIO is used
+
+		/delete-property/ qcom,use-bam;
+		/delete-property/ qcom,bam-consumer-pipe-index;
+		/delete-property/ qcom,bam-producer-pipe-index;
+
 		qcom,use-pinctrl;
 		qcom,ver-reg-exists;
 		qcom,master-id = <86>;
@@ -256,8 +295,8 @@
 / {
 	aliases {
 		/delete-property/ spi4;
-		spi0 = &vector_spi_imu;
-		spi1 = &spi_4;
+		spi0 = &vector_spi_imu;	/* IMU    -> /dev/spidev0.0 */
+		spi1 = &spi_4;		/* SCREEN -> /dev/spidev1.0 */
 	};
 };
 
@@ -265,6 +304,7 @@
 	status = "ok";
 	pinctrl-0 = <&vector_hsuart_sleep>;
 	pinctrl-1 = <&vector_hsuart_active>;
+	/* Retained from the 4.9 robot refboard; see HANDOFF section 9.8. */
 	qcom,no-rt-suspend;
 };
 
@@ -317,6 +357,7 @@
 			 <&clock_gcc clk_gcc_gtcu_ahb_clk>,
 			 <&clock_gcc clk_gcc_vfe_tbu_clk>;
 
+		/* vfe = CB3, 0x1e23000 */
 		iommu-ctx@3000 {
 			compatible = "qcom,msm-iommu-v1-ns";
 			reg = <0x3000 0x1000>;

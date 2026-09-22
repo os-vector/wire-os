@@ -1,4 +1,5 @@
-/* Copyright (c) 2012-2016, 2018-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2016, 2018-2020, The Linux Foundation.
+ * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1317,6 +1318,9 @@ static int venus_hfi_suspend(void *dev)
 		return -ENOTSUPP;
 	}
 
+	dprintk(VIDC_DBG, "Suspending Venus\n");
+	flush_delayed_work(&venus_hfi_pm_work);
+
 	mutex_lock(&device->lock);
 
 	if (device->power_enabled) {
@@ -2249,8 +2253,12 @@ static int venus_hfi_core_init(void *device)
 
 	if (dev->res->pm_qos_latency_us) {
 #ifdef CONFIG_SMP
-		dev->qos.type = PM_QOS_REQ_AFFINE_IRQ;
-		dev->qos.irq = dev->hal_data->irq;
+		if (dev->res->is_qos_type_all_cores) {
+			dev->qos.type = PM_QOS_REQ_ALL_CORES;
+		} else {
+			dev->qos.type = PM_QOS_REQ_AFFINE_IRQ;
+			dev->qos.irq = dev->hal_data->irq;
+		}
 #endif
 		pm_qos_add_request(&dev->qos, PM_QOS_CPU_DMA_LATENCY,
 				dev->res->pm_qos_latency_us);
@@ -3306,9 +3314,11 @@ static void __dump_venus_debug_registers(struct venus_hfi_device *device)
 	dprintk(VIDC_ERR, "VIDC_CPU_CS_SCIACMDARG0: 0x%x\n", reg);
 }
 
-static void __process_sys_error(struct venus_hfi_device *device)
+static void print_sfr_message(struct venus_hfi_device *device)
 {
 	struct hfi_sfr_struct *vsfr = NULL;
+	u32 vsfr_size = 0;
+	void *p = NULL;
 
 	/* Once SYS_ERROR received from HW, it is safe to halt the AXI.
 	 * With SYS_ERROR, Venus FW may have crashed and HW might be
@@ -3320,13 +3330,11 @@ static void __process_sys_error(struct venus_hfi_device *device)
 
 	vsfr = (struct hfi_sfr_struct *)device->sfr.align_virtual_addr;
 	if (vsfr) {
-		void *p = memchr(vsfr->rg_data, '\0', vsfr->bufSize);
-		/* SFR isn't guaranteed to be NULL terminated
-		 * since SYS_ERROR indicates that Venus is in the
-		 * process of crashing.
-		 */
+		vsfr_size = vsfr->bufSize - sizeof(u32);
+		p = memchr(vsfr->rg_data, '\0', vsfr_size);
+		/* SFR isn't guaranteed to be NULL terminated */
 		if (p == NULL)
-			vsfr->rg_data[vsfr->bufSize - 1] = '\0';
+			vsfr->rg_data[vsfr_size - 1] = '\0';
 
 		dprintk(VIDC_ERR, "SFR Message from FW: %s\n",
 				vsfr->rg_data);
@@ -3440,8 +3448,6 @@ static int __response_handler(struct venus_hfi_device *device)
 	}
 
 	if (device->intr_status & VIDC_WRAPPER_INTR_CLEAR_A2HWD_BMSK) {
-		struct hfi_sfr_struct *vsfr = (struct hfi_sfr_struct *)
-			device->sfr.align_virtual_addr;
 		struct msm_vidc_cb_info info = {
 			.response_type = HAL_SYS_WATCHDOG_TIMEOUT,
 			.response.cmd = {
@@ -3449,9 +3455,7 @@ static int __response_handler(struct venus_hfi_device *device)
 			}
 		};
 
-		if (vsfr)
-			dprintk(VIDC_ERR, "SFR Message from FW: %s\n",
-					vsfr->rg_data);
+		print_sfr_message(device);
 
 		__dump_venus_debug_registers(device);
 		dprintk(VIDC_ERR, "Received watchdog timeout\n");
@@ -3479,7 +3483,7 @@ static int __response_handler(struct venus_hfi_device *device)
 		switch (info->response_type) {
 		case HAL_SYS_ERROR:
 			__dump_venus_debug_registers(device);
-			__process_sys_error(device);
+			print_sfr_message(device);
 			break;
 		case HAL_SYS_RELEASE_RESOURCE_DONE:
 			dprintk(VIDC_DBG, "Received SYS_RELEASE_RESOURCE\n");
@@ -4428,8 +4432,12 @@ static inline int __resume(struct venus_hfi_device *device)
 
 	if (device->res->pm_qos_latency_us) {
 #ifdef CONFIG_SMP
-		device->qos.type = PM_QOS_REQ_AFFINE_IRQ;
-		device->qos.irq = device->hal_data->irq;
+		if (device->res->is_qos_type_all_cores) {
+			device->qos.type = PM_QOS_REQ_ALL_CORES;
+		} else {
+			device->qos.type = PM_QOS_REQ_AFFINE_IRQ;
+			device->qos.irq = device->hal_data->irq;
+		}
 #endif
 		pm_qos_add_request(&device->qos, PM_QOS_CPU_DMA_LATENCY,
 				device->res->pm_qos_latency_us);

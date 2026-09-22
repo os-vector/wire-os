@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,6 +17,7 @@
 #include <linux/rtmutex.h>
 #include <linux/clk.h>
 #include <linux/msm-bus.h>
+#include <dt-bindings/msm/msm-bus-ids.h>
 #include "msm_bus_core.h"
 #include "msm_bus_rpmh.h"
 
@@ -66,6 +67,9 @@ static void copy_remaining_nodes(struct list_head *edge_list, struct list_head
 		return;
 
 	search_node = kzalloc(sizeof(struct bus_search_type), GFP_KERNEL);
+	if (!search_node)
+		return;
+
 	INIT_LIST_HEAD(&search_node->node_list);
 	list_splice_init(edge_list, traverse_list);
 	list_splice_init(traverse_list, &search_node->node_list);
@@ -462,6 +466,9 @@ static int getpath(struct device *src_dev, int dest, const char *cl_name)
 			/* Keep tabs of the previous search list */
 			search_node = kzalloc(sizeof(struct bus_search_type),
 					 GFP_KERNEL);
+			if (!search_node)
+				goto exit_getpath;
+
 			INIT_LIST_HEAD(&search_node->node_list);
 			list_splice_init(&traverse_list,
 					 &search_node->node_list);
@@ -1398,6 +1405,16 @@ static int update_client_paths(struct msm_bus_client *client, bool log_trns,
 			MSM_BUS_ERR("%s: Update path failed! %d ctx %d\n",
 					__func__, ret, pdata->active_only);
 			goto exit_update_client_paths;
+		}
+
+		if (dest == MSM_BUS_SLAVE_IPA_CORE && cur_idx <= 0 && idx > 0) {
+			struct device *dev;
+
+			dev = bus_find_device(&msm_bus_type, NULL,
+				(void *) &dest, msm_bus_device_match_adhoc);
+
+			if (dev)
+				msm_bus_commit_single(dev);
 		}
 
 		if (log_trns)

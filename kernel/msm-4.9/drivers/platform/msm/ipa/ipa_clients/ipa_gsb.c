@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -161,6 +161,7 @@ struct ipa_gsb_context {
 	spinlock_t iface_spinlock[MAX_SUPPORTED_IFACE];
 	u32 pm_hdl;
 	atomic_t disconnect_in_progress;
+	atomic_t suspend_in_progress;
 };
 
 static struct ipa_gsb_context *ipa_gsb_ctx;
@@ -437,7 +438,9 @@ static void ipa_gsb_pm_cb(void *user_data, enum ipa_pm_cb_event event)
 
 	IPA_GSB_DBG_LOW("wake up clients\n");
 	for (i = 0; i < MAX_SUPPORTED_IFACE; i++)
-		if (ipa_gsb_ctx->iface[i] != NULL)
+		if (ipa_gsb_ctx->iface[i] != NULL &&
+			ipa_gsb_ctx->iface[i]->is_connected &&
+			!ipa_gsb_ctx->iface[i]->is_resumed)
 			ipa_gsb_ctx->iface[i]->wakeup_request(
 				ipa_gsb_ctx->iface[i]->priv);
 }
@@ -474,6 +477,53 @@ fail_pm_cons:
 	ipa_pm_deregister(ipa_gsb_ctx->pm_hdl);
 	ipa_gsb_ctx->pm_hdl = ~0;
 fail_pm_reg:
+	return ret;
+}
+
+static int ipa_bridge_stop_channel_deactivate_pm(u32 hdl)
+{
+	int ret = 0;
+
+	if (ipa_gsb_ctx->num_resumed_iface == 1) {
+		ret = ipa_stop_gsi_channel(
+			ipa_gsb_ctx->cons_hdl);
+		if (ret) {
+			IPA_GSB_ERR(
+				"fail to stop cons ep %d\n",
+				ret);
+			return ret;
+		}
+
+		ret = ipa_pm_deactivate_sync(ipa_gsb_ctx->pm_hdl);
+		if (ret) {
+			IPA_GSB_ERR("fail to deactivate ipa pm\n");
+			ipa_start_gsi_channel(ipa_gsb_ctx->cons_hdl);
+			return ret;
+		}
+	}
+	return ret;
+}
+
+static int ipa_bridge_activate_pm_start_channel(u32 hdl)
+{
+	int ret = 0;
+
+	if (ipa_gsb_ctx->num_resumed_iface == 0) {
+		ret = ipa_pm_activate_sync(ipa_gsb_ctx->pm_hdl);
+		if (ret) {
+			IPA_GSB_ERR("fail to activate ipa pm\n");
+			return ret;
+		}
+
+		ret = ipa_start_gsi_channel(
+			ipa_gsb_ctx->cons_hdl);
+		if (ret) {
+			IPA_GSB_ERR(
+				"fail to start con ep %d\n",
+				ret);
+			return ret;
+		}
+	}
 	return ret;
 }
 
@@ -675,9 +725,14 @@ static void ipa_gsb_cons_cb(void *priv, enum ipa_dp_evt_type evt,
 		return;
 	}
 
+	if (!data) {
+		IPA_GSB_ERR("Invalid data\n");
+		return;
+	}
+
 	skb = (struct sk_buff *)data;
 
-	while (skb && skb->len) {
+	while (skb->len) {
 		mux_hdr = (struct ipa_gsb_mux_hdr *)skb->data;
 		pkt_size = mux_hdr->pkt_size;
 		/* 4-byte padding */
@@ -875,9 +930,18 @@ int ipa_bridge_connect(u32 hdl)
 	ipa_gsb_ctx->iface[hdl]->is_connected = true;
 	ipa_gsb_ctx->iface[hdl]->is_resumed = true;
 
+	/* Connected == 0, would have started above already,
+	 * So, ignore it.
+	 */
+	if (ipa_gsb_ctx->num_connected_iface != 0)
+		ipa_bridge_activate_pm_start_channel(hdl);
+
 	ipa_gsb_ctx->num_connected_iface++;
 	IPA_GSB_DBG("connected iface: %d\n",
 		ipa_gsb_ctx->num_connected_iface);
+	/* Wake up remaining clients. */
+	if (ipa_gsb_ctx->num_resumed_iface == 0)
+		ipa_gsb_pm_cb(NULL, IPA_PM_REQUEST_WAKEUP);
 	ipa_gsb_ctx->num_resumed_iface++;
 	IPA_GSB_DBG("num resumed iface: %d\n",
 		ipa_gsb_ctx->num_resumed_iface);
@@ -967,6 +1031,13 @@ int ipa_bridge_disconnect(u32 hdl)
 
 	if (ipa_gsb_ctx->iface[hdl]->is_resumed) {
 		ipa_gsb_ctx->iface[hdl]->is_resumed = false;
+
+		/* Connected < 1, would have stopped above already,
+		 * So, ignore it.
+		 */
+		if (ipa_gsb_ctx->num_connected_iface >= 1)
+			ipa_bridge_stop_channel_deactivate_pm(hdl);
+
 		ipa_gsb_ctx->num_resumed_iface--;
 		IPA_GSB_DBG("num resumed iface: %d\n",
 			ipa_gsb_ctx->num_resumed_iface);
@@ -1016,25 +1087,11 @@ int ipa_bridge_resume(u32 hdl)
 	}
 
 	mutex_lock(&ipa_gsb_ctx->lock);
-	if (ipa_gsb_ctx->num_resumed_iface == 0) {
-		ret = ipa_pm_activate_sync(ipa_gsb_ctx->pm_hdl);
-		if (ret) {
-			IPA_GSB_ERR("fail to activate ipa pm\n");
-			mutex_unlock(&ipa_gsb_ctx->lock);
-			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
-			return ret;
-		}
-
-		ret = ipa_start_gsi_channel(
-			ipa_gsb_ctx->cons_hdl);
-		if (ret) {
-			IPA_GSB_ERR(
-				"fail to start con ep %d\n",
-				ret);
-			mutex_unlock(&ipa_gsb_ctx->lock);
-			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
-			return ret;
-		}
+	ret = ipa_bridge_activate_pm_start_channel(hdl);
+	if (ret) {
+		mutex_unlock(&ipa_gsb_ctx->lock);
+		mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
+		return ret;
 	}
 
 	ipa_gsb_ctx->iface[hdl]->is_resumed = true;
@@ -1065,52 +1122,41 @@ int ipa_bridge_suspend(u32 hdl)
 	IPA_GSB_DBG_LOW("client hdl: %d\n", hdl);
 
 	mutex_lock(&ipa_gsb_ctx->iface_lock[hdl]);
+	atomic_set(&ipa_gsb_ctx->suspend_in_progress, 1);
 	if (!ipa_gsb_ctx->iface[hdl]) {
 		IPA_GSB_ERR("fail to find interface, hdl: %d\n", hdl);
+		atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 		mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 		return -EFAULT;
 	}
 
 	if (!ipa_gsb_ctx->iface[hdl]->is_connected) {
 		IPA_GSB_ERR("iface is not connected\n");
+		atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 		mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 		return -EFAULT;
 	}
 
 	if (!ipa_gsb_ctx->iface[hdl]->is_resumed) {
 		IPA_GSB_DBG_LOW("iface was already suspended\n");
+		atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 		mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 		return 0;
 	}
 
 	mutex_lock(&ipa_gsb_ctx->lock);
-	if (ipa_gsb_ctx->num_resumed_iface == 1) {
-		ret = ipa_stop_gsi_channel(
-			ipa_gsb_ctx->cons_hdl);
-		if (ret) {
-			IPA_GSB_ERR(
-				"fail to stop cons ep %d\n",
-				ret);
-			mutex_unlock(&ipa_gsb_ctx->lock);
-			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
-			return ret;
-		}
-
-		ret = ipa_pm_deactivate_sync(ipa_gsb_ctx->pm_hdl);
-		if (ret) {
-			IPA_GSB_ERR("fail to deactivate ipa pm\n");
-			ipa_start_gsi_channel(ipa_gsb_ctx->cons_hdl);
-			mutex_unlock(&ipa_gsb_ctx->lock);
-			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
-			return ret;
-		}
+	ret = ipa_bridge_stop_channel_deactivate_pm(hdl);
+	if (ret) {
+		atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
+		mutex_unlock(&ipa_gsb_ctx->lock);
+		mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
+		return ret;
 	}
-
 	ipa_gsb_ctx->iface[hdl]->is_resumed = false;
 	ipa_gsb_ctx->num_resumed_iface--;
 	IPA_GSB_DBG_LOW("num resumed iface: %d\n",
 		ipa_gsb_ctx->num_resumed_iface);
-
+	atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 	mutex_unlock(&ipa_gsb_ctx->lock);
 	mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 	return 0;
@@ -1161,6 +1207,16 @@ int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb,
 
 	if (unlikely(atomic_read(&ipa_gsb_ctx->disconnect_in_progress))) {
 		IPA_GSB_ERR("ipa bridge disconnect_in_progress\n");
+		return -EFAULT;
+	}
+
+	if (unlikely(atomic_read(&ipa_gsb_ctx->suspend_in_progress))) {
+		IPA_GSB_ERR("ipa bridge suspend_in_progress\n");
+		return -EFAULT;
+	}
+
+	if (unlikely(!ipa_gsb_ctx->iface[hdl]->is_resumed)) {
+		IPA_GSB_ERR("iface %d was suspended\n", hdl);
 		return -EFAULT;
 	}
 

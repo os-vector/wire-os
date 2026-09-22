@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2018,2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -790,6 +790,8 @@ static int gmu_rpmh_init(struct gmu_device *gmu, struct kgsl_pwrctrl *pwr)
 
 static void send_nmi_to_gmu(struct adreno_device *adreno_dev)
 {
+	u32 val;
+
 	/* Mask so there's no interrupt caused by NMI */
 	adreno_write_gmureg(adreno_dev,
 			ADRENO_REG_GMU_GMU2HOST_INTR_MASK, 0xFFFFFFFF);
@@ -798,9 +800,10 @@ static void send_nmi_to_gmu(struct adreno_device *adreno_dev)
 	wmb();
 	adreno_write_gmureg(adreno_dev,
 		ADRENO_REG_GMU_NMI_CONTROL_STATUS, 0);
-	adreno_write_gmureg(adreno_dev,
-		ADRENO_REG_GMU_CM3_CFG,
-		(1 << GMU_CM3_CFG_NONMASKINTR_SHIFT));
+
+	adreno_read_gmureg(adreno_dev, ADRENO_REG_GMU_CM3_CFG, &val);
+	val |= 1 << GMU_CM3_CFG_NONMASKINTR_SHIFT;
+	adreno_write_gmureg(adreno_dev, ADRENO_REG_GMU_CM3_CFG, val);
 
 	/* Make sure the NMI is invoked before we proceed*/
 	wmb();
@@ -1321,6 +1324,8 @@ static int gmu_enable_gdsc(struct gmu_device *gmu)
 #define CX_GDSC_TIMEOUT	5000	/* ms */
 static int gmu_disable_gdsc(struct gmu_device *gmu)
 {
+	struct kgsl_device *device = container_of(gmu, struct kgsl_device, gmu);
+	struct adreno_gpudev *gpudev = ADRENO_GPU_DEVICE(ADRENO_DEVICE(device));
 	int ret;
 	unsigned long t;
 
@@ -1342,13 +1347,13 @@ static int gmu_disable_gdsc(struct gmu_device *gmu)
 	 */
 	t = jiffies + msecs_to_jiffies(CX_GDSC_TIMEOUT);
 	do {
-		if (!regulator_is_enabled(gmu->cx_gdsc))
+		if (gpudev->cx_is_on && !(gpudev->cx_is_on(device)))
 			return 0;
 		usleep_range(10, 100);
 
 	} while (!(time_after(jiffies, t)));
 
-	if (!regulator_is_enabled(gmu->cx_gdsc))
+	if (gpudev->cx_is_on && !(gpudev->cx_is_on(device)))
 		return 0;
 
 	dev_err(&gmu->pdev->dev, "GMU CX gdsc off timeout");
@@ -1693,25 +1698,28 @@ int adreno_gmu_fenced_write(struct adreno_device *adreno_dev,
 		 * was successful
 		 */
 		if (!(status & fence_mask))
-			return 0;
+			break;
 		/* Wait a small amount of time before trying again */
 		udelay(GMU_WAKEUP_DELAY_US);
 
 		/* Try to write the fenced register again */
 		adreno_writereg(adreno_dev, offset, val);
+	}
 
-		if (i == GMU_SHORT_WAKEUP_RETRY_LIMIT)
-			dev_err(adreno_dev->dev.dev,
-				"Waited %d usecs to write fenced register 0x%x. Continuing to wait...\n",
-				(GMU_SHORT_WAKEUP_RETRY_LIMIT *
-				GMU_WAKEUP_DELAY_US),
-				reg_offset);
+	if (i < GMU_SHORT_WAKEUP_RETRY_LIMIT)
+		return 0;
+
+	if (i == GMU_LONG_WAKEUP_RETRY_LIMIT) {
+		dev_err(adreno_dev->dev.dev,
+			"Timed out waiting %d usecs to write fenced register 0x%x\n",
+			(i * GMU_WAKEUP_DELAY_US),
+			reg_offset);
+		return -ETIMEDOUT;
 	}
 
 	dev_err(adreno_dev->dev.dev,
-		"Timed out waiting %d usecs to write fenced register 0x%x\n",
-		GMU_LONG_WAKEUP_RETRY_LIMIT * GMU_WAKEUP_DELAY_US,
-		reg_offset);
+		"Waited %d usecs to write fenced register 0x%x\n",
+		i * GMU_WAKEUP_DELAY_US, reg_offset);
 
-	return -ETIMEDOUT;
+	return 0;
 }

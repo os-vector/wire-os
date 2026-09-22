@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015, 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2015, 2017-2018, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -25,7 +25,7 @@
 #include <linux/of.h>
 #include <linux/wait.h>
 #include <linux/sched.h>
-#if IS_ENABLED(CONFIG_AVTIMER_LEGACY)
+#if IS_ENABLED(CONFIG_MSM_AVTIMER)
 #include <media/msmb_isp.h>
 #endif
 #include <ipc/apr.h>
@@ -329,7 +329,7 @@ int avcs_core_query_timer(uint64_t *avtimer_tick)
 }
 EXPORT_SYMBOL(avcs_core_query_timer);
 
-#if IS_ENABLED(CONFIG_AVTIMER_LEGACY)
+#if IS_ENABLED(CONFIG_MSM_AVTIMER)
 static void avcs_set_isp_fptr(bool enable)
 {
 	struct avtimer_fptr_t av_fptr;

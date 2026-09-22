@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2019,2020 The Linux Foundation. All rights reserved.
  * Copyright (C) 2007 Google Incorporated
  *
  * This software is licensed under the terms of the GNU General Public
@@ -916,17 +916,6 @@ u64 mdp3_get_panic_lut_cfg(u32 panel_width)
 	return panic_config;
 }
 
-int mdp3_enable_panic_ctrl(void)
-{
-	int rc = 0;
-
-	if (MDP3_REG_READ(MDP3_PANIC_ROBUST_CTRL) == 0) {
-		pr_err("%s: Enable Panic Control\n", __func__);
-		MDP3_REG_WRITE(MDP3_PANIC_ROBUST_CTRL, BIT(0));
-	}
-	return rc;
-}
-
 int mdp3_qos_remapper_setup(struct mdss_panel_data *panel)
 {
 	int rc = 0;
@@ -1354,6 +1343,8 @@ int mdp3_put_img(struct mdp3_img_data *data, int client)
 			pr_err("invalid ion client\n");
 			return -ENOMEM;
 		}
+		MDSS_XLOG(data->srcp_dma_buf, data->addr, data->len, client,
+				data->mapped, data->skip_detach);
 		if (data->mapped) {
 			if (client == MDP3_CLIENT_PPP ||
 						client == MDP3_CLIENT_DMA_P)
@@ -1391,7 +1382,7 @@ int mdp3_get_img(struct msmfb_data *img, struct mdp3_img_data *data, int client)
 {
 	struct fd f;
 	int ret = -EINVAL;
-	int fb_num;
+	int fb_num = 0;
 	struct ion_client *iclient = mdp3_res->ion_client;
 	int dom = (mdp3_res->domains + MDP3_IOMMU_DOMAIN_UNSECURE)->domain_idx;
 
@@ -1519,6 +1510,13 @@ done:
 	} else {
 		mdp3_put_img(data, client);
 		return -EINVAL;
+	}
+	if (img->flags & MDP_MEMORY_ID_TYPE_FB) {
+		MDSS_XLOG(img->memory_id, data->addr, data->len, fb_num);
+	} else if (iclient) {
+		MDSS_XLOG(img->memory_id, data->srcp_dma_buf, data->addr,
+				data->len, client, data->mapped,
+				data->skip_detach);
 	}
 	return ret;
 
@@ -1987,6 +1985,7 @@ static int mdp3_debug_init(struct platform_device *pdev)
 
 	mdata->debug_inf.debug_enable_clock = mdp3_debug_enable_clock;
 	mdata->mdp_rev = mdp3_res->mdp_rev;
+	mdata->pdev = pdev;
 
 	rc = mdss_debugfs_init(mdata);
 	if (rc)

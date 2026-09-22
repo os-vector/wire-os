@@ -15,8 +15,13 @@ ifeq ($(call is-board-platform-in-list,msm8953 msm8937),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_SDM450=m
 endif
 
-ifeq ($(call is-board-platform-in-list,msm8909),true)
+ifeq ($(strip $(AUDIO_FEATURE_ENABLED_DLKM_8909W)),true)
 AUDIO_SELECT  += CONFIG_SND_SOC_BG_8909=m
+AUDIO_SELECT  += CONFIG_SND_SOC_8909_DIG_CDC=m
+endif
+
+ifeq ($(strip $(TARGET_ROARING_LIONUS)),true)
+AUDIO_SELECT  += CONFIG_MSM_8905=m
 endif
 
 AUDIO_CHIPSET := audio
@@ -29,7 +34,7 @@ LOCAL_PATH := $(call my-dir)
 ifneq ($(findstring vendor,$(LOCAL_PATH)),)
 
 ifneq ($(findstring opensource,$(LOCAL_PATH)),)
-	AUDIO_BLD_DIR := $(ANDROID_BUILD_TOP)/vendor/qcom/opensource/audio-kernel
+	AUDIO_BLD_DIR := $(shell pwd)/vendor/qcom/opensource/audio-kernel
 endif # opensource
 
 ifeq ($(AUDIO_FEATURE_ENABLED_DLKM_8909W),true)
@@ -62,7 +67,6 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
 endif
 ###########################################################
-ifneq ($(call is-board-platform-in-list, msm8909),true)
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_pinctrl_wcd.ko
 LOCAL_MODULE_KBUILD_NAME  := pinctrl_wcd_dlkm.ko
@@ -70,7 +74,6 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/AndroidKernelModule.mk
-endif
 ###########################################################
 include $(CLEAR_VARS)
 LOCAL_MODULE              := $(AUDIO_CHIPSET)_swr.ko

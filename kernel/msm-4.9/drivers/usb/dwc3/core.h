@@ -44,6 +44,7 @@
 #define DWC3_EP0_BOUNCE_SIZE	512
 #define DWC3_ENDPOINTS_NUM	32
 #define DWC3_XHCI_RESOURCES_NUM	2
+#define MAX_ERROR_RECOVERY_TRIES	3
 
 #define DWC3_SCRATCHBUF_SIZE	4096	/* each buffer is assumed to be 4KiB */
 #define DWC3_EVENT_BUFFERS_SIZE	4096
@@ -517,6 +518,19 @@
 struct dwc3_trb;
 
 /**
+ * struct dwc3_gadget_ep_cmd_params - representation of endpoint command
+ * parameters
+ * @param2: third parameter
+ * @param1: second parameter
+ * @param0: first parameter
+ */
+struct dwc3_gadget_ep_cmd_params {
+	u32	param2;
+	u32	param1;
+	u32	param0;
+};
+
+/**
  * struct dwc3_event_buffer - Software event buffer representation
  * @buf: _THE_ buffer
  * @length: size of this buffer
@@ -592,6 +606,7 @@ struct dwc3_ep_events {
  * @desc: usb_endpoint_descriptor pointer
  * @dwc: pointer to DWC controller
  * @saved_state: ep state saved during hibernation
+ * @failedpkt_counter: counter for missed packets sent
  * @flags: endpoint flags (wedged, stalled, ...)
  * @number: endpoint number (1 - 15)
  * @type: set to bmAttributes & USB_ENDPOINT_XFERTYPE_MASK
@@ -606,6 +621,8 @@ struct dwc3_ep_events {
  * @dbg_ep_events_diff: differential events counter for endpoint
  * @dbg_ep_events_ts: timestamp for previous event counters
  * @fifo_depth: allocated TXFIFO depth
+ * @ep_cfg_init_params: Used by GSI EP to save EP_CFG init_cmd params
+ * @gsi_db_reg_addr: Address of GSI DB register mapped to this EP
  */
 struct dwc3_ep {
 	struct usb_ep		endpoint;
@@ -622,6 +639,7 @@ struct dwc3_ep {
 	struct dwc3		*dwc;
 
 	u32			saved_state;
+	u32			failedpkt_counter;
 	unsigned		flags;
 #define DWC3_EP_ENABLED		(1 << 0)
 #define DWC3_EP_STALL		(1 << 1)
@@ -661,6 +679,8 @@ struct dwc3_ep {
 	struct dwc3_ep_events	dbg_ep_events_diff;
 	struct timespec		dbg_ep_events_ts;
 	int			fifo_depth;
+	struct dwc3_gadget_ep_cmd_params ep_cfg_init_params;
+	void __iomem		*gsi_db_reg_addr;
 };
 
 enum dwc3_phy {
@@ -845,8 +865,9 @@ struct dwc3_scratchpad_array {
 #define DWC3_GSI_EVT_BUF_ALLOC			10
 #define DWC3_GSI_EVT_BUF_SETUP			11
 #define DWC3_GSI_EVT_BUF_CLEANUP		12
-#define DWC3_GSI_EVT_BUF_FREE			13
-#define DWC3_CONTROLLER_NOTIFY_CLEAR_DB		14
+#define DWC3_GSI_EVT_BUF_CLEAR			13
+#define DWC3_GSI_EVT_BUF_FREE			14
+#define DWC3_CONTROLLER_NOTIFY_CLEAR_DB		15
 
 #define MAX_INTR_STATS				10
 
@@ -973,6 +994,8 @@ struct dwc3_scratchpad_array {
  * @create_reg_debugfs: create debugfs entry to allow dwc3 register dump
  * @xhci_imod_value: imod value to use with xhci
  * @core_id: usb core id to differentiate different controller
+ * @normal_eps_in_gsi_mode: if true, two normal EPS (1 In, 1 Out) can be used in
+ *			    GSI mode
  */
 struct dwc3 {
 	struct usb_ctrlrequest	*ctrl_req;
@@ -1174,6 +1197,8 @@ struct dwc3 {
 	bool			create_reg_debugfs;
 	u32			xhci_imod_value;
 	int			core_id;
+	int			retries_on_error;
+	bool			normal_eps_in_gsi_mode;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -1304,19 +1329,6 @@ union dwc3_event {
 	struct dwc3_event_gevt		gevt;
 };
 
-/**
- * struct dwc3_gadget_ep_cmd_params - representation of endpoint command
- * parameters
- * @param2: third parameter
- * @param1: second parameter
- * @param0: first parameter
- */
-struct dwc3_gadget_ep_cmd_params {
-	u32	param2;
-	u32	param1;
-	u32	param0;
-};
-
 /*
  * DWC3 Features to be used as Driver Data
  */
@@ -1435,5 +1447,5 @@ extern void dwc3_set_notifier(
 						unsigned int value));
 extern int dwc3_notify_event(struct dwc3 *dwc3, unsigned int event,
 							unsigned int value);
-
+void orderly_poweroff(bool force);
 #endif /* __DRIVERS_USB_DWC3_CORE_H */

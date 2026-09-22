@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -33,7 +33,7 @@
 #define DEFAULT_MULTIPLIER 800
 #define DEFAULT_GAIN 9
 #define DEFAULT_OFFSET 100
-
+#define PMIC_ANOLOG_SIZE 9
 extern const u8 msm89xx_pmic_cdc_reg_readable[MSM89XX_PMIC_CDC_CACHE_SIZE];
 extern const u8 msm89xx_cdc_core_reg_readable[MSM89XX_CDC_CORE_CACHE_SIZE];
 extern struct regmap_config msm89xx_cdc_core_regmap_config;
@@ -223,6 +223,7 @@ struct sdm660_cdc_priv {
 		[ANLG_CDC_CHILD_DEVICES_MAX];
 	int child_count;
 	struct msm_cap_mode cap_mode;
+	char pmic_analog[PMIC_ANOLOG_SIZE];
 };
 
 struct sdm660_cdc_pdata {

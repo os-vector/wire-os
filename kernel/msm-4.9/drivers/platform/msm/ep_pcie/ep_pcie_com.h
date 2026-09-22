@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -27,15 +27,20 @@
 #define PCIE20_PARF_SYS_CTRL           0x00
 #define PCIE20_PARF_DB_CTRL            0x10
 #define PCIE20_PARF_PM_CTRL            0x20
+#define PCIE20_PARF_PM_CTRL_REQ_NOT_ENTR_L1_BIT_MASK	BIT(5)
 #define PCIE20_PARF_PM_STTS            0x24
+#define PCIE20_PARF_PM_STTS_LINKST_IN_L1SUB		BIT(8)
 #define PCIE20_PARF_PHY_CTRL           0x40
 #define PCIE20_PARF_PHY_REFCLK         0x4C
 #define PCIE20_PARF_CONFIG_BITS        0x50
 #define PCIE20_PARF_TEST_BUS           0xE4
 #define PCIE20_PARF_MHI_BASE_ADDR_LOWER 0x178
 #define PCIE20_PARF_MHI_BASE_ADDR_UPPER 0x17c
+#define PCIE20_PARF_L1SUB_AHB_CLK_MAX_TIMER	0x180
+#define PCIE20_PARF_L1SUB_AHB_CLK_MAX_TIMER_RESET_MASK	0x80000000
 #define PCIE20_PARF_MSI_GEN             0x188
 #define PCIE20_PARF_DEBUG_INT_EN        0x190
+#define PCIE20_PARF_DEBUG_INT_EN_L1SUB_TIMEOUT_BIT_MASK	BIT(0)
 #define PCIE20_PARF_MHI_IPA_DBS                0x198
 #define PCIE20_PARF_MHI_IPA_CDB_TARGET_LOWER   0x19C
 #define PCIE20_PARF_MHI_IPA_EDB_TARGET_LOWER   0x1A0
@@ -48,11 +53,27 @@
 #define PCIE20_PARF_INT_ALL_STATUS     0x224
 #define PCIE20_PARF_INT_ALL_CLEAR      0x228
 #define PCIE20_PARF_INT_ALL_MASK       0x22C
+
+#define PCIE20_PARF_CLKREQ_OVERRIDE	0x2B0
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_STS	BIT(5)
+#define PCIE20_PARF_CLKREQ_OE_OVERRIDE_STS	BIT(4)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_VAL	BIT(3)
+#define PCIE20_PARF_CLKREQ_OE_OVERRIDE_VAL	BIT(2)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_ENABLE	BIT(1)
+#define PCIE20_PARF_CLKREQ_OE_OVERRIDE_ENABLE	BIT(0)
+
 #define PCIE20_PARF_SLV_ADDR_MSB_CTRL  0x2C0
 #define PCIE20_PARF_DBI_BASE_ADDR      0x350
 #define PCIE20_PARF_DBI_BASE_ADDR_HI   0x354
 #define PCIE20_PARF_SLV_ADDR_SPACE_SIZE        0x358
 #define PCIE20_PARF_SLV_ADDR_SPACE_SIZE_HI     0x35C
+
+#define PCIE20_PARF_L1SS_SLEEP_MODE_HANDLER_STATUS	0x4D0
+#define PCIE20_PARF_L1SS_SLEEP_MHI_FWD_DISABLE		BIT(5)
+#define PCIE20_PARF_L1SS_SLEEP_MHI_FWD_ENABLE		BIT(4)
+
+#define PCIE20_PARF_L1SS_SLEEP_MODE_HANDLER_CONFIG	0x4D4
+
 #define PCIE20_PARF_ATU_BASE_ADDR      0x634
 #define PCIE20_PARF_ATU_BASE_ADDR_HI   0x638
 #define PCIE20_PARF_BUS_DISCONNECT_CTRL          0x648
@@ -60,10 +81,11 @@
 
 #define PCIE20_PARF_DEVICE_TYPE        0x1000
 
-#define PCIE20_ELBI_VERSION            0x00
-#define PCIE20_ELBI_SYS_CTRL           0x04
-#define PCIE20_ELBI_SYS_STTS	       0x08
-#define PCIE20_ELBI_CS2_ENABLE         0xA4
+#define PCIE20_ELBI_VERSION		0x00
+#define PCIE20_ELBI_SYS_CTRL		0x04
+#define PCIE20_ELBI_SYS_CTRL_CLK_PM_EN_BIT_MASK		BIT(7)
+#define PCIE20_ELBI_SYS_STTS		0x08
+#define PCIE20_ELBI_CS2_ENABLE		0xA4
 
 #define PCIE20_DEVICE_ID_VENDOR_ID     0x00
 #define PCIE20_MASK_DEVICE_ID          GENMASK(31, 16)
@@ -90,8 +112,8 @@
 #define PCIE20_CAP_LINKCTRLSTATUS      0x80
 #define PCIE20_DEVICE_CONTROL2_STATUS2 0x98
 #define PCIE20_LINK_CONTROL2_LINK_STATUS2 0xA0
-#define PCIE20_L1SUB_CAPABILITY        0x154
-#define PCIE20_L1SUB_CONTROL1          0x158
+#define PCIE20_L1SUB_CAPABILITY        0x1E0
+#define PCIE20_L1SUB_CONTROL1          0x1E4
 #define PCIE20_ACK_F_ASPM_CTRL_REG     0x70C
 #define PCIE20_MASK_ACK_N_FTS          0xff00
 #define PCIE20_MISC_CONTROL_1          0x8BC
@@ -132,6 +154,16 @@
 #define PCIE20_BHI_VERSION_UPPER	0x204
 #define PCIE20_BHI_INTVEC		0x220
 
+#define PCIE20_PARF_DBG_CNT_PM_LINKST_IN_L2		0xC04
+#define PCIE20_PARF_DBG_CNT_PM_LINKST_IN_L1SUB		0xC08
+#define PCIE20_PARF_DBG_CNT_PM_LINKST_IN_L1		0xC0C
+#define PCIE20_PARF_DBG_CNT_PM_LINKST_IN_L0S		0xC10
+
+#define PCIE20_PHY_PCS_STATUS4		0x820
+
+#define PCIE20_PHY_PCS_START_OFFSET	0x600
+#define PCIE20_PHY_PCS_END_OFFSET	0xE60
+
 #define PCIE20_AUX_CLK_FREQ_REG        0xB40
 
 #define PERST_TIMEOUT_US_MIN	              1000
@@ -150,8 +182,14 @@
 #define PHY_READY_TIMEOUT_COUNT               30000
 #define MSI_EXIT_L1SS_WAIT	              10
 #define MSI_EXIT_L1SS_WAIT_MAX_COUNT          100
+#define D3HOT_L1SS_WAIT			      10
+#define D3HOT_L1SS_WAIT_MAX_COUNT	      1000
 #define XMLH_LINK_UP                          0x400
 #define PARF_XMLH_LINK_UP                     0x40000000
+
+#define D3HOT_SLEEP_ENTRY_EXIT_MAX_COUNT		100
+#define D3HOT_SLEEP_ENTRY_EXIT_TIMEOUT_US_MIN	1000
+#define D3HOT_SLEEP_ENTRY_EXIT_TIMEOUT_US_MAX	1100
 
 #define MAX_PROP_SIZE 32
 #define MAX_MSG_LEN 80
@@ -234,6 +272,7 @@ enum ep_pcie_res {
 	EP_PCIE_RES_DM_CORE,
 	EP_PCIE_RES_ELBI,
 	EP_PCIE_RES_IATU,
+	EP_PCIE_RES_TCSR_PERST,
 	EP_PCIE_MAX_RES,
 };
 
@@ -325,15 +364,19 @@ struct ep_pcie_dev_t {
 	void __iomem                 *dm_core;
 	void __iomem                 *elbi;
 	void __iomem                 *iatu;
+	void __iomem		     *tcsr_perst_en;
 
 	struct msm_bus_scale_pdata   *bus_scale_table;
 	u32                          bus_client;
 	u16                          vendor_id;
 	u16                          device_id;
-	u32                          link_speed;
+	u32                          subsystem_id;
+	u32                          max_link_speed;
+	u32                          curr_link_speed;
 	bool                         active_config;
 	bool                         aggregated_irq;
 	bool                         mhi_a7_irq;
+	bool			     m2_autonomous;
 	u32                          dbi_base_reg;
 	u32                          slv_space_reg;
 	u32                          phy_status_reg;
@@ -382,6 +425,19 @@ struct ep_pcie_dev_t {
 	struct work_struct	     handle_perst_work;
 	struct work_struct           handle_bme_work;
 	struct work_struct           handle_d3cold_work;
+	atomic_t		     ep_pcie_dev_wake;
+	struct work_struct           handle_d3hot_sleep_work;
+	struct work_struct	     sched_inact_timer;
+	struct workqueue_struct	     *d3hot_sleep_wq;
+	int			     clk_ref_count;
+	spinlock_t		     d3hot_sleep_lock;
+	bool			     gdsc_disabled;
+	bool			     in_d3hot_sleep;
+	bool			     d3hot_sleep_in_progress;
+	bool			     clkreq_wake_in_progress;
+	bool			     ep_wake_in_progress;
+	bool			     inact_timer_enabled;
+	bool			     l1ss_sleep_mode_enabled;
 };
 
 extern struct ep_pcie_dev_t ep_pcie_dev;
@@ -422,6 +478,7 @@ extern int ep_pcie_core_register_event(struct ep_pcie_register_event *reg);
 extern int ep_pcie_get_debug_mask(void);
 extern void ep_pcie_phy_init(struct ep_pcie_dev_t *dev);
 extern bool ep_pcie_phy_is_ready(struct ep_pcie_dev_t *dev);
+extern void ep_pcie_phy_update_pcs(struct ep_pcie_dev_t *dev);
 extern void ep_pcie_reg_dump(struct ep_pcie_dev_t *dev, u32 sel, bool linkdown);
 extern void ep_pcie_debugfs_init(struct ep_pcie_dev_t *ep_dev);
 extern void ep_pcie_debugfs_exit(void);

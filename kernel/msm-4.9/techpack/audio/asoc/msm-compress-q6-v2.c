@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, 2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -42,6 +42,7 @@
 #include <dsp/msm_audio_ion.h>
 #include <dsp/apr_audio-v2.h>
 #include <dsp/q6asm-v2.h>
+#include <dsp/q6core.h>
 #include <dsp/msm-audio-effects-q6-v2.h>
 #include "msm-pcm-routing-v2.h"
 #include "msm-qti-pp-config.h"
@@ -206,7 +207,7 @@ struct msm_compr_dec_params {
 
 struct msm_compr_ch_map {
 	bool set_ch_map;
-	char channel_map[PCM_FORMAT_MAX_NUM_CHANNEL];
+	char channel_map[PCM_FORMAT_MAX_NUM_CHANNEL_V8];
 };
 
 static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
@@ -1015,16 +1016,32 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 			sample_word_size = 16;
 			break;
 		}
-		ret = q6asm_media_format_block_pcm_format_support_v4(
-							prtd->audio_client,
-							prtd->sample_rate,
-							prtd->num_channels,
-							bit_width, stream_id,
-							use_default_chmap,
-							chmap,
-							sample_word_size,
-							ASM_LITTLE_ENDIAN,
-							DEFAULT_QF);
+
+		if (q6core_get_avcs_api_version_per_service(
+					APRV2_IDS_SERVICE_ID_ADSP_ASM_V) >=
+					ADSP_ASM_API_VERSION_V2) {
+			ret = q6asm_media_format_block_pcm_format_support_v5(
+					prtd->audio_client,
+					prtd->sample_rate,
+					prtd->num_channels,
+					bit_width, stream_id,
+					use_default_chmap,
+					chmap,
+					sample_word_size,
+					ASM_LITTLE_ENDIAN,
+					DEFAULT_QF);
+		} else {
+			ret = q6asm_media_format_block_pcm_format_support_v4(
+					prtd->audio_client,
+					prtd->sample_rate,
+					prtd->num_channels,
+					bit_width, stream_id,
+					use_default_chmap,
+					chmap,
+					sample_word_size,
+					ASM_LITTLE_ENDIAN,
+					DEFAULT_QF);
+		}
 		if (ret < 0)
 			pr_err("%s: CMD Format block failed\n", __func__);
 
@@ -1339,7 +1356,16 @@ static int msm_compr_configure_dsp_for_playback
 	} else {
 		pr_debug("%s: stream_id %d bits_per_sample %d\n",
 				__func__, ac->stream_id, bits_per_sample);
-		ret = q6asm_stream_open_write_v4(ac,
+
+		if (q6core_get_avcs_api_version_per_service(
+					APRV2_IDS_SERVICE_ID_ADSP_ASM_V) >=
+					ADSP_ASM_API_VERSION_V2)
+			ret = q6asm_stream_open_write_v5(ac,
+				prtd->codec, bits_per_sample,
+				ac->stream_id,
+				prtd->gapless_state.use_dsp_gapless_mode);
+		else
+			ret = q6asm_stream_open_write_v4(ac,
 				prtd->codec, bits_per_sample,
 				ac->stream_id,
 				prtd->gapless_state.use_dsp_gapless_mode);
@@ -3475,6 +3501,7 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 			pr_err("%s: invalid num of params:: %d\n", __func__,
 				ddp->params_length);
 			rc = -EINVAL;
+			mutex_unlock(&pdata->lock);
 			goto end;
 		}
 		for (cnt = 0; cnt < ddp->params_length; cnt++) {
@@ -3490,9 +3517,9 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 	default:
 		break;
 	}
+	mutex_unlock(&pdata->lock);
 end:
 	pr_debug("%s: ret %d\n", __func__, rc);
-	mutex_unlock(&pdata->lock);
 	return rc;
 }
 
@@ -3629,7 +3656,7 @@ static int msm_compr_channel_map_put(struct snd_kcontrol *kcontrol,
 
 	if (pdata->ch_map[fe_id]) {
 		pdata->ch_map[fe_id]->set_ch_map = true;
-		for (i = 0; i < PCM_FORMAT_MAX_NUM_CHANNEL; i++)
+		for (i = 0; i < PCM_FORMAT_MAX_NUM_CHANNEL_V8; i++)
 			pdata->ch_map[fe_id]->channel_map[i] =
 				(char)(ucontrol->value.integer.value[i]);
 	} else {
@@ -3658,7 +3685,7 @@ static int msm_compr_channel_map_get(struct snd_kcontrol *kcontrol,
 		goto end;
 	}
 	if (pdata->ch_map[fe_id]) {
-		for (i = 0; i < PCM_FORMAT_MAX_NUM_CHANNEL; i++)
+		for (i = 0; i < PCM_FORMAT_MAX_NUM_CHANNEL_V8; i++)
 			ucontrol->value.integer.value[i] =
 				pdata->ch_map[fe_id]->channel_map[i];
 	}
@@ -3680,25 +3707,28 @@ static int msm_compr_adsp_stream_cmd_put(struct snd_kcontrol *kcontrol,
 	struct msm_adsp_event_data *event_data = NULL;
 	uint64_t actual_payload_len = 0;
 
+	mutex_lock(&pdata->lock);
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s Received invalid fe_id %lu\n",
 			__func__, fe_id);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
 	cstream = pdata->cstream[fe_id];
 	if (cstream == NULL) {
 		pr_err("%s cstream is null\n", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
 	prtd = cstream->runtime->private_data;
 	if (!prtd) {
 		pr_err("%s: prtd is null\n", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
-	mutex_lock(&pdata->lock);
 	if (prtd->audio_client == NULL) {
 		pr_err("%s: audio_client is null\n", __func__);
 		ret = -EINVAL;
@@ -3752,25 +3782,28 @@ static int msm_compr_ion_fd_map_put(struct snd_kcontrol *kcontrol,
 	int fd;
 	int ret = 0;
 
+	mutex_lock(&pdata->lock);
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s Received out of bounds invalid fe_id %lu\n",
 			__func__, fe_id);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
 	cstream = pdata->cstream[fe_id];
 	if (cstream == NULL) {
 		pr_err("%s cstream is null\n", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
 	prtd = cstream->runtime->private_data;
 	if (!prtd) {
 		pr_err("%s: prtd is null\n", __func__);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
-	mutex_lock(&pdata->lock);
 	if (prtd->audio_client == NULL) {
 		pr_err("%s: audio_client is null\n", __func__);
 		ret = -EINVAL;
@@ -3798,13 +3831,14 @@ static int msm_compr_rtic_event_ack_put(struct snd_kcontrol *kcontrol,
 	int ret = 0;
 	int param_length = 0;
 
+	mutex_lock(&pdata->lock);
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
 		pr_err("%s Received invalid fe_id %lu\n",
 			__func__, fe_id);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto done;
 	}
 
-	mutex_lock(&pdata->lock);
 	cstream = pdata->cstream[fe_id];
 	if (cstream == NULL) {
 		pr_err("%s cstream is null\n", __func__);
@@ -3891,6 +3925,7 @@ static int msm_compr_probe(struct snd_soc_platform *platform)
 	if (!pdata)
 		return -ENOMEM;
 
+	mutex_init(&pdata->lock);
 	snd_soc_platform_set_drvdata(platform, pdata);
 
 	for (i = 0; i < MSM_FRONTEND_DAI_MAX; i++) {
@@ -3924,8 +3959,18 @@ static int msm_compr_probe(struct snd_soc_platform *platform)
 	 * Gapless is disabled by default.
 	 */
 	pdata->use_dsp_gapless_mode = false;
-	mutex_init(&pdata->lock);
 	return 0;
+}
+
+static int msm_compr_chmix_cfg_ctl_info(struct snd_kcontrol *kcontrol,
+				     struct snd_ctl_elem_info *uinfo)
+{
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = 128;
+	uinfo->value.integer.min = 0;
+	uinfo->value.integer.max = 0xFFFFFFFF;
+
+        return 0;
 }
 
 static int msm_compr_remove(struct snd_soc_platform *platform)
@@ -3937,6 +3982,7 @@ static int msm_compr_remove(struct snd_soc_platform *platform)
 		pr_err("%s pdata is null\n", __func__);
 		return -ENOMEM;
 	}
+
 	mutex_destroy(&pdata->lock);
 	kfree(pdata);
 
@@ -3997,9 +4043,10 @@ static int msm_compr_channel_map_info(struct snd_kcontrol *kcontrol,
 				      struct snd_ctl_elem_info *uinfo)
 {
 	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
-	uinfo->count = 8;
+	uinfo->count = PCM_FORMAT_MAX_NUM_CHANNEL_V8;
 	uinfo->value.integer.min = 0;
-	uinfo->value.integer.max = 0xFFFFFFFF;
+	/* See PCM_CHANNEL_RSD=34 in apr_audio-v2.h */
+	uinfo->value.integer.max = 34;
 	return 0;
 }
 
@@ -4366,6 +4413,112 @@ static int msm_compr_add_app_type_cfg_control(struct snd_soc_pcm_runtime *rtd)
 	return 0;
 }
 
+static int msm_compr_chmix_cfg_ctl_put(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *comp = snd_kcontrol_chip(kcontrol);
+	struct msm_compr_pdata *pdata = (struct msm_compr_pdata *)
+				snd_soc_component_get_drvdata(comp);
+	struct snd_compr_stream *cstream = NULL;
+	struct snd_soc_pcm_runtime *rtd = NULL;
+	u64 fe_id = kcontrol->private_value;
+	int ip_channel_cnt, op_channel_cnt;
+	int i, index = 0;
+	int ch_coeff[PCM_FORMAT_MAX_NUM_CHANNEL * PCM_FORMAT_MAX_NUM_CHANNEL];
+	bool use_default_chmap = true;
+	char *chmap = NULL;
+
+	pr_debug("%s: fe_id- %llu\n", __func__, fe_id);
+	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
+		pr_err("%s: Received out of bounds fe_id %llu\n",
+			__func__, fe_id);
+		return -EINVAL;
+	}
+	cstream = pdata->cstream[fe_id];
+	if (!cstream) {
+		pr_err("%s: stream inactive\n", __func__);
+		return -EINVAL;
+	}
+	rtd = cstream->private_data;
+	if (!rtd) {
+		pr_err("%s: stream inactive\n", __func__);
+		return -EINVAL;
+	}
+
+	use_default_chmap = !(pdata->ch_map[rtd->dai_link->id]->set_ch_map);
+	chmap = pdata->ch_map[rtd->dai_link->id]->channel_map;
+
+	ip_channel_cnt = ucontrol->value.integer.value[index++];
+	op_channel_cnt = ucontrol->value.integer.value[index++];
+	/*
+	 * wght coeff of first out channel corresponding to each in channel
+	 * are sent followed by second out channel for each in channel etc.
+	 */
+	memset(ch_coeff, 0, sizeof(ch_coeff));
+	for (i = 0; i < op_channel_cnt * ip_channel_cnt; i++) {
+		ch_coeff[i] =
+			ucontrol->value.integer.value[index++];
+	}
+
+	msm_pcm_routing_send_chmix_cfg(fe_id, ip_channel_cnt, op_channel_cnt,
+			ch_coeff, SESSION_TYPE_RX, use_default_chmap, chmap);
+
+	return 0;
+}
+
+static int msm_compr_chmix_cfg_ctl_get(struct snd_kcontrol *kcontrol,
+					struct snd_ctl_elem_value *ucontrol)
+{
+	return 0;
+}
+
+static int msm_compr_add_chmix_cfg_controls(struct snd_soc_pcm_runtime *rtd)
+{
+	const char *mixer_ctl_name = "Audio Stream";
+	const char *deviceNo       = "NN";
+	const char *suffix         = "Channel Mix Cfg";
+	int ctl_len;
+	char *mixer_str = NULL;
+	struct snd_kcontrol_new chmix_cfg_controls[1] = {
+		{
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name = "?",
+		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+		.info = msm_compr_chmix_cfg_ctl_info,
+		.get = msm_compr_chmix_cfg_ctl_get,
+		.put = msm_compr_chmix_cfg_ctl_put,
+		.private_value = 0,
+		}
+	};
+
+	if (!rtd) {
+		pr_err("%s NULL rtd\n", __func__);
+		return -EINVAL;
+	}
+
+	pr_debug("%s: added new compr FE with name %s, id %d, cpu dai %s, device no %d\n",
+		 __func__, rtd->dai_link->name, rtd->dai_link->id,
+		 rtd->dai_link->cpu_dai_name, rtd->pcm->device);
+
+	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1 +
+		  strlen(suffix) + 1;
+	mixer_str = kzalloc(ctl_len, GFP_KERNEL);
+	if (!mixer_str)
+		return -ENOMEM;
+
+	snprintf(mixer_str, ctl_len, "%s %d %s", mixer_ctl_name,
+		 rtd->pcm->device, suffix);
+
+	chmix_cfg_controls[0].name = mixer_str;
+	chmix_cfg_controls[0].private_value = rtd->dai_link->id;
+	pr_debug("%s: Registering new mixer ctl %s", __func__, mixer_str);
+	snd_soc_add_platform_controls(rtd->platform,
+				      chmix_cfg_controls,
+				      ARRAY_SIZE(chmix_cfg_controls));
+	kfree(mixer_str);
+	return 0;
+}
+
 static int msm_compr_add_channel_map_control(struct snd_soc_pcm_runtime *rtd)
 {
 	const char *mixer_ctl_name = "Playback Channel Map";
@@ -4562,6 +4715,9 @@ static int msm_compr_new(struct snd_soc_pcm_runtime *rtd)
 	if (rc)
 		pr_err("%s: Could not add Compr Channel Map Control\n",
 			__func__);
+	rc = msm_compr_add_chmix_cfg_controls(rtd);
+	if (rc)
+		pr_err("%s: add chmix cfg controls failed:%d\n", __func__, rc);
 	return 0;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -904,6 +904,16 @@ static struct msm_vidc_ctrl msm_venc_ctrls[] = {
 		.qmenu = NULL,
 	},
 	{
+		.id = V4L2_CID_MPEG_VIDC_VIDEO_FRAME_QP,
+		.name = "Dynamic Frame QP",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.minimum = 0,
+		.maximum = MSM_VIDC_ALL_LAYER_ID,
+		.default_value = 0,
+		.step = 1,
+		.qmenu = NULL,
+	},
+	{
 		.id = V4L2_CID_MPEG_VIDC_VENC_PARAM_SAR_WIDTH,
 		.name = "SAR Width",
 		.type = V4L2_CTRL_TYPE_INTEGER,
@@ -1337,6 +1347,13 @@ static struct msm_vidc_format venc_formats[] = {
 		.get_frame_size = get_frame_size_p010,
 		.type = OUTPUT_PORT,
 	},
+	{
+		.name = "YCbCr Semiplanar 4:2:0 512 aligned",
+		.description = "Y/CbCr 4:2:0 512 aligned",
+		.fourcc = V4L2_PIX_FMT_NV12_512,
+		.get_frame_size = get_frame_size_nv12_512,
+		.type = OUTPUT_PORT,
+	},
 };
 
 static int msm_venc_set_csc(struct msm_vidc_inst *inst,
@@ -1393,7 +1410,6 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	struct hal_h264_entropy_control h264_entropy_control;
 	struct hal_intra_period intra_period;
 	struct hal_idr_period idr_period;
-	struct hal_vpe_rotation vpe_rotation;
 	struct hal_intra_refresh intra_refresh;
 	struct hal_multi_slice_control multi_slice_control;
 	struct hal_h264_db_control h264_db_control;
@@ -1692,28 +1708,12 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_MPEG_VIDC_VIDEO_ROTATION:
 	{
-		temp_ctrl = TRY_GET_CTRL(V4L2_CID_MPEG_VIDC_VIDEO_FLIP);
-		property_id = HAL_PARAM_VPE_ROTATION;
-		vpe_rotation.rotate = msm_comm_v4l2_to_hal(
-				V4L2_CID_MPEG_VIDC_VIDEO_ROTATION,
-				ctrl->val);
-		vpe_rotation.flip = msm_comm_v4l2_to_hal(
-				V4L2_CID_MPEG_VIDC_VIDEO_FLIP,
-				temp_ctrl->val);
-		pdata = &vpe_rotation;
+		dprintk(VIDC_DBG, "Rotation %d\n", ctrl->val);
 		break;
 	}
 	case V4L2_CID_MPEG_VIDC_VIDEO_FLIP:
 	{
-		temp_ctrl = TRY_GET_CTRL(V4L2_CID_MPEG_VIDC_VIDEO_ROTATION);
-		property_id = HAL_PARAM_VPE_ROTATION;
-		vpe_rotation.rotate = msm_comm_v4l2_to_hal(
-				V4L2_CID_MPEG_VIDC_VIDEO_ROTATION,
-				temp_ctrl->val);
-		vpe_rotation.flip = msm_comm_v4l2_to_hal(
-				V4L2_CID_MPEG_VIDC_VIDEO_FLIP,
-				ctrl->val);
-		pdata = &vpe_rotation;
+		dprintk(VIDC_DBG, "Flip %d\n", ctrl->val);
 		break;
 	}
 	case V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MODE: {
@@ -1963,7 +1963,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_USELTRFRAME:
 		property_id = HAL_CONFIG_VENC_USELTRFRAME;
 		use_ltr.ref_ltr = ctrl->val;
-		use_ltr.use_constraint = false;
+		use_ltr.use_constraint = true;
 		use_ltr.frames = 0;
 		pdata = &use_ltr;
 		break;
@@ -2318,6 +2318,7 @@ int msm_venc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case V4L2_CID_MPEG_VIDC_VIDEO_BLUR_WIDTH:
 	case V4L2_CID_MPEG_VIDC_VIDEO_BLUR_HEIGHT:
 	case V4L2_CID_MPEG_VIDC_VIDEO_LAYER_ID:
+	case V4L2_CID_MPEG_VIDC_VIDEO_FRAME_QP:
 	case V4L2_CID_MPEG_VIDC_VENC_PARAM_LAYER_BITRATE:
 	case V4L2_CID_MPEG_VIDC_VIDEO_I_FRAME_QP_MIN:
 	case V4L2_CID_MPEG_VIDC_VIDEO_P_FRAME_QP_MIN:
@@ -2527,6 +2528,54 @@ int msm_venc_s_ext_ctrl(struct msm_vidc_inst *inst,
 				break;
 			}
 			i++;
+			}
+			break;
+		case V4L2_CID_MPEG_VIDC_VIDEO_FRAME_QP:
+			qp.layer_id = control[i].value;
+			/* Enable QP for all frame types by default */
+			qp.enable = 7;
+			qp_range.layer_id = control[i].value;
+			i++;
+			while (i < ctrl->count) {
+				switch (control[i].id) {
+				case V4L2_CID_MPEG_VIDC_VIDEO_I_FRAME_QP_MIN:
+					qp_range.qpi_min = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				case V4L2_CID_MPEG_VIDC_VIDEO_P_FRAME_QP_MIN:
+					qp_range.qpp_min = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				case V4L2_CID_MPEG_VIDC_VIDEO_B_FRAME_QP_MIN:
+					qp_range.qpb_min = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				case V4L2_CID_MPEG_VIDC_VIDEO_I_FRAME_QP_MAX:
+					qp_range.qpi_max = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				case V4L2_CID_MPEG_VIDC_VIDEO_P_FRAME_QP_MAX:
+					qp_range.qpp_max = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				case V4L2_CID_MPEG_VIDC_VIDEO_B_FRAME_QP_MAX:
+					qp_range.qpb_max = control[i].value;
+					property_id =
+						HAL_CONFIG_VENC_FRAME_QP_RANGE;
+					pdata = &qp_range;
+					break;
+				}
+				i++;
 			}
 			break;
 		case V4L2_CID_MPEG_VIDC_VENC_HDR_INFO:

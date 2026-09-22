@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -122,8 +122,24 @@ static ssize_t dp_debug_write_edid(struct file *file,
 		goto bail;
 
 	if (edid_size != debug->edid_size) {
-		pr_debug("clearing debug edid\n");
-		goto bail;
+		pr_debug("realloc debug edid\n");
+
+		if (debug->edid) {
+			devm_kfree(debug->dev, debug->edid);
+
+			debug->edid = devm_kzalloc(debug->dev,
+						edid_size, GFP_KERNEL);
+			if (!debug->edid) {
+				rc = -ENOMEM;
+				goto bail;
+			}
+
+			debug->edid_size = edid_size;
+
+			debug->aux->set_sim_mode(debug->aux,
+					debug->dp_debug.sim_mode,
+					debug->edid, debug->dpcd);
+		}
 	}
 
 	while (edid_size--) {
@@ -149,7 +165,7 @@ bail:
 	kfree(buf);
 
 	if (!debug->dp_debug.sim_mode)
-		debug->panel->set_edid(debug->panel, edid);
+		debug->panel->set_edid(debug->panel, edid, debug->edid_size);
 
 	mutex_unlock(&debug->lock);
 	return rc;
@@ -517,9 +533,10 @@ static ssize_t dp_debug_read_edid_modes(struct file *file,
 	mutex_lock(&connector->dev->mode_config.mutex);
 	list_for_each_entry(mode, &connector->modes, head) {
 		ret = snprintf(buf + len, max_size,
-		"%s %d %d %d %d %d 0x%x\n",
-		mode->name, mode->vrefresh, mode->picture_aspect_ratio,
-		mode->htotal, mode->vtotal, mode->clock, mode->flags);
+		"%d %s %d %d %d %d %d 0x%x\n",
+		mode->vic_id, mode->name, mode->vrefresh,
+		mode->picture_aspect_ratio, mode->htotal, mode->vtotal,
+		mode->clock, mode->flags);
 		if (dp_debug_check_buffer_overflow(ret, &max_size, &len))
 			break;
 	}

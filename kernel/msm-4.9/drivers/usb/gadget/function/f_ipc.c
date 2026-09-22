@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,11 +21,14 @@
 #include <linux/workqueue.h>
 #include <linux/debugfs.h>
 #include <linux/usb/ipc_bridge.h>
+#include <soc/qcom/sb_notification.h>
 
 #define MAX_INST_NAME_LEN	40
 
-#define IPC_BRIDGE_MAX_READ_SZ	(8 * 1024)
-#define IPC_BRIDGE_MAX_WRITE_SZ	(8 * 1024)
+#define IPC_BRIDGE_MAX_READ_SZ	(24 * 1024)
+#define IPC_BRIDGE_MAX_WRITE_SZ	(24 * 1024)
+
+#define IPC_WRITE_WAIT_TIMEOUT	10000
 
 /* for configfs support */
 struct ipc_opts {
@@ -239,6 +242,7 @@ static int ipc_write(struct platform_device *pdev, char *buf,
 	unsigned long flags;
 	struct usb_request *req;
 	struct usb_ep *in;
+	int ret;
 
 	if (!ipc_dev)
 		return -ENODEV;
@@ -265,19 +269,44 @@ retry_write:
 		return -EINVAL;
 	}
 
+	reinit_completion(&ipc_dev->write_done);
+
+	/* Notify the GPIO driver to wakup the host if
+	 * host is in suspend mode
+	 */
 	if (usb_ep_queue(in, req, GFP_KERNEL)) {
+		sb_notifier_call_chain(EVT_WAKE_UP, NULL);
 		wait_event_interruptible(ipc_dev->state_wq, ipc_dev->online ||
 				ipc_dev->current_state == IPC_DISCONNECTED);
 		pr_debug("%s: Interface ready, Retry IN request\n", __func__);
 		goto retry_write;
 	}
 
-	if (unlikely(wait_for_completion_interruptible(&ipc_dev->write_done))) {
-		usb_ep_dequeue(in, req);
-		return -EINTR;
+retry_write_done:
+	ret = wait_for_completion_interruptible_timeout(&ipc_dev->write_done,
+				msecs_to_jiffies(IPC_WRITE_WAIT_TIMEOUT));
+	if (ret < 0) {
+		pr_err("%s: Interruption triggered\n", __func__);
+		ret = -EINTR;
+		goto fail;
+	} else if (ret == 0 && ipc_dev->online) {
+		pr_err("%s: Request timed out\n", __func__);
+		ret = -ETIMEDOUT;
+		goto fail;
+	/* Notify the GPIO driver to wakeup the host and reintialize the
+	 * completion structure.
+	 */
+	} else if (ipc_dev->connected && !ipc_dev->online) {
+		sb_notifier_call_chain(EVT_WAKE_UP, NULL);
+		reinit_completion(&ipc_dev->write_done);
+		goto retry_write_done;
 	}
 
 	return !req->status ? req->actual : req->status;
+
+fail:
+	usb_ep_dequeue(in, req);
+	return ret;
 }
 
 static void ipc_out_complete(struct usb_ep *ep, struct usb_request *req)
@@ -331,6 +360,8 @@ retry_read:
 		ipc_dev->pending_reads--;
 		return -EINVAL;
 	}
+
+	reinit_completion(&ipc_dev->read_done);
 
 	if (usb_ep_queue(out, req, GFP_KERNEL)) {
 		wait_event_interruptible(ipc_dev->state_wq, ipc_dev->online ||
@@ -482,6 +513,7 @@ static int ipc_bind(struct usb_configuration *c, struct usb_function *f)
 	if (!ctxt->in_req)
 		goto fail;
 
+	ctxt->in_req->zero = true;
 	ctxt->in_req->complete = ipc_in_complete;
 	ctxt->out_req = usb_ep_alloc_request(ctxt->out, GFP_KERNEL);
 	if (!ctxt->out_req)
@@ -671,21 +703,24 @@ static ssize_t debug_read_stats(struct file *file, char __user *ubuf,
 	int temp = 0;
 	unsigned long flags;
 
-	if (ipc_dev) {
-		spin_lock_irqsave(&ipc_dev->lock, flags);
-		temp += scnprintf(buf + temp, PAGE_SIZE - temp,
-				"endpoints: %s, %s\n"
-				"bytes to host: %lu\n"
-				"bytes to mdm:  %lu\n"
-				"pending writes:  %u\n"
-				"pending reads: %u\n",
-				ipc_dev->in->name, ipc_dev->out->name,
-				ipc_dev->bytes_to_host,
-				ipc_dev->bytes_to_mdm,
-				ipc_dev->pending_writes,
-				ipc_dev->pending_reads);
-		spin_unlock_irqrestore(&ipc_dev->lock, flags);
+	if (!ipc_dev || !ipc_dev->in || !ipc_dev->out) {
+		pr_err("ipc_dev instance, or EPs not yet initialised\n");
+		return 0;
 	}
+
+	spin_lock_irqsave(&ipc_dev->lock, flags);
+	temp += scnprintf(buf + temp, PAGE_SIZE - temp,
+			"endpoints: %s, %s\n"
+			"bytes to host: %lu\n"
+			"bytes to mdm:  %lu\n"
+			"pending writes:  %u\n"
+			"pending reads: %u\n",
+			ipc_dev->in->name, ipc_dev->out->name,
+			ipc_dev->bytes_to_host,
+			ipc_dev->bytes_to_mdm,
+			ipc_dev->pending_writes,
+			ipc_dev->pending_reads);
+	spin_unlock_irqrestore(&ipc_dev->lock, flags);
 
 	return simple_read_from_buffer(ubuf, count, ppos, buf, temp);
 }
@@ -695,12 +730,15 @@ static ssize_t debug_reset_stats(struct file *file, const char __user *buf,
 {
 	unsigned long flags;
 
-	if (ipc_dev) {
-		spin_lock_irqsave(&ipc_dev->lock, flags);
-		ipc_dev->bytes_to_host = 0;
-		ipc_dev->bytes_to_mdm = 0;
-		spin_unlock_irqrestore(&ipc_dev->lock, flags);
+	if (!ipc_dev) {
+		pr_err("ipc_dev instance not yet initialised\n");
+		return count;
 	}
+
+	spin_lock_irqsave(&ipc_dev->lock, flags);
+	ipc_dev->bytes_to_host = 0;
+	ipc_dev->bytes_to_mdm = 0;
+	spin_unlock_irqrestore(&ipc_dev->lock, flags);
 
 	return count;
 }
@@ -770,10 +808,6 @@ static int ipc_set_inst_name(struct usb_function_instance *fi,
 	if (name_len > MAX_INST_NAME_LEN)
 		return -ENAMETOOLONG;
 
-	ipc_dev = kzalloc(sizeof(*ipc_dev), GFP_KERNEL);
-	if (!ipc_dev)
-		return -ENOMEM;
-
 	spin_lock_init(&ipc_dev->lock);
 	init_waitqueue_head(&ipc_dev->state_wq);
 	init_completion(&ipc_dev->read_done);
@@ -789,7 +823,6 @@ static void ipc_free_inst(struct usb_function_instance *f)
 {
 	struct ipc_opts *opts = container_of(f, struct ipc_opts, func_inst);
 
-	kfree(opts->ctxt);
 	kfree(opts);
 }
 
@@ -820,9 +853,17 @@ static int __init ipc_init(void)
 {
 	int ret;
 
+	ipc_dev = kzalloc(sizeof(*ipc_dev), GFP_KERNEL);
+	if (!ipc_dev)
+		return -ENOMEM;
+
 	ret = usb_function_register(&ipcusb_func);
-	if (ret)
+	if (ret) {
+		kfree(ipc_dev);
+		ipc_dev = NULL;
 		pr_err("%s: failed to register ipc %d\n", __func__, ret);
+		return ret;
+	}
 
 	fipc_debugfs_init();
 
@@ -833,6 +874,8 @@ static void __exit ipc_exit(void)
 {
 	fipc_debugfs_remove();
 	usb_function_unregister(&ipcusb_func);
+	kfree(ipc_dev);
+	ipc_dev = NULL;
 }
 
 module_init(ipc_init);

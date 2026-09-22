@@ -305,14 +305,6 @@ static int32_t msm_sensor_fill_laser_led_subdevid_by_name(
 	if (!of_node)
 		return -EINVAL;
 
-	/*
-	 * No-op.  There is no SUB_MODULE_LASER_LED slot in subdev_id[] any
-	 * more -- see the comment in <uapi/media/msm_cam_sensor.h>, removing
-	 * it is what keeps the sensor ioctl numbers matching the 3.18-built
-	 * userspace.  Nothing on this board has a "qcom,laserled-src", and
-	 * the only thing this function ever did was publish that phandle's
-	 * cell-index in that slot.
-	 */
 	if (of_find_property(of_node, "qcom,laserled-src", NULL))
 		pr_warn("%s: qcom,laserled-src present but laser LED subdev id is not plumbed\n",
 			__func__);
@@ -945,7 +937,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 		slave_info->sensor_id_info.sensor_id_reg_addr;
 	camera_info->sensor_id = slave_info->sensor_id_info.sensor_id;
 	camera_info->sensor_id_mask = slave_info->sensor_id_info.sensor_id_mask;
-	/* no pre-ID-read register writes; msm_sensor_match_id() guards on NULL */
 	camera_info->setting = NULL;
 
 	/* Fill CCI master, slave address and CCI default params */

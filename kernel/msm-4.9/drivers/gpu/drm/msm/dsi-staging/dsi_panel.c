@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -252,6 +252,103 @@ static int dsi_panel_vreg_put(struct dsi_panel *panel)
 	return rc;
 }
 
+static int dsi_panel_exd_gpio_request(struct dsi_panel *panel)
+{
+	int rc = 0;
+	struct dsi_panel_exd_config *e_config = &panel->exd_config;
+
+	if (!e_config->display_1p8_en && !e_config->led_5v_en &&
+		!e_config->led_en1 && !e_config->led_en2 &&
+		!e_config->oenab && !e_config->selab &&
+		!e_config->switch_power)
+		return 0;
+
+	if (gpio_is_valid(e_config->display_1p8_en)) {
+		rc = gpio_request(e_config->display_1p8_en, "display_1p8_en");
+		if (rc) {
+			pr_err("request for display_1p8_en failed, rc=%d\n",
+				rc);
+			goto error;
+		}
+	}
+
+	if (gpio_is_valid(e_config->led_5v_en)) {
+		rc = gpio_request(e_config->led_5v_en, "led_5v_en");
+		if (rc) {
+			pr_err("request for led_5v_en failed, rc=%d\n",
+				rc);
+			goto error_release_1p8;
+		}
+	}
+
+	if (gpio_is_valid(e_config->led_en1)) {
+		rc = gpio_request(e_config->led_en1, "led_en1");
+		if (rc) {
+			pr_err("request for led_en1 failed, rc=%d\n",
+				rc);
+			goto error_release_5v;
+		}
+	}
+
+	if (gpio_is_valid(e_config->led_en2)) {
+		rc = gpio_request(e_config->led_en2, "led_en2");
+		if (rc) {
+			pr_err("request for led_en2 failed, rc=%d\n",
+				rc);
+			goto error_release_led;
+		}
+	}
+
+	if (gpio_is_valid(e_config->oenab)) {
+		rc = gpio_request(e_config->oenab, "oenab");
+		if (rc) {
+			pr_err("request for oenab failed, rc=%d\n",
+				rc);
+			goto error_release_led2;
+		}
+	}
+
+	if (gpio_is_valid(e_config->selab)) {
+		rc = gpio_request(e_config->selab, "selab");
+		if (rc) {
+			pr_err("request for selab failed, rc=%d\n",
+				rc);
+			goto error_release_oenab;
+		}
+	}
+
+	if (gpio_is_valid(e_config->switch_power)) {
+		rc = gpio_request(e_config->switch_power, "switch_power");
+		if (rc) {
+			pr_err("request for switch_power failed, rc=%d\n",
+				rc);
+			goto error_release_selab;
+		}
+	}
+	return rc;
+
+error_release_selab:
+	if (gpio_is_valid(e_config->selab))
+		gpio_free(e_config->selab);
+error_release_oenab:
+	if (gpio_is_valid(e_config->oenab))
+		gpio_free(e_config->oenab);
+error_release_led2:
+	if (gpio_is_valid(e_config->led_en2))
+		gpio_free(e_config->led_en2);
+error_release_led:
+	if (gpio_is_valid(e_config->led_en1))
+		gpio_free(e_config->led_en1);
+error_release_5v:
+	if (gpio_is_valid(e_config->led_5v_en))
+		gpio_free(e_config->led_5v_en);
+error_release_1p8:
+	if (gpio_is_valid(e_config->display_1p8_en))
+		gpio_free(e_config->display_1p8_en);
+error:
+	return rc;
+}
+
 static int dsi_panel_gpio_request(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -301,6 +398,34 @@ error_release_reset:
 		gpio_free(r_config->reset_gpio);
 error:
 	return rc;
+}
+
+static int dsi_panel_exd_gpio_release(struct dsi_panel *panel)
+{
+	struct dsi_panel_exd_config *e_config = &panel->exd_config;
+
+	if (!e_config->display_1p8_en && !e_config->led_5v_en &&
+		!e_config->led_en1 && !e_config->led_en2 &&
+		!e_config->oenab && !e_config->selab &&
+		!e_config->switch_power)
+		return 0;
+
+	if (gpio_is_valid(e_config->display_1p8_en))
+		gpio_free(e_config->display_1p8_en);
+	if (gpio_is_valid(e_config->led_5v_en))
+		gpio_free(e_config->led_5v_en);
+	if (gpio_is_valid(e_config->led_en1))
+		gpio_free(e_config->led_en1);
+	if (gpio_is_valid(e_config->led_en2))
+		gpio_free(e_config->led_en2);
+	if (gpio_is_valid(e_config->oenab))
+		gpio_free(e_config->oenab);
+	if (gpio_is_valid(e_config->selab))
+		gpio_free(e_config->selab);
+	if (gpio_is_valid(e_config->switch_power))
+		gpio_free(e_config->switch_power);
+
+	return 0;
 }
 
 static int dsi_panel_gpio_release(struct dsi_panel *panel)
@@ -426,6 +551,110 @@ static int dsi_panel_set_pinctrl_state(struct dsi_panel *panel, bool enable)
 	return rc;
 }
 
+static int dsi_panel_exd_enable(struct dsi_panel *panel)
+{
+	int rc = 0;
+	struct dsi_panel_exd_config *e_config = &panel->exd_config;
+
+	if (!e_config->display_1p8_en && !e_config->led_5v_en &&
+			!e_config->led_en1 && !e_config->led_en2 &&
+			!e_config->oenab && !e_config->selab &&
+			!e_config->switch_power)
+		return 0;
+
+	if (gpio_is_valid(e_config->display_1p8_en)) {
+		rc = gpio_direction_output(e_config->display_1p8_en, 0);
+		if (rc) {
+			pr_err("unable to set dir for disp_1p8_en rc:%d\n",
+				rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->display_1p8_en, 1);
+	}
+
+	if (gpio_is_valid(e_config->switch_power)) {
+		rc = gpio_direction_output(e_config->switch_power, 0);
+		if (rc) {
+			pr_err("unable to set dir for switch_power rc:%d\n",
+				rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->switch_power, 1);
+	}
+
+	if (gpio_is_valid(e_config->led_5v_en)) {
+		rc = gpio_direction_output(e_config->led_5v_en, 0);
+		if (rc) {
+			pr_err("unable to set dir for led_5v_en rc:%d\n", rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->led_5v_en, 1);
+	}
+
+	if (gpio_is_valid(e_config->led_en1)) {
+		rc = gpio_direction_output(e_config->led_en1, 0);
+		if (rc) {
+			pr_err("unable to set dir for led_en1 rc:%d\n", rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->led_en1, 1);
+	}
+
+	if (gpio_is_valid(e_config->led_en2)) {
+		rc = gpio_direction_output(e_config->led_en2, 0);
+		if (rc) {
+			pr_err("unable to set dir for led_en2 rc:%d\n", rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->led_en2, 1);
+	}
+
+	if (gpio_is_valid(e_config->oenab)) {
+		rc = gpio_direction_output(e_config->oenab, 0);
+		if (rc) {
+			pr_err("unable to set dir for oenab rc:%d\n", rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->oenab, 0);
+	}
+
+	if (gpio_is_valid(e_config->selab)) {
+		rc = gpio_direction_output(e_config->selab, 0);
+		if (rc) {
+			pr_err("unable to set dir for selab rc:%d\n", rc);
+			goto exit;
+		}
+		gpio_set_value(e_config->selab, 1);
+	}
+exit:
+	return rc;
+}
+
+static void dsi_panel_exd_disable(struct dsi_panel *panel)
+{
+	struct dsi_panel_exd_config *e_config = &panel->exd_config;
+
+	if (!e_config->display_1p8_en && !e_config->led_5v_en &&
+		!e_config->led_en1 && !e_config->led_en2 &&
+		!e_config->oenab && !e_config->selab &&
+		!e_config->switch_power)
+		return;
+
+	if (gpio_is_valid(e_config->display_1p8_en))
+		gpio_set_value(e_config->display_1p8_en, 0);
+	if (gpio_is_valid(e_config->led_5v_en))
+		gpio_set_value(e_config->led_5v_en, 0);
+	if (gpio_is_valid(e_config->led_en1))
+		gpio_set_value(e_config->led_en1, 0);
+	if (gpio_is_valid(e_config->led_en2))
+		gpio_set_value(e_config->led_en2, 0);
+	if (gpio_is_valid(e_config->oenab))
+		gpio_set_value(e_config->oenab, 1);
+	if (gpio_is_valid(e_config->selab))
+		gpio_set_value(e_config->selab, 0);
+	if (gpio_is_valid(e_config->switch_power))
+		gpio_set_value(e_config->switch_power, 0);
+}
 
 static int dsi_panel_power_on(struct dsi_panel *panel)
 {
@@ -446,6 +675,13 @@ static int dsi_panel_power_on(struct dsi_panel *panel)
 	rc = dsi_panel_reset(panel);
 	if (rc) {
 		pr_err("[%s] failed to reset panel, rc=%d\n", panel->name, rc);
+		goto error_disable_gpio;
+	}
+
+	rc = dsi_panel_exd_enable(panel);
+	if (rc) {
+		pr_err("[%s] failed to reset panel, rc=%d\n", panel->name, rc);
+		dsi_panel_exd_disable(panel);
 		goto error_disable_gpio;
 	}
 
@@ -470,6 +706,8 @@ exit:
 static int dsi_panel_power_off(struct dsi_panel *panel)
 {
 	int rc = 0;
+
+	dsi_panel_exd_disable(panel);
 
 	if (gpio_is_valid(panel->reset_config.disp_en_gpio))
 		gpio_set_value(panel->reset_config.disp_en_gpio, 0);
@@ -1177,7 +1415,7 @@ static int dsi_panel_parse_dfps_caps(struct dsi_dfps_capabilities *dfps_caps,
 	int rc = 0;
 	bool supported = false;
 	const char *type;
-	u32 val = 0, i;
+	u32 i;
 
 	supported = of_property_read_bool(of_node,
 					"qcom,mdss-dsi-pan-enable-dynamic-fps");
@@ -1237,11 +1475,10 @@ static int dsi_panel_parse_dfps_caps(struct dsi_dfps_capabilities *dfps_caps,
 	dfps_caps->dfps_support = true;
 
 	/* calculate max and min fps */
-	of_property_read_u32(of_node, "qcom,mdss-dsi-panel-framerate", &val);
-	dfps_caps->max_refresh_rate = val;
-	dfps_caps->min_refresh_rate = val;
+	dfps_caps->max_refresh_rate = dfps_caps->dfps_list[0];
+	dfps_caps->min_refresh_rate = dfps_caps->dfps_list[0];
 
-	for (i = 0; i < dfps_caps->dfps_list_len; i++) {
+	for (i = 1; i < dfps_caps->dfps_list_len; i++) {
 		if (dfps_caps->dfps_list[i] < dfps_caps->min_refresh_rate)
 			dfps_caps->min_refresh_rate = dfps_caps->dfps_list[i];
 		else if (dfps_caps->dfps_list[i] > dfps_caps->max_refresh_rate)
@@ -1576,7 +1813,7 @@ static int dsi_panel_create_cmd_packets(const char *data,
 		cmd[i].msg.type = data[0];
 		cmd[i].last_command = (data[1] == 1 ? true : false);
 		cmd[i].msg.channel = data[2];
-		cmd[i].msg.flags |= (data[3] == 1 ? MIPI_DSI_MSG_REQ_ACK : 0);
+		cmd[i].msg.flags |= data[3];
 		cmd[i].msg.ctrl = 0;
 		cmd[i].post_wait_ms = cmd[i].msg.wait_ms = data[4];
 		cmd[i].msg.tx_len = ((data[5] << 8) | (data[6]));
@@ -1888,6 +2125,63 @@ error:
 	return rc;
 }
 
+static int dsi_panel_exd_parse_gpios(struct dsi_panel *panel,
+				 struct device_node *of_node)
+{
+	int rc = 0;
+	struct dsi_panel_exd_config *e_config = &panel->exd_config;
+
+	e_config->display_1p8_en = of_get_named_gpio(of_node,
+			"qcom,1p8-en-gpio", 0);
+	if (!e_config->display_1p8_en) {
+		pr_debug("%s qcom,display-1p8-en-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->led_5v_en = of_get_named_gpio(of_node,
+				"qcom,led-5v-en-gpio", 0);
+	if (!e_config->led_5v_en) {
+		pr_debug("%s qcom,led-5v-en-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->led_en1 = of_get_named_gpio(of_node,
+				"qcom,led-driver-en1-gpio", 0);
+	if (!e_config->led_en1) {
+		pr_debug("%s qcom,led-driver-en1-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->led_en2 = of_get_named_gpio(of_node,
+				"qcom,led-driver-en2-gpio", 0);
+	if (!e_config->led_en2) {
+		pr_debug("%s qcom,led-driver-en2-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->oenab = of_get_named_gpio(of_node,
+				"qcom,oenab-gpio", 0);
+	if (!e_config->oenab) {
+		pr_debug("%s qcom,oenab-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->selab = of_get_named_gpio(of_node,
+				"qcom,selab-gpio", 0);
+	if (!e_config->selab) {
+		pr_debug("%s qcom,selab-gpio not found\n", __func__);
+		return -EINVAL;
+	}
+
+	e_config->switch_power = of_get_named_gpio(of_node,
+				"qcom,switch-power-gpio", 0);
+	if (!e_config->switch_power) {
+		pr_debug("%s qcom,switch_power not found\n", __func__);
+		return -EINVAL;
+	}
+	return rc;
+}
+
 static int dsi_panel_parse_gpios(struct dsi_panel *panel,
 				 struct device_node *of_node)
 {
@@ -1942,6 +2236,12 @@ static int dsi_panel_parse_gpios(struct dsi_panel *panel,
 		/* Set default mode as SPLIT mode */
 		panel->reset_config.mode_sel_state = MODE_SEL_DUAL_PORT;
 	}
+
+	/* Extended display panel gpios parsed */
+	rc = dsi_panel_exd_parse_gpios(panel, of_node);
+	if (rc && rc != -EINVAL)
+		pr_err("[%s] failed to parse gpios, rc=%d\n",
+				panel->name, rc);
 
 	/* TODO:  release memory */
 	rc = dsi_panel_parse_reset_sequence(panel, of_node);
@@ -3106,8 +3406,17 @@ int dsi_panel_drv_init(struct dsi_panel *panel,
 		goto error_gpio_release;
 	}
 
+	rc = dsi_panel_exd_gpio_request(panel);
+	if (rc) {
+		pr_err("[%s] failed to request gpios, rc=%d\n", panel->name,
+				rc);
+		goto error_exd_gpio_release;
+	}
+
 	goto exit;
 
+error_exd_gpio_release:
+	(void)dsi_panel_exd_gpio_release(panel);
 error_gpio_release:
 	(void)dsi_panel_gpio_release(panel);
 error_pinctrl_deinit:
@@ -3142,6 +3451,11 @@ int dsi_panel_drv_deinit(struct dsi_panel *panel)
 	if (rc)
 		pr_err("[%s] failed to release gpios, rc=%d\n", panel->name,
 		       rc);
+
+	rc = dsi_panel_exd_gpio_release(panel);
+	if (rc)
+		pr_err("[%s] failed to release gpios, rc=%d\n", panel->name,
+			rc);
 
 	rc = dsi_panel_pinctrl_deinit(panel);
 	if (rc)

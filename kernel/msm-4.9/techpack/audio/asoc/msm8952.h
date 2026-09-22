@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -86,6 +86,8 @@ struct msm_asoc_mach_data {
 	struct device_node *us_euro_gpio_p;
 	struct device_node *comp_gpio_p;
 	struct device_node *mi2s_gpio_p[MI2S_MAX];
+	struct device_node *dmic_gpio_p; /* used by pinctrl API */
+	struct snd_soc_codec *codec;
 	struct snd_info_entry *codec_root;
 };
 

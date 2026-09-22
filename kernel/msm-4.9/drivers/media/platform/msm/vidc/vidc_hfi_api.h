@@ -235,6 +235,7 @@ enum hal_property {
 	HAL_CONFIG_HEIC_FRAME_CROP_INFO,
 	HAL_CONFIG_HEIC_FRAME_QUALITY,
 	HAL_CONFIG_HEIC_GRID_ENABLE,
+	HAL_CONFIG_VENC_FRAME_QP_RANGE,
 };
 
 enum hal_domain {
@@ -1407,11 +1408,11 @@ struct vidc_bus_vote_data {
 	enum hal_video_codec codec;
 	enum hal_uncompressed_format color_formats[2];
 	int num_formats; /* 1 = DPB-OPB unified; 2 = split */
-	int input_height, input_width, fps;
-	int output_height, output_width;
-	int compression_ratio;
-	int complexity_factor;
-	int input_cr;
+	u32 input_height, input_width, fps, bitrate;
+	u32 output_height, output_width;
+	uint64_t compression_ratio;
+	uint64_t complexity_factor;
+	u32 input_cr;
 	bool use_dpb_read;
 	unsigned int lcu_size;
 	enum msm_vidc_power_mode power_mode;

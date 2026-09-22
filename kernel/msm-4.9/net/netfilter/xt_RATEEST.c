@@ -106,6 +106,9 @@ static int xt_rateest_tg_checkentry(const struct xt_tgchk_param *par)
 	} cfg;
 	int ret;
 
+	if (strnlen(info->name, sizeof(est->name)) >= sizeof(est->name))
+		return -ENAMETOOLONG;
+
 	net_get_random_once(&jhash_rnd, sizeof(jhash_rnd));
 
 	mutex_lock(&xt_rateest_mutex);
@@ -174,6 +177,7 @@ static struct xt_target xt_rateest_tg_reg __read_mostly = {
 	.checkentry = xt_rateest_tg_checkentry,
 	.destroy    = xt_rateest_tg_destroy,
 	.targetsize = sizeof(struct xt_rateest_target_info),
+	.usersize   = offsetof(struct xt_rateest_target_info, est),
 	.me         = THIS_MODULE,
 };
 

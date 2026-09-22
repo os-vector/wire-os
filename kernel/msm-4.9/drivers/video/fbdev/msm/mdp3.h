@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2014, 2016-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2014, 2016-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2007 Google Incorporated
  *
  * This program is free software; you can redistribute it and/or modify
@@ -211,6 +211,8 @@ struct mdp3_hw_resource {
 	struct mutex reg_bus_lock;
 	int bklt_level;
 	int bklt_update;
+	bool secure_update_bl;
+	bool secure_reg_on;
 	bool twm_en;
 	u32 max_bw;
 
@@ -281,7 +283,6 @@ u64 mdp3_clk_round_off(u64 clk_rate);
 void mdp3_calc_dma_res(struct mdss_panel_info *panel_info, u64 *clk_rate,
 		u64 *ab, u64 *ib, uint32_t bpp);
 void mdp3_clear_irq(u32 interrupt_mask);
-int mdp3_enable_panic_ctrl(void);
 
 void mdss_spi_panel_bl_ctrl_update(struct mdss_panel_data *pdata, u32 bl_level);
 

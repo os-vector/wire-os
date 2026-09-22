@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -25,7 +25,7 @@
 / {
 	model = "Qualcomm Technologies, Inc. SDX POORWILLS";
 	compatible = "qcom,sdxpoorwills";
-	qcom,msm-id = <334 0x0>, <335 0x0>;
+	qcom,msm-id = <334 0x0>, <335 0x0>, <408 0x0>;
 	interrupt-parent = <&pdc>;
 
 	reserved-memory {
@@ -85,7 +85,7 @@
 			compatible = "shared-dma-pool";
 			reusable;
 			alignment = <0x400000>;
-			size = <0x400000>;
+			size = <0x700000>;
 			status = "disabled";
 		};
 
@@ -257,9 +257,9 @@
 		qcom,cpulist = <&CPU0>;
 		qcom,target-dev = <&cpubw>;
 		qcom,core-dev-table =
-				<  153600 MHZ_TO_MBPS(200, 2) >,
-				<  576000 MHZ_TO_MBPS(691, 2) >,
-				< 1497600 MHZ_TO_MBPS(1383, 2)>;
+				<  153600 MHZ_TO_MBPS( 200, 4) >,
+				<  576000 MHZ_TO_MBPS( 691, 4) >,
+				< 1497600 MHZ_TO_MBPS(1383, 4)>;
 	};
 
 	clock_gcc: qcom,gcc@100000 {
@@ -363,9 +363,10 @@
 			<0x40001000 0x1000>,
 			<0x01c00000 0x2000>,
 			<0x01c02000 0x1000>,
-			<0x01c04000 0x1000>;
+			<0x01c04000 0x1000>,
+			<0x01fcb000 0x1000>;
 		reg-names = "msi", "dm_core", "elbi", "iatu", "parf",
-				"phy", "mmio";
+				"phy", "mmio", "tcsr_pcie_perst_en";
 
 		#address-cells = <0>;
 		interrupt-parent = <&pcie_ep>;
@@ -509,6 +510,21 @@
 		status = "disabled";
 	};
 
+	ipc_router_mhi_dev_xprt: qcom,ipc_router_mhi_dev_xprt {
+		compatible = "qcom,ipc-router-mhi-dev-xprt";
+		qcom,out-chan-id = <20>;
+		qcom,in-chan-id = <21>;
+		qcom,xprt-remote = "external-ap";
+		qcom,xprt-linkid = <2>;
+		qcom,xprt-version = <1>;
+		status = "disabled";
+	};
+
+	mhi_net_device: qcom,mhi_net_dev {
+		compatible = "qcom,msm-mhi-dev-net";
+		status = "disabled";
+	};
+
 	gdsc_emac: qcom,gdsc@147004 {
 		compatible = "qcom,gdsc";
 		regulator-name = "gdsc_emac";
@@ -577,6 +593,9 @@
 
 		qcom,restore-after-cx-collapse;
 
+		/* DLL HSR settings. Refer go/hsr - <Target> DLL settings */
+		qcom,dll-hsr-list = <0x0007642c 0x0 0x10 0x2c010800 0x80040868>;
+
 		status = "disabled";
 	};
 
@@ -619,7 +638,7 @@
 		clock-frequency = <32768>;
 	};
 
-	restart@c264000 {
+	restart_pshold: restart@c264000 {
 		compatible = "qcom,pshold";
 		reg = <0x0c264000 0x4>,
 			<0x01fd3000 0x4>;
@@ -817,7 +836,7 @@
 		qcom,smem-id = <421>;
 		qcom,proxy-timeout-ms = <10000>;
 		qcom,sysmon-id = <0>;
-		qcom,ssctl-instance-id = <0x12>;
+		qcom,ssctl-instance-id = <0x22>;
 		qcom,firmware-name = "modem";
 		memory-region = <&mss_mem>;
 		status = "ok";
@@ -827,6 +846,7 @@
 		qcom,gpio-err-ready = <&smp2pgpio_ssr_smp2p_1_in 1 0>;
 		qcom,gpio-proxy-unvote = <&smp2pgpio_ssr_smp2p_1_in 2 0>;
 		qcom,gpio-stop-ack = <&smp2pgpio_ssr_smp2p_1_in 3 0>;
+		qcom,gpio-shutdown-ack = <&smp2pgpio_ssr_smp2p_1_in 7 0>;
 
 		/* GPIO output to mss */
 		qcom,gpio-force-stop = <&smp2pgpio_ssr_smp2p_1_out 0 0>;
@@ -1152,7 +1172,7 @@
 		reg-names = "wdt-base";
 		interrupts = <1 3 0>, <1 2 0>;
 		qcom,bark-time = <11000>;
-		qcom,pet-time = <10000>;
+		qcom,pet-time = <9360>;
 	};
 
 	qcom_rng: qrng@793000{
@@ -1306,6 +1326,7 @@
 		compatible = "qcom,cnss_sdio";
 		subsys-name = "AR6320_SDIO";
 		vdd-wlan-supply = <&vreg_wlan>;
+		vdd-wlan-xtal-supply = <&pmxpoorwills_l5>;
 		vdd-wlan-io-supply = <&pmxpoorwills_l6>;
 		qcom,wlan-ramdump-dynamic = <0x200000>;
 		pinctrl-names = "active", "sleep";
@@ -1313,6 +1334,8 @@
 		pinctrl-1 = <&cnss_sdio_sleep>;
 		qcom,is-antenna-shared;
 		status = "disabled";
+		vdd-wlan-xtal-min = <1704000>;
+		vdd-wlan-xtal-max = <1704000>;
 	};
 };
 
@@ -1367,12 +1390,15 @@
 			"eth_rgmii_clk", "eth_slave_ahb_clk";
 		qcom,phy-intr-redirect = <&tlmm 84 GPIO_ACTIVE_LOW>;
 		qcom,phy-reset = <&tlmm 85 GPIO_ACTIVE_LOW>;
+		qcom,phy-reset-delay-msecs = <11 70>;
 		vreg_rgmii-supply = <&vreg_rgmii>;
 		vreg_emac_phy-supply =  <&vreg_emac_phy>;
 		vreg_rgmii_io_pads-supply = <&vreg_rgmii_io_pads>;
 		gdsc_emac-supply = <&gdsc_emac>;
 		mboxes = <&qmp_aop 0>;
 		mbox-names = "emac_aop";
+		ipa-dma-rx-desc-cnt = <256>;
+		ipa-dma-tx-desc-cnt = <256>;
 		io-macro-info {
 			io-macro-bypass-mode = <0>;
 			io-interface = "rgmii";

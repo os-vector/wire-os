@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015, 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2015, 2018-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -64,7 +64,6 @@
 		pm8916_s3: regulator-s3 {
 			regulator-min-microvolt = <1000000>;
 			regulator-max-microvolt = <1448000>;
-			qcom,init-voltage = <1000000>;
 			status = "okay";
 		};
 	};
@@ -93,9 +92,8 @@
 	rpm-regulator-ldoa2 {
 		status = "okay";
 		pm8916_l2: regulator-l2 {
-			regulator-min-microvolt = <944000>;
+			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1088000>;
-			qcom,init-voltage = <944000>;
 			status = "okay";
 		};
 
@@ -551,9 +549,15 @@
 		qcom,cpr-voltage-scaling-factor-max = <0 2000 2000>;
 		qcom,cpr-scaled-init-voltage-as-ceiling;
 		qcom,cpr-fuse-revision = <69 39 3 0>;
+		qcom,pvs-version-fuse-sel = <37 40 3 0>; /* foundry */
+		qcom,cpr-fuse-version-map =
+			<(-1)       1     (-1)    (-1)    (-1)    (-1)>,
+			<(-1)     (-1)    (-1)    (-1)    (-1)    (-1)>;
 		qcom,cpr-quotient-adjustment =
+				<30      20      0>,
 				<50      40     50>;
 		qcom,cpr-init-voltage-adjustment =
+				<0       0          0>,
 				<30000   5000   10000>;
 		qcom,cpr-enable;
 	};

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -26,6 +26,7 @@
 #include <linux/of_gpio.h>
 #include <linux/kthread.h>
 #include <linux/dma-mapping.h>
+#include <linux/pm_runtime.h>
 #include "bgcom.h"
 #include "bgrsb.h"
 #include "bgcom_interface.h"
@@ -49,7 +50,7 @@
 #define HED_EVENT_DATA_STRT_LEN (0x05)
 #define CMA_BFFR_POOL_SIZE (128*1024)
 
-#define MAX_RETRY 500
+#define MAX_RETRY 100
 
 enum bgcom_state {
 	/*BGCOM Staus ready*/
@@ -106,6 +107,7 @@ static uint32_t g_slav_status_reg;
 static void send_input_events(struct work_struct *work);
 static struct list_head cb_head = LIST_HEAD_INIT(cb_head);
 static struct list_head pr_lst_hd = LIST_HEAD_INIT(pr_lst_hd);
+static DEFINE_SPINLOCK(lst_setup_lock);
 static enum bgcom_spi_state spi_state;
 
 
@@ -148,7 +150,9 @@ static void send_input_events(struct work_struct *work)
 		evnt = node->evnt;
 		bgrsb_send_input(evnt);
 		kfree(evnt);
+		spin_lock(&lst_setup_lock);
 		list_del(&node->list);
+		spin_unlock(&lst_setup_lock);
 		kfree(node);
 	}
 }
@@ -157,6 +161,10 @@ int bgcom_set_spi_state(enum bgcom_spi_state state)
 {
 	struct bg_spi_priv *bg_spi = container_of(bg_com_drv,
 						struct bg_spi_priv, lhandle);
+	const struct device spi_dev = bg_spi->spi->master->dev;
+	ktime_t time_start, delta;
+	s64 time_elapsed;
+
 	if (state < 0 || state > 1)
 		return -EINVAL;
 
@@ -164,6 +172,15 @@ int bgcom_set_spi_state(enum bgcom_spi_state state)
 		return 0;
 
 	mutex_lock(&bg_spi->xfer_mutex);
+	if (state == BGCOM_SPI_BUSY) {
+		time_start = ktime_get();
+		while (!pm_runtime_status_suspended(spi_dev.parent)) {
+			delta = ktime_sub(ktime_get(), time_start);
+			time_elapsed = ktime_to_ms(delta);
+			WARN_ON(time_elapsed > 5 * MSEC_PER_SEC);
+			msleep(100);
+		}
+	}
 	spi_state = state;
 	mutex_unlock(&bg_spi->xfer_mutex);
 	return 0;
@@ -260,7 +277,9 @@ static int bgcom_transfer(void *handle, uint8_t *tx_buf,
 		tx_xfer->rx_buf = rx_buf;
 
 	tx_xfer->len = txn_len;
+	pm_runtime_get_sync(spi->master->dev.parent);
 	ret = spi_sync(spi, &bg_spi->msg1);
+	pm_runtime_put_sync_suspend(spi->master->dev.parent);
 	mutex_unlock(&bg_spi->xfer_mutex);
 
 	if (ret)
@@ -323,8 +342,9 @@ static void parse_fifo(uint8_t *data, union bgcom_event_data_type *event_data)
 
 			data_list = kmalloc(sizeof(*data_list), GFP_KERNEL);
 			data_list->evnt = evnt;
+			spin_lock(&lst_setup_lock);
 			list_add_tail(&data_list->list, &pr_lst_hd);
-
+			spin_unlock(&lst_setup_lock);
 		} else if (event_id == 0x0001) {
 			evnt_data = kmalloc(p_len, GFP_KERNEL);
 			if (evnt_data != NULL) {
@@ -464,7 +484,6 @@ static void bg_irq_tasklet_hndlr_l(void)
 int bgcom_ahb_read(void *handle, uint32_t ahb_start_addr,
 	uint32_t num_words, void *read_buf)
 {
-	dma_addr_t dma_hndl_tx, dma_hndl_rx;
 	uint32_t txn_len;
 	uint8_t *tx_buf;
 	uint8_t *rx_buf;
@@ -472,7 +491,6 @@ int bgcom_ahb_read(void *handle, uint32_t ahb_start_addr,
 	int ret;
 	uint8_t cmnd = 0;
 	uint32_t ahb_addr = 0;
-	struct spi_device *spi = get_spi_device();
 
 	if (!handle || !read_buf || num_words == 0
 		|| num_words > BG_SPI_MAX_WORDS) {
@@ -495,16 +513,13 @@ int bgcom_ahb_read(void *handle, uint32_t ahb_start_addr,
 	size = num_words*BG_SPI_WORD_SIZE;
 	txn_len = BG_SPI_AHB_READ_CMD_LEN + size;
 
-
-	tx_buf = dma_zalloc_coherent(&spi->dev, txn_len,
-					&dma_hndl_tx, GFP_KERNEL);
+	tx_buf = kzalloc(txn_len, GFP_KERNEL | GFP_ATOMIC);
 	if (!tx_buf)
 		return -ENOMEM;
 
-	rx_buf = dma_zalloc_coherent(&spi->dev, txn_len,
-					&dma_hndl_rx, GFP_KERNEL);
+	rx_buf = kzalloc(txn_len, GFP_KERNEL | GFP_ATOMIC);
 	if (!rx_buf) {
-		dma_free_coherent(&spi->dev, txn_len, tx_buf, dma_hndl_tx);
+		kfree(tx_buf);
 		return -ENOMEM;
 	}
 
@@ -519,8 +534,8 @@ int bgcom_ahb_read(void *handle, uint32_t ahb_start_addr,
 	if (!ret)
 		memcpy(read_buf, rx_buf+BG_SPI_AHB_READ_CMD_LEN, size);
 
-	dma_free_coherent(&spi->dev, txn_len, tx_buf, dma_hndl_tx);
-	dma_free_coherent(&spi->dev, txn_len, rx_buf, dma_hndl_rx);
+	kfree(tx_buf);
+	kfree(rx_buf);
 	return ret;
 }
 EXPORT_SYMBOL(bgcom_ahb_read);
@@ -556,7 +571,6 @@ int bgcom_ahb_write(void *handle, uint32_t ahb_start_addr,
 		pr_err("Failed to resume\n");
 		return -EBUSY;
 	}
-
 
 	mutex_lock(&cma_buffer_lock);
 	size = num_words*BG_SPI_WORD_SIZE;
@@ -827,17 +841,31 @@ int bgcom_resume(void *handle)
 		return -ECANCELED;
 
 	cntx = (struct bg_context *)handle;
+
+	/* if client is outside bgcom scope and
+	 * handle is provided before BGCOM probed
+	 */
+	if (cntx->state == BGCOM_PROB_WAIT) {
+		pr_info("handle is provided before BGCOM probed\n");
+		if (!is_bgcom_ready())
+			return -EAGAIN;
+		cntx->bg_spi = container_of(bg_com_drv,
+						struct bg_spi_priv, lhandle);
+		cntx->state = BGCOM_PROB_SUCCESS;
+	}
+
 	bg_spi = cntx->bg_spi;
 
 	mutex_lock(&bg_resume_mutex);
 	if (bg_spi->bg_state == BGCOM_STATE_ACTIVE)
 		goto unlock;
+	enable_irq(bg_irq);
 	do {
 		if (is_bg_resume(handle)) {
 			bg_spi->bg_state = BGCOM_STATE_ACTIVE;
 			break;
 		}
-		udelay(10);
+		udelay(1000);
 		++retry;
 	} while (retry < MAX_RETRY);
 
@@ -846,6 +874,11 @@ unlock:
 	if (retry == MAX_RETRY) {
 		/* BG failed to resume. Trigger BG soft reset. */
 		pr_err("BG failed to resume\n");
+		pr_err("%s: gpio#95 value is: %d\n",
+				__func__, gpio_get_value(95));
+		pr_err("%s: gpio#97 value is: %d\n",
+				__func__, gpio_get_value(97));
+		BUG();
 		bg_soft_reset();
 		return -ETIMEDOUT;
 	}
@@ -1012,7 +1045,7 @@ static int bg_spi_probe(struct spi_device *spi)
 
 	bg_irq = gpio_to_irq(irq_gpio);
 	ret = request_threaded_irq(bg_irq, NULL, bg_irq_tasklet_hndlr,
-		IRQF_TRIGGER_HIGH | IRQF_ONESHOT, "qcom,bg_spi", bg_spi);
+		IRQF_TRIGGER_HIGH | IRQF_ONESHOT, "qcom-bg_spi", bg_spi);
 
 	if (ret)
 		goto err_ret;
@@ -1033,6 +1066,7 @@ static int bg_spi_remove(struct spi_device *spi)
 {
 	struct bg_spi_priv *bg_spi = spi_get_drvdata(spi);
 
+	bg_com_drv = NULL;
 	mutex_destroy(&bg_spi->xfer_mutex);
 	devm_kfree(&spi->dev, bg_spi);
 	spi_set_drvdata(spi, NULL);
@@ -1078,8 +1112,6 @@ static int bgcom_pm_resume(struct device *dev)
 	clnt_handle.bg_spi = spi;
 	atomic_set(&bg_is_spi_active, 1);
 	ret = bgcom_resume(&clnt_handle);
-	if (ret == 0)
-		enable_irq(bg_irq);
 	pr_info("Bgcom resumed with : %d\n", ret);
 	return ret;
 }

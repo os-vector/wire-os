@@ -161,6 +161,7 @@ lenovo	Lenovo Group Ltd.
 lg	LG Corporation
 linaro	Linaro Limited
 linux	Linux-specific binding
+liteon  Lite-On Technology Corporation
 lltc	Linear Technology Corporation
 lsi	LSI Corp. (LSI Logic)
 lt	Lontium Semiconductor Corporation
@@ -319,3 +320,7 @@ zarlink	Zarlink Semiconductor
 zii	Zodiac Inflight Innovations
 zte	ZTE Corp.
 zyxel	ZyXEL Communications Corp.
+inven   InvenSense, Inc.
+cy      Parade.
+awinic  Shanghai Awinic Technology Co., Ltd.
+altek	Altek Corporation

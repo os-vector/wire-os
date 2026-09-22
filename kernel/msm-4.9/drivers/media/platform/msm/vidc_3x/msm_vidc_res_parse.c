@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -59,13 +59,13 @@ fail_read:
 	return 0;
 }
 
+static bool is_compatible(char *compat)
+{
+	return !!of_find_compatible_node(NULL, NULL, compat);
+}
+
 static inline enum imem_type read_imem_type(struct platform_device *pdev)
 {
-	bool is_compatible(char *compat)
-	{
-		return !!of_find_compatible_node(NULL, NULL, compat);
-	}
-
 	return is_compatible("qcom,msm-ocmem") ? IMEM_OCMEM :
 		is_compatible("qcom,msm-vmem") ? IMEM_VMEM :
 						IMEM_NONE;
@@ -624,19 +624,19 @@ error:
 	return rc;
 }
 
+/* A comparator to compare loads (needed later on) */
+static int cmp(const void *a, const void *b)
+{
+	/* want to sort in reverse so flip the comparison */
+	return ((struct load_freq_table *)b)->load -
+		((struct load_freq_table *)a)->load;
+}
+
 static int msm_vidc_load_freq_table(struct msm_vidc_platform_resources *res)
 {
 	int rc = 0;
 	int num_elements = 0;
 	struct platform_device *pdev = res->pdev;
-
-	/* A comparator to compare loads (needed later on) */
-	int cmp(const void *a, const void *b)
-	{
-		/* want to sort in reverse so flip the comparison */
-		return ((struct load_freq_table *)b)->load -
-			((struct load_freq_table *)a)->load;
-	}
 
 	if (!of_find_property(pdev->dev.of_node, "qcom,load-freq-tbl", NULL)) {
 		/* qcom,load-freq-tbl is an optional property.  It likely won't
@@ -1221,6 +1221,11 @@ int read_platform_resources_from_dt(
 
 	res->never_unload_fw = of_property_read_bool(pdev->dev.of_node,
 			"qcom,never-unload-fw");
+
+	res->is_qos_type_all_cores  = of_property_read_bool(pdev->dev.of_node,
+					"qcom,qos-type-all-cores");
+	dprintk(VIDC_DBG, "QOS type all cores = %s\n",
+				res->is_qos_type_all_cores ? "yes" : "no");
 
 	of_property_read_u32(pdev->dev.of_node,
 			"qcom,pm-qos-latency-us", &res->pm_qos_latency_us);

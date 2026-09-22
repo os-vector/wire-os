@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -754,6 +754,7 @@ struct ipa_rm_perf_profile {
 enum teth_tethering_mode {
 	TETH_TETHERING_MODE_RMNET,
 	TETH_TETHERING_MODE_MBIM,
+	TETH_TETHERING_MODE_RMNET_2,
 	TETH_TETHERING_MODE_MAX,
 };
 
@@ -1606,6 +1607,11 @@ int ipa_get_smmu_params(struct ipa_smmu_in_params *in,
  * Returns: 0 on success, negative on failure
  */
 int ipa_is_vlan_mode(enum ipa_vlan_ifaces iface, bool *res);
+
+/**
+ * ipa_get_lan_rx_napi - returns true if NAPI is enabled in the LAN RX dp
+ */
+bool ipa_get_lan_rx_napi(void);
 #else /* (CONFIG_IPA || CONFIG_IPA3) */
 
 /*
@@ -2422,6 +2428,11 @@ static inline int ipa_get_smmu_params(struct ipa_smmu_in_params *in,
 static inline int ipa_is_vlan_mode(enum ipa_vlan_ifaces iface, bool *res)
 {
 	return -EPERM;
+}
+
+static inline bool ipa_get_lan_rx_napi(void)
+{
+	return false;
 }
 #endif /* (CONFIG_IPA || CONFIG_IPA3) */
 

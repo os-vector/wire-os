@@ -13,6 +13,8 @@
 #define __QDSP6VOICE_H__
 
 #include <linux/msm_ion.h>
+#include <linux/power_supply.h>
+#include <uapi/linux/vm_bms.h>
 #include <sound/voice_params.h>
 #include <dsp/rtac.h>
 #include <dsp/q6core.h>
@@ -1916,6 +1918,8 @@ struct voice_data {
 
 	bool mic_break_status;
 	struct work_struct voice_mic_break_work;
+
+	struct power_supply *psy;
 };
 
 struct cal_mem {
@@ -1980,6 +1984,7 @@ struct common_data {
 	bool sidetone_enable;
 	bool mic_break_enable;
 	struct audio_uevent_data *uevent_data;
+	bool is_vote_bms;
 };
 
 struct voice_session_itr {
@@ -2107,6 +2112,7 @@ int voc_update_amr_vocoder_rate(uint32_t session_id);
 int voc_disable_device(uint32_t session_id);
 int voc_enable_device(uint32_t session_id);
 void voc_set_destroy_cvd_flag(bool is_destroy_cvd);
+void voc_set_vote_bms_flag(bool is_vote_bms);
 int voc_disable_topology(uint32_t session_id, uint32_t disable);
 int voc_set_device_config(uint32_t session_id, uint8_t path_dir,
 			  struct media_format_info *finfo);

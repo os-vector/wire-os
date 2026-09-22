@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -37,6 +37,7 @@ static struct list_head    ordered_sd_list;
 static struct mutex        ordered_sd_mtx;
 static struct mutex        v4l2_event_mtx;
 
+static atomic_t qos_add_request_done = ATOMIC_INIT(0);
 static struct pm_qos_request msm_v4l2_pm_qos_request;
 
 static struct msm_queue_head *msm_session_q;
@@ -223,9 +224,11 @@ static inline int __msm_queue_find_command_ack_q(void *d1, void *d2)
 	return (ack->stream_id == *(unsigned int *)d2) ? 1 : 0;
 }
 
-static void msm_pm_qos_add_request(void)
+static inline void msm_pm_qos_add_request(void)
 {
 	pr_info("%s: add request", __func__);
+	if (atomic_cmpxchg(&qos_add_request_done, 0, 1))
+		return;
 	pm_qos_add_request(&msm_v4l2_pm_qos_request, PM_QOS_CPU_DMA_LATENCY,
 	PM_QOS_DEFAULT_VALUE);
 }
@@ -243,6 +246,7 @@ void msm_pm_qos_update_request(int val)
 	 */
 	if (msm_session_q && msm_session_q->len == 0) {
 		pr_info("%s: update request %d", __func__, val);
+		msm_pm_qos_add_request();
 		pm_qos_update_request(&msm_v4l2_pm_qos_request, val);
 	}
 }
@@ -418,23 +422,6 @@ static void msm_add_sd_in_position(struct msm_sd_subdev *msm_subdev,
 	list_add_tail(&msm_subdev->list, sd_list);
 }
 
-/*
- * Legacy media-entity group_id, restored for Vector's userspace.
- *
- * media_entity.group_id was deleted upstream in 4.5 as unused.  CAF's 4.9
- * port responded by repurposing the MSM_CAMERA_SUBDEV_* macros -- which used
- * to be group_id values 0..19 -- into media-entity *function* values based at
- * MEDIA_ENT_F_OLD_BASE + 0xF00, and commenting the group_id assignments out.
- * But mm-qcamera-daemon and the camera HAL are built against msm-3.18 and
- * still find their nodes by matching group_id, so on a stock CAF 4.9 they
- * match nothing and open "/dev/" plus an uninitialised buffer.
- *
- * Note this cannot be computed as (function - MSM_CAMERA_SUBDEV_BASE): CAF
- * also swapped CSID and BUF_MNGR (CSID is BASE+13, BUF_MNGR is BASE+1, the
- * reverse of 3.18), so the mapping has to be explicit.
- *
- * See HANDOFF.md section 9.6.
- */
 static int msm_sd_legacy_group_id(u32 function)
 {
 	switch (function) {
@@ -469,14 +456,6 @@ int msm_sd_register(struct msm_sd_subdev *msm_subdev)
 	if (WARN_ON(!msm_subdev))
 		return -EINVAL;
 
-	/*
-	 * CAF stored the subdev identity in entity.function, which
-	 * MEDIA_IOC_ENUM_ENTITIES reports as entity.type.  Userspace wants it
-	 * split the 3.18 way: type = MEDIA_ENT_T_V4L2_SUBDEV (0x20000) and the
-	 * identity in group_id.  Put it back.  Nothing in camera_v2 reads
-	 * entity.function afterwards, and this driver does not use the generic
-	 * v4l2-mc graph builder that would.
-	 */
 	gid = msm_sd_legacy_group_id(msm_subdev->sd.entity.function);
 	if (gid >= 0) {
 		msm_subdev->sd.entity.group_id = gid;
@@ -692,7 +671,7 @@ static inline int __msm_remove_session_cmd_ack_q(void *d1, void *d2)
 {
 	struct msm_command_ack *cmd_ack = d1;
 
-	if (!(&cmd_ack->command_q))
+	if (&cmd_ack->command_q == NULL)
 		return 0;
 
 	msm_queue_drain(&cmd_ack->command_q, struct msm_command, list);
@@ -702,7 +681,7 @@ static inline int __msm_remove_session_cmd_ack_q(void *d1, void *d2)
 
 static void msm_remove_session_cmd_ack_q(struct msm_session *session)
 {
-	if ((!session) || !(&session->command_ack_q))
+	if ((!session) || (&session->command_ack_q == NULL))
 		return;
 
 	mutex_lock(&session->lock);
@@ -1435,7 +1414,6 @@ static int msm_probe(struct platform_device *pdev)
 		goto entity_fail;
 
 	pvdev->vdev->entity.function = QCAMERA_VNODE_GROUP_ID;
-	/* legacy group_id the 3.18-era userspace matches on */
 	pvdev->vdev->entity.group_id = QCAMERA_VNODE_GROUP_ID_LEGACY;
 #endif
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -261,8 +261,10 @@ new_packet:
 		 * sparse, don't aggregate. We will need to tune this later
 		 */
 		diff = timespec_sub(config->agg_last, last);
+		size = config->egress_agg_size - skb->len;
 
-		if ((diff.tv_sec > 0) || (diff.tv_nsec > agg_bypass_time)) {
+		if ((diff.tv_sec > 0) || (diff.tv_nsec > agg_bypass_time) ||
+		    (size <= 0)) {
 			spin_unlock_irqrestore(&config->agg_lock, flags);
 			LOGL("delta t: %ld.%09lu\tcount: bypass", diff.tv_sec,
 			     diff.tv_nsec);
@@ -274,7 +276,6 @@ new_packet:
 			return;
 		}
 
-		size = config->egress_agg_size - skb->len;
 		config->agg_skb = skb_copy_expand(skb, 0, size, GFP_ATOMIC);
 		if (!config->agg_skb) {
 			config->agg_skb = 0;
@@ -624,9 +625,9 @@ static void rmnet_map_fill_ipv4_packet_ul_checksum_header
 	ul_header->checksum_insert_offset = skb->csum_offset;
 	ul_header->cks_en = 1;
 	if (ip4h->protocol == IPPROTO_UDP)
-		ul_header->udp_ip4_ind = 1;
+		ul_header->udp_ind = 1;
 	else
-		ul_header->udp_ip4_ind = 0;
+		ul_header->udp_ind = 0;
 	/* Changing checksum_insert_offset to network order */
 	hdr++;
 	*hdr = htons(*hdr);
@@ -637,13 +638,18 @@ static void rmnet_map_fill_ipv6_packet_ul_checksum_header
 	(void *iphdr, struct rmnet_map_ul_checksum_header_s *ul_header,
 	 struct sk_buff *skb)
 {
+	struct ipv6hdr *ip6h = (struct ipv6hdr *)iphdr;
 	unsigned short *hdr = (unsigned short *)ul_header;
 
 	ul_header->checksum_start_offset = htons((unsigned short)
 		(skb_transport_header(skb) - (unsigned char *)iphdr));
 	ul_header->checksum_insert_offset = skb->csum_offset;
 	ul_header->cks_en = 1;
-	ul_header->udp_ip4_ind = 0;
+
+	if (ip6h->nexthdr == IPPROTO_UDP)
+		ul_header->udp_ind = 1;
+	else
+		ul_header->udp_ind = 0;
 	/* Changing checksum_insert_offset to network order */
 	hdr++;
 	*hdr = htons(*hdr);
@@ -746,7 +752,7 @@ sw_checksum:
 	ul_header->checksum_start_offset = 0;
 	ul_header->checksum_insert_offset = 0;
 	ul_header->cks_en = 0;
-	ul_header->udp_ip4_ind = 0;
+	ul_header->udp_ind = 0;
 done:
 	return ret;
 }

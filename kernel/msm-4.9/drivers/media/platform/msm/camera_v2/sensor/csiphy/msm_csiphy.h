@@ -83,8 +83,6 @@ struct csiphy_reg_snps_parms_t {
 	struct csiphy_reg_t mipi_csiphy_irq_mask_ctrl_lane_0;
 	struct csiphy_reg_t mipi_csiphy_irq_mask_ctrl_lane_clk_0;
 	struct csiphy_reg_t mipi_csiphy_rx_sys_7_00;
-	struct csiphy_reg_t mipi_csiphy_rx_sys_9_00;
-	struct csiphy_reg_t mipi_csiphy_rx_startup_ovr_0_00;
 	struct csiphy_reg_t mipi_csiphy_rx_startup_ovr_1_00;
 	struct csiphy_reg_t mipi_csiphy_rx_startup_ovr_2_00;
 	struct csiphy_reg_t mipi_csiphy_rx_startup_ovr_3_00;
@@ -199,16 +197,16 @@ enum msm_csiphy_state_t {
 
 enum snps_csiphy_mode {
 	AGGREGATE_MODE,
-	TWO_LANE_PHY_A,
-	TWO_LANE_PHY_B,
+	PHY_A_MODE,
+	PHY_B_MODE,
 	INVALID_MODE,
 };
 
 enum snps_csiphy_state {
 	NOT_CONFIGURED,
 	CONFIGURED_AGGREGATE_MODE,
-	CONFIGURED_TWO_LANE_PHY_A,
-	CONFIGURED_TWO_LANE_PHY_B,
+	CONFIGURED_PHY_A_MODE,
+	CONFIGURED_PHY_B_MODE,
 	CONFIGURED_COMBO_MODE,
 };
 

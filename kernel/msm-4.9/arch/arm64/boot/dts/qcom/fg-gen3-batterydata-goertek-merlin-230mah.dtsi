@@ -1,0 +1,80 @@
+/* Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+qcom,fg-gen3-batterydata-goertek-merlin-230mah {
+	qcom,max-voltage-uv = <4350000>;
+	qcom,fg-cc-cv-threshold-mv = <4340>;
+	qcom,nom-batt-capacity-mah = <230>;
+	qcom,batt-id-kohm = <0>;
+	qcom,battery-beta = <3440>;
+	qcom,battery-type = "fg-gen3-batterydata-goertek-merlin-230mah";
+	qcom,checksum = <0x163C>;
+	qcom,gui-version = "PM660GUI - 0.0.0.45";
+	qcom,fg-profile-data = [
+		 2A 1E 8D EC
+		 6A 01 88 E2
+		 CF 1C 2E 02
+		 5A 0D F6 0A
+		 2A 19 81 22
+		 F0 45 5E 52
+		 63 00 00 00
+		 12 00 00 00
+		 00 00 AF CD
+		 44 BC 06 C2
+		 3A 00 08 00
+		 8A F2 1E 07
+		 C3 F4 2A EA
+		 1D EB 57 0B
+		 EC 04 96 32
+		 1C 06 09 20
+		 27 00 14 00
+		 BD 1E 06 07
+		 42 02 CD ED
+		 BA 1C FC 02
+		 F7 15 35 12
+		 95 18 82 23
+		 6E 44 86 5A
+		 61 00 00 00
+		 0F 00 00 00
+		 00 00 B8 D5
+		 8D CA 00 9C
+		 36 00 00 00
+		 22 01 1E 07
+		 72 ED 47 CC
+		 F3 06 ED EB
+		 69 FA 37 FA
+		 99 33 CC FF
+		 07 10 00 00
+		 F6 00 99 45
+		 36 00 40 00
+		 EC 05 0A FA
+		 FF 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+		 00 00 00 00
+	];
+};

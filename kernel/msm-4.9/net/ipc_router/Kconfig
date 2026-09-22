@@ -34,6 +34,17 @@ config IPC_ROUTER_NODE_ID
 	  core and publish the same NODE ID to other NODES present in the
 	  network.
 
+config IPC_ROUTER_WAKEUP_MS
+	int "IPC router Wakeup timeout"
+	default 0
+	help
+	  This option is used to configure the wakesource timeout that IPC
+	  router should take when a packet is received.The IPC router can
+	  guarantee that the packet gets queued to the socket but cannot
+	  guarantee the client process will get time to run if auto sleep is
+	  enabled. This config will help mitigate missed packets on systems
+	  where auto sleep is aggressive.
+
 config IPC_ROUTER_FIFO_XPRT
 	depends on IPC_ROUTER
 	bool "IPC Router FIFO Transport"

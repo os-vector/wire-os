@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2018, Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2021, Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -41,6 +41,13 @@ MODULE_PARM_DESC(disable_usb_pd, "Disable USB PD for USB3.1 compliance testing")
 static bool rev3_sink_only;
 module_param(rev3_sink_only, bool, 0644);
 MODULE_PARM_DESC(rev3_sink_only, "Enable power delivery rev3.0 sink only mode");
+
+#define XR1_DISCOVER_VDO 0x1085
+#define XR1_DEFAULT_VDO 0x0
+#define XR1_PIN_E_VDO 0x0082
+#define DP_USBPD_EVT_STATUS_XR1 0x10
+#define DP_USBPD_EVT_CONFIGURE_XR1 0x11
+static bool sxr_dp_mode;
 
 enum usbpd_state {
 	PE_UNKNOWN,
@@ -249,7 +256,7 @@ static void *usbpd_ipc_log;
 #define PS_HARD_RESET_TIME	25
 #define PS_SOURCE_ON		400
 #define PS_SOURCE_OFF		750
-#define FIRST_SOURCE_CAP_TIME	200
+#define FIRST_SOURCE_CAP_TIME	100
 #define VDM_BUSY_TIME		50
 #define VCONN_ON_TIME		100
 
@@ -394,6 +401,14 @@ struct rx_msg {
 #define IS_EXT(m, t) ((m) && PD_MSG_HDR_IS_EXTENDED((m)->hdr) && \
 		(PD_MSG_HDR_TYPE((m)->hdr) == (t)))
 
+#define SXR_SEND_SVDM(pd, cmd, num, tx_vdos, pos) usbpd_send_svdm(pd, 0xFF01, \
+						cmd, SVDM_CMD_TYPE_RESP_ACK, \
+						 num, tx_vdos, pos)
+
+#define SXR_SEND_ATTEN(pd, cmd, num, tx_vdos, pos) usbpd_send_svdm(pd, 0xFF01, \
+						cmd, SVDM_CMD_TYPE_INITIATOR, \
+						num, tx_vdos, pos)
+
 struct usbpd {
 	struct device		dev;
 	struct workqueue_struct	*wq;
@@ -488,6 +503,8 @@ struct usbpd {
 	u8			get_battery_status_db;
 	bool			send_get_battery_status;
 	u32			battery_sts_dobj;
+	bool			is_sxr_dp_sink;
+	u8			dp_hpd_status_db;
 };
 
 static LIST_HEAD(_usbpd);	/* useful for debugging */
@@ -1304,8 +1321,6 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 
 		if (PD_RDO_OBJ_POS(pd->rdo) != 1 ||
 			PD_RDO_FIXED_CURR(pd->rdo) >
-				PD_SRC_PDO_FIXED_MAX_CURR(*default_src_caps) ||
-			PD_RDO_FIXED_CURR_MINMAX(pd->rdo) >
 				PD_SRC_PDO_FIXED_MAX_CURR(*default_src_caps)) {
 			/* send Reject */
 			ret = pd_send_msg(pd, MSG_REJECT, NULL, 0, SOP_MSG);
@@ -1700,7 +1715,47 @@ static void handle_vdm_rx(struct usbpd *pd, struct rx_msg *rx_msg)
 	}
 
 	if (handler && handler->svdm_received) {
-		handler->svdm_received(handler, cmd, cmd_type, vdos, num_vdos);
+		if (pd->is_sxr_dp_sink) {
+			u32 tx_vdos[1];
+
+			switch (cmd) {
+			/*CMD 3, Type 1, PayLoad 43 */
+			case USBPD_SVDM_DISCOVER_MODES:
+				usbpd_dbg(&pd->dev,
+					 "USBPD_SVDM_DISCOVER_MODES\n");
+				tx_vdos[0] = XR1_DISCOVER_VDO;
+				usbpd_dbg(&pd->dev, "sending RESP_ACK\n");
+				SXR_SEND_SVDM(pd, cmd, 0x0, tx_vdos, 0x1);
+				break;
+			/*CMD 4, Type 1, PayLoad 44 */
+			case USBPD_SVDM_ENTER_MODE:
+				usbpd_dbg(&pd->dev, "USBPD_SVDM_ENTER_MODE\n");
+				tx_vdos[0] = XR1_DEFAULT_VDO;
+				usbpd_dbg(&pd->dev, "sending RESP_ACK\n");
+				SXR_SEND_SVDM(pd, cmd, 0x1, tx_vdos, 0x0);
+				break;
+			/*CMD 10, Type 1, PayLoad 50 */
+			case DP_USBPD_EVT_STATUS_XR1:
+				tx_vdos[0] = XR1_PIN_E_VDO; // Pin assign E
+				usbpd_dbg(&pd->dev,
+					"DP_USBPD_EVT_STATUS_XR1\n");
+				SXR_SEND_SVDM(pd, cmd, 0x1, tx_vdos, 0x1);
+				break;
+			/*CMD 11, Type 1, PayLoad 51 */
+			case DP_USBPD_EVT_CONFIGURE_XR1:
+				usbpd_dbg(&pd->dev,
+					 "DP_USBPD_EVT_CONFIGURE_XR1\n");
+				tx_vdos[0] = XR1_DEFAULT_VDO;
+				usbpd_dbg(&pd->dev,
+						 "DP_USBPD_EVT_STATUS_XR1\n");
+				SXR_SEND_SVDM(pd, cmd, 0x1, tx_vdos, 0x0);
+				break;
+			default:
+				usbpd_dbg(&pd->dev, "default mode:%d\n", cmd);
+			}
+		} else
+			handler->svdm_received(handler, cmd, cmd_type, vdos,
+								 num_vdos);
 		return;
 	}
 
@@ -1718,9 +1773,21 @@ static void handle_vdm_rx(struct usbpd *pd, struct rx_msg *rx_msg)
 
 			usbpd_send_svdm(pd, USBPD_SID, cmd,
 					SVDM_CMD_TYPE_RESP_ACK, 0, tx_vdos, 3);
-		} else if (cmd != USBPD_SVDM_ATTENTION) {
-			usbpd_send_svdm(pd, svid, cmd, SVDM_CMD_TYPE_RESP_NAK,
+		} else if (cmd != USBPD_SVDM_ATTENTION)  {
+			if (pd->is_sxr_dp_sink) {
+				u32 tx_vdos_pd[3] = {
+					ID_HDR_VID,
+					0xFF01,
+					0x0,
+					};
+				usbpd_send_svdm(pd, USBPD_SID, cmd,
+					SVDM_CMD_TYPE_RESP_ACK, 0,
+					 tx_vdos_pd, 3);
+			} else {
+				usbpd_send_svdm(pd, svid, cmd,
+					SVDM_CMD_TYPE_RESP_NAK,
 					SVDM_HDR_OBJ_POS(vdm_hdr), NULL, 0);
+			}
 		}
 		break;
 
@@ -3914,6 +3981,50 @@ static ssize_t get_battery_status_show(struct device *dev,
 }
 static DEVICE_ATTR_RW(get_battery_status);
 
+static ssize_t dp_hpd_status_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	struct usbpd *pd = dev_get_drvdata(dev);
+	int val;
+	u32 tx_vdos[1];
+
+	if (sscanf(buf, "%d\n", &val) != 1) {
+		usbpd_dbg(&pd->dev, "Error: size is not 1\n");
+		return -EINVAL;
+	}
+
+	if (!sxr_dp_mode) {
+		usbpd_dbg(&pd->dev, "Error: Device is not in DP mode\n");
+		pd->dp_hpd_status_db = 0;
+		return size;
+	}
+	pd->dp_hpd_status_db = val;
+
+	if (val) {
+		usbpd_dbg(&pd->dev, "making hpd high\n");
+		tx_vdos[0] = XR1_PIN_E_VDO; // Pin assign E
+	} else {
+		usbpd_dbg(&pd->dev, "making hpd low\n");
+		tx_vdos[0] = XR1_DEFAULT_VDO; // Pin assign E
+	}
+	SXR_SEND_ATTEN(pd, USBPD_SVDM_ATTENTION, 0x1, tx_vdos, 0x1);
+
+	return size;
+}
+
+static ssize_t dp_hpd_status_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct usbpd *pd = dev_get_drvdata(dev);
+
+	if (pd->dp_hpd_status_db == -EINVAL)
+		return -EINVAL;
+
+	return snprintf(buf, PAGE_SIZE, "%s\n",
+		((pd->dp_hpd_status_db >= 1) ? "on" : "off"));
+}
+static DEVICE_ATTR_RW(dp_hpd_status);
+
 static struct attribute *usbpd_attrs[] = {
 	&dev_attr_contract.attr,
 	&dev_attr_initial_pr.attr,
@@ -3938,6 +4049,7 @@ static struct attribute *usbpd_attrs[] = {
 	&dev_attr_get_pps_status.attr,
 	&dev_attr_get_battery_cap.attr,
 	&dev_attr_get_battery_status.attr,
+	&dev_attr_dp_hpd_status.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(usbpd);
@@ -4119,6 +4231,15 @@ struct usbpd *usbpd_create(struct device *parent)
 		goto put_psy;
 	}
 
+	/*
+	 * Need to set is_sxr_dp_sink to TRUE only when device tree node is
+	 * present, and sim_vid_display string is present in
+	 * boot_command_line string.
+	 */
+	if (sxr_dp_mode)
+		pd->is_sxr_dp_sink = device_property_present(parent,
+						"qcom,sxr1130-sxr-dp-sink");
+
 	pd->vconn_is_external = device_property_present(parent,
 					"qcom,vconn-uses-external-source");
 
@@ -4238,6 +4359,15 @@ EXPORT_SYMBOL(usbpd_destroy);
 
 static int __init usbpd_init(void)
 {
+	char *cmdline;
+
+	cmdline = strnstr(boot_command_line,
+			"msm_drm.dsi_display0=dsi_sim_vid_display",
+				strlen(boot_command_line));
+	sxr_dp_mode = false;
+	if (cmdline)
+		sxr_dp_mode = true;
+
 	usbpd_ipc_log = ipc_log_context_create(NUM_LOG_PAGES, "usb_pd", 0);
 	return class_register(&usbpd_class);
 }

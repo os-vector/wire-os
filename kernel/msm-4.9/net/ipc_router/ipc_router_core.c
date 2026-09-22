@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -221,6 +221,7 @@ enum {
 };
 
 static bool is_wakeup_source_allowed;
+static unsigned int ipc_router_wakeup_ms = CONFIG_IPC_ROUTER_WAKEUP_MS;
 
 void msm_ipc_router_set_ws_allowed(bool flag)
 {
@@ -430,12 +431,19 @@ static void ipc_router_log_msg(void *log_ctx, u32 xchng_type,
 			(xchng_type == IPC_ROUTER_LOG_EVENT_RX ? "RX" :
 			(xchng_type == IPC_ROUTER_LOG_EVENT_TX ? "TX" : "ERR")),
 			msg->cmd, msg->cli.node_id, msg->cli.port_id);
-		else if (msg->cmd == IPC_ROUTER_CTRL_CMD_HELLO && hdr)
+		else if (msg->cmd == IPC_ROUTER_CTRL_CMD_HELLO && hdr) {
 			IPC_RTR_INFO(log_ctx,
 				     "CTL MSG %s cmd:0x%x ADDR:0x%x",
 			(xchng_type == IPC_ROUTER_LOG_EVENT_RX ? "RX" :
 			(xchng_type == IPC_ROUTER_LOG_EVENT_TX ? "TX" : "ERR")),
 			msg->cmd, hdr->src_node_id);
+			if (hdr->src_node_id == 0 || hdr->src_node_id == 3)
+				pr_err("%s: Modem QMI Readiness %s cmd:0x%x ADDR:0x%x\n",
+				       __func__,
+				(xchng_type == IPC_ROUTER_LOG_EVENT_RX ? "RX" :
+				(xchng_type == IPC_ROUTER_LOG_EVENT_TX ? "TX" :
+				"ERR")), msg->cmd, hdr->src_node_id);
+		}
 		else
 			IPC_RTR_INFO(log_ctx,
 				     "%s UNKNOWN cmd:0x%x",
@@ -972,13 +980,27 @@ static int calc_tx_header_size(struct rr_packet *pkt,
  *
  * @return: valid header size on success, INT_MAX on failure.
  */
-static int calc_rx_header_size(struct msm_ipc_router_xprt_info *xprt_info)
+static int calc_rx_header_size(struct msm_ipc_router_xprt_info *xprt_info,
+			       struct rr_packet *pkt)
 {
 	int xprt_version = 0;
 	int hdr_size = INT_MAX;
+	struct sk_buff *temp_skb;
 
-	if (xprt_info)
+	if (xprt_info && xprt_info->initialized) {
 		xprt_version = xprt_info->xprt->get_version(xprt_info->xprt);
+	} else {
+		if (!pkt) {
+			IPC_RTR_ERR("%s: NULL PKT\n", __func__);
+			return -EINVAL;
+		}
+		temp_skb = skb_peek(pkt->pkt_fragment_q);
+		if (!temp_skb || !temp_skb->data) {
+			IPC_RTR_ERR("%s: No SKBs in skb_queue\n", __func__);
+			return -EINVAL;
+		}
+		xprt_version = temp_skb->data[0];
+	}
 
 	if (xprt_version == IPC_ROUTER_V1)
 		hdr_size = sizeof(struct rr_header_v1);
@@ -2786,6 +2808,33 @@ static void do_read_data(struct kthread_work *work)
 				     hdr->control_flag, hdr->src_node_id,
 				     hdr->src_port_id, hdr->dst_node_id,
 				     hdr->dst_port_id);
+			/**
+			 * update forwarding port information as well in routing
+			 * table which will help to cleanup clients/services
+			 * running in modem when MSM goes down
+			 */
+			rport_ptr = ipc_router_get_rport_ref(hdr->src_node_id,
+							     hdr->src_port_id);
+			if (!rport_ptr) {
+				rport_ptr =
+				ipc_router_create_rport(hdr->src_node_id,
+							hdr->src_port_id,
+							xprt_info);
+				if (!rport_ptr) {
+					IPC_RTR_ERR(
+					"%s: Rmt Prt %08x:%08x create failed\n",
+					__func__, hdr->src_node_id,
+					hdr->src_port_id);
+				}
+			}
+			/**
+			 * just to fail safe check is added, if rport
+			 * allocation failed above we still forward the
+			 * packet to remote.
+			 */
+			if (rport_ptr)
+				kref_put(&rport_ptr->ref,
+					 ipc_router_release_rport);
 			forward_msg(xprt_info, pkt);
 			goto read_next_pkt1;
 		}
@@ -3335,8 +3384,11 @@ int msm_ipc_router_read(struct msm_ipc_port *port_ptr,
 		return -ETOOSMALL;
 	}
 	list_del(&pkt->list);
-	if (list_empty(&port_ptr->port_rx_q))
+	if (list_empty(&port_ptr->port_rx_q)) {
 		__pm_relax(port_ptr->port_rx_ws);
+		/* keep the system wakeup for configured duration */
+		__pm_wakeup_event(port_ptr->port_rx_ws, ipc_router_wakeup_ms);
+	}
 	*read_pkt = pkt;
 	mutex_unlock(&port_ptr->port_rx_q_lock_lhc3);
 	if (pkt->hdr.control_flag & CONTROL_FLAG_CONFIRM_RX)
@@ -3538,16 +3590,6 @@ int msm_ipc_router_close_port(struct msm_ipc_port *port_ptr)
 			ipc_router_destroy_rport(rport_ptr);
 		}
 
-		if (port_ptr->type == SERVER_PORT) {
-			memset(&msg, 0, sizeof(msg));
-			msg.cmd = IPC_ROUTER_CTRL_CMD_REMOVE_SERVER;
-			msg.srv.service = port_ptr->port_name.service;
-			msg.srv.instance = port_ptr->port_name.instance;
-			msg.srv.node_id = port_ptr->this_port.node_id;
-			msg.srv.port_id = port_ptr->this_port.port_id;
-			broadcast_ctl_msg(&msg);
-		}
-
 		/* Server port could have been a client port earlier.
 		 * Send REMOVE_CLIENT message in either case.
 		 */
@@ -3577,6 +3619,19 @@ int msm_ipc_router_close_port(struct msm_ipc_port *port_ptr)
 						  port_ptr->this_port.node_id,
 						  port_ptr->this_port.port_id);
 		}
+		/**
+		 * released server information from hash table, now
+		 * it is safe to broadcast remove server message so that
+		 * next call to lookup server will not succeed until
+		 * server open the port again
+		 */
+		memset(&msg, 0, sizeof(msg));
+		msg.cmd = IPC_ROUTER_CTRL_CMD_REMOVE_SERVER;
+		msg.srv.service = port_ptr->port_name.service;
+		msg.srv.instance = port_ptr->port_name.instance;
+		msg.srv.node_id = port_ptr->this_port.node_id;
+		msg.srv.port_id = port_ptr->this_port.port_id;
+		broadcast_ctl_msg(&msg);
 	}
 
 	mutex_lock(&port_ptr->port_lock_lhc3);
@@ -4135,6 +4190,7 @@ static int msm_ipc_router_add_xprt(struct msm_ipc_router_xprt *xprt)
 	up_write(&routing_table_lock_lha3);
 
 	xprt->priv = xprt_info;
+	complete_all(&xprt->xprt_init_complete);
 	send_hello_msg(xprt_info);
 
 	return 0;
@@ -4227,7 +4283,9 @@ void msm_ipc_router_xprt_notify(struct msm_ipc_router_xprt *xprt,
 		if (xprt_work) {
 			xprt_work->xprt = xprt;
 			INIT_WORK(&xprt_work->work, xprt_open_worker);
+			init_completion(&xprt->xprt_init_complete);
 			queue_work(msm_ipc_router_workqueue, &xprt_work->work);
+			wait_for_completion(&xprt->xprt_init_complete);
 		} else {
 			IPC_RTR_ERR(
 			"%s: malloc failure - Couldn't notify OPEN event",
@@ -4261,7 +4319,7 @@ void msm_ipc_router_xprt_notify(struct msm_ipc_router_xprt *xprt,
 	if (!pkt)
 		return;
 
-	if (pkt->length < calc_rx_header_size(xprt_info) ||
+	if (pkt->length < calc_rx_header_size(xprt_info, pkt) ||
 	    pkt->length > MAX_IPC_PKT_SIZE) {
 		IPC_RTR_ERR("%s: Invalid pkt length %d\n",
 			    __func__, pkt->length);

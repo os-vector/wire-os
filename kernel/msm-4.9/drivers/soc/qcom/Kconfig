@@ -240,6 +240,16 @@ config MSM_BOOT_STATS
 	  This figures are reported in mpm sleep clock cycles and have a
 	  resolution of 31 bits as 1 bit is used as an overflow check.
 
+config MSM_BOOT_TIME_MARKER
+        bool "Use MSM boot time marker reporting"
+        depends on MSM_BOOT_STATS
+        help
+         Use this to mark msm boot kpi for measurement.
+         An instrumentation for boot time measurement.
+         To create an entry, call "place_marker" function.
+         At userspace, write marker name to "/sys/kernel/debug/bootkpi/kpi_values"
+         If unsure, say N
+
 config MSM_CORE_HANG_DETECT
        tristate "MSM Core Hang Detection Support"
        help
@@ -263,6 +273,25 @@ config MSM_GLADIATOR_ERP
                Meant to be used for debug scenarios only.
 
                If unsure, say N.
+
+config SDX_EXT_IPC
+	tristate "QCOM external ipc driver"
+	help
+	  This enables the module to help modem communicate with external
+	  Application processor connected to Qualcomm Technologies, Inc
+	  modem chipset. The modem and APQ can understand each other's
+	  state by reading ipc gpios.
+
+	  If unsure, say N.
+
+config QTI_NOTIFY_SIDEBAND
+	tristate "QCOM sideband signalling helper"
+	help
+	  This provides helper APIs and a header file through which
+	  transport layer driver can talk to the sideband driver to
+	  assert appropriate sideband signal.
+
+	  If unsure, say N.
 
 config PANIC_ON_GLADIATOR_ERROR
        depends on MSM_GLADIATOR_ERP
@@ -545,13 +574,23 @@ config MSM_IPC_ROUTER_USB_XPRT
 	  with only one of them on a given platform.
 
 config MSM_IPC_ROUTER_MHI_XPRT
-	depends on MSM_MHI
+	depends on MHI_BUS
 	depends on IPC_ROUTER
 	bool "MSM MHI XPRT Layer"
 	help
 	  MHI Transport Layer that enables off-chip communication of
 	  IPC Router. When the MHI endpoint becomes available, this layer
 	  registers the transport with IPC Router and enable message
+	  exchange.
+
+config MSM_IPC_ROUTER_MHI_DEV_XPRT
+	depends on MSM_MHI_DEV
+	depends on IPC_ROUTER
+	bool "MSM MHI_DEV XPRT Layer"
+	help
+	  MHI_DEV Transport Layer that enables off-chip communication of
+	  IPC Router. When the MHI endpoint becomes available, this layer
+	  registers the transport with IPC Router and enables message
 	  exchange.
 
 config MSM_IPC_ROUTER_GLINK_XPRT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,6 +18,7 @@
 #include <linux/completion.h>
 #include <linux/delay.h>
 
+#include "msm_kms.h"
 #include "dp_ctrl.h"
 
 #define DP_KHZ_TO_HZ 1000
@@ -149,9 +150,16 @@ static void dp_ctrl_config_ctrl(struct dp_ctrl_private *ctrl)
 {
 	u32 config = 0, tbd;
 	u8 *dpcd = ctrl->panel->dpcd;
+	u32 out_format = ctrl->panel->pinfo.out_format;
 
 	config |= (2 << 13); /* Default-> LSCLK DIV: 1/4 LCLK  */
-	config |= (0 << 11); /* RGB */
+
+	if (out_format & MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420)
+		config |= (1 << 11); /* YUV420 */
+	else if (out_format & MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422)
+		config |= (2 << 11); /* YUV422 */
+	else
+		config |= (0 << 11); /* RGB */
 
 	/* Scrambler reset enable */
 	if (dpcd[DP_EDP_CONFIGURATION_CAP] & DP_ALTERNATE_SCRAMBLER_RESET_CAP)
@@ -178,6 +186,25 @@ static void dp_ctrl_config_ctrl(struct dp_ctrl_private *ctrl)
 	ctrl->catalog->config_ctrl(ctrl->catalog, config);
 }
 
+static void dp_ctrl_misc_ctrl(struct dp_ctrl_private *ctrl)
+{
+	u32 out_format = ctrl->panel->pinfo.out_format;
+	u32 yres = ctrl->panel->pinfo.v_active;
+	u32 cc, tb;
+
+	tb = ctrl->link->get_test_bits_depth(ctrl->link,
+		ctrl->panel->pinfo.bpp);
+	cc = ctrl->link->get_colorimetry_config(ctrl->link);
+	if (out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422) {
+		cc |= (0x01 << 1); /* Set 4:2:2 Pixel Encoding */
+		cc |= BIT(3); /* Set YCbCr Colorimetry */
+		if (yres >= 720)
+			cc |= BIT(4); /* Set BT709 */
+	}
+
+	ctrl->catalog->config_misc(ctrl->catalog, cc, tb);
+}
+
 /**
  * dp_ctrl_configure_source_params() - configures DP transmitter source params
  * @ctrl: Display Port Driver data
@@ -187,17 +214,13 @@ static void dp_ctrl_config_ctrl(struct dp_ctrl_private *ctrl)
  */
 static void dp_ctrl_configure_source_params(struct dp_ctrl_private *ctrl)
 {
-	u32 cc, tb;
 
 	ctrl->catalog->lane_mapping(ctrl->catalog);
 	ctrl->catalog->mainlink_ctrl(ctrl->catalog, true);
 
 	dp_ctrl_config_ctrl(ctrl);
+	dp_ctrl_misc_ctrl(ctrl);
 
-	tb = ctrl->link->get_test_bits_depth(ctrl->link,
-		ctrl->panel->pinfo.bpp);
-	cc = ctrl->link->get_colorimetry_config(ctrl->link);
-	ctrl->catalog->config_misc(ctrl->catalog, cc, tb);
 	ctrl->panel->timing_cfg(ctrl->panel);
 }
 
@@ -251,7 +274,8 @@ static void dp_ctrl_calc_tu_parameters(struct dp_ctrl_private *ctrl,
 {
 	u32 const multiplier = 1000000;
 	u64 pclk, lclk;
-	u8 bpp, ln_cnt;
+	u32 bpp;
+	u8 ln_cnt;
 	int run_idx = 0;
 	u32 lwidth, h_blank;
 	u32 fifo_empty = 0;
@@ -309,6 +333,8 @@ static void dp_ctrl_calc_tu_parameters(struct dp_ctrl_private *ctrl,
 	int min_hblank_tmp = 0;
 	bool extra_req_bytes_is_neg = false;
 	struct dp_panel_info *pinfo = &ctrl->panel->pinfo;
+	int div = 0;
+	u32 out_format = pinfo->out_format;
 
 	u8 dp_brute_force = 1;
 	u64 brute_force_threshold = 10;
@@ -317,10 +343,26 @@ static void dp_ctrl_calc_tu_parameters(struct dp_ctrl_private *ctrl,
 	ln_cnt =  ctrl->link->link_params.lane_count;
 
 	bpp = pinfo->bpp;
-	lwidth = pinfo->h_active;
-	h_blank = pinfo->h_back_porch + pinfo->h_front_porch +
-				pinfo->h_sync_width;
-	pclk = pinfo->pixel_clk_khz * 1000;
+	if (out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422) {
+		switch (pinfo->bpp) {
+		case 24:
+			bpp = 16;
+			break;
+		case 30:
+			bpp = 20;
+			break;
+		default:
+			bpp = 16;
+			break;
+		};
+	} else if (out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420) {
+		div = 1;
+	}
+
+	lwidth = pinfo->h_active >> div;
+	h_blank = (pinfo->h_back_porch + pinfo->h_front_porch +
+			pinfo->h_sync_width) >> div;
+	pclk = (pinfo->pixel_clk_khz * 1000) >> div;
 
 	boundary_moderation_en = 0;
 	upper_bdry_cnt = 0;
@@ -1177,24 +1219,6 @@ static void dp_ctrl_host_deinit(struct dp_ctrl *dp_ctrl)
 	pr_debug("Host deinitialized successfully\n");
 }
 
-static bool dp_ctrl_use_fixed_nvid(struct dp_ctrl_private *ctrl)
-{
-	u8 *dpcd = ctrl->panel->dpcd;
-
-	/*
-	 * For better interop experience, used a fixed NVID=0x8000
-	 * whenever connected to a VGA dongle downstream.
-	 */
-	if (dpcd[DP_DOWNSTREAMPORT_PRESENT] & DP_DWN_STRM_PORT_PRESENT) {
-		u8 type = dpcd[DP_DOWNSTREAMPORT_PRESENT] &
-			DP_DWN_STRM_PORT_TYPE_MASK;
-		if (type == DP_DWN_STRM_PORT_TYPE_ANALOG)
-			return true;
-	}
-
-	return false;
-}
-
 static int dp_ctrl_link_maintenance(struct dp_ctrl *dp_ctrl)
 {
 	int ret = 0;
@@ -1219,7 +1243,7 @@ static int dp_ctrl_link_maintenance(struct dp_ctrl *dp_ctrl)
 	ctrl->dp_ctrl.push_idle(&ctrl->dp_ctrl);
 	ctrl->dp_ctrl.reset(&ctrl->dp_ctrl);
 
-	ctrl->pixel_rate = ctrl->panel->pinfo.pixel_clk_khz;
+	ctrl->pixel_rate = ctrl->panel->get_pixel_clk(ctrl->panel);
 
 	do {
 		if (ret == -EAGAIN) {
@@ -1248,7 +1272,8 @@ static int dp_ctrl_link_maintenance(struct dp_ctrl *dp_ctrl)
 		ctrl->catalog->config_msa(ctrl->catalog,
 			drm_dp_bw_code_to_link_rate(
 			ctrl->link->link_params.bw_code),
-			ctrl->pixel_rate, dp_ctrl_use_fixed_nvid(ctrl));
+			ctrl->pixel_rate,
+			ctrl->panel->pinfo.out_format);
 
 		reinit_completion(&ctrl->idle_comp);
 
@@ -1306,9 +1331,7 @@ static void dp_ctrl_send_phy_test_pattern(struct dp_ctrl_private *ctrl)
 	u32 pattern_sent = 0x0;
 	u32 pattern_requested = ctrl->link->phy_params.phy_test_pattern_sel;
 
-	ctrl->catalog->update_vx_px(ctrl->catalog,
-			ctrl->link->phy_params.v_level,
-			ctrl->link->phy_params.p_level);
+	dp_ctrl_update_vx_px(ctrl);
 	ctrl->catalog->send_phy_pattern(ctrl->catalog, pattern_requested);
 	ctrl->link->send_test_response(ctrl->link);
 
@@ -1395,7 +1418,7 @@ static int dp_ctrl_on(struct dp_ctrl *dp_ctrl)
 			drm_dp_link_rate_to_bw_code(rate);
 		ctrl->link->link_params.lane_count =
 			ctrl->panel->link_info.num_lanes;
-		ctrl->pixel_rate = ctrl->panel->pinfo.pixel_clk_khz;
+		ctrl->pixel_rate = ctrl->panel->get_pixel_clk(ctrl->panel);
 	}
 
 	pr_debug("bw_code=%d, lane_count=%d, pixel_rate=%d\n",
@@ -1417,7 +1440,7 @@ static int dp_ctrl_on(struct dp_ctrl *dp_ctrl)
 		ctrl->catalog->config_msa(ctrl->catalog,
 			drm_dp_bw_code_to_link_rate(
 			ctrl->link->link_params.bw_code),
-			ctrl->pixel_rate, dp_ctrl_use_fixed_nvid(ctrl));
+			ctrl->pixel_rate, ctrl->panel->pinfo.out_format);
 
 		rc = dp_ctrl_setup_main_link(ctrl, true);
 		if (!rc)

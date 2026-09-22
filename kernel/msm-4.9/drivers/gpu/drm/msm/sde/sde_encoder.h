@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -58,11 +58,13 @@ struct sde_encoder_hw_resources {
  * @is_primary: set to true if the display is primary display
  * @affected_displays:  bitmask, bit set means the ROI of the commit lies within
  *                      the bounds of the physical display at the bit index
+ * @num_channels: Add number of encoder channels
  */
 struct sde_encoder_kickoff_params {
 	u32 inline_rotate_prefill;
 	u32 is_primary;
 	unsigned long affected_displays;
+	u32 num_channels;
 };
 
 /**
@@ -263,5 +265,12 @@ int sde_encoder_in_clone_mode(struct drm_encoder *enc);
  * @enable:	enable/disable flag
  */
 void sde_encoder_control_idle_pc(struct drm_encoder *enc, bool enable);
+
+/**
+ * sde_encoder_get_ctlstart_timeout_state - checks if ctl start timeout happened
+ * @drm_enc:    Pointer to drm encoder structure
+ * @Return:     non zero value if ctl start timeout occurred
+ */
+int sde_encoder_get_ctlstart_timeout_state(struct drm_encoder *enc);
 
 #endif /* __SDE_ENCODER_H__ */

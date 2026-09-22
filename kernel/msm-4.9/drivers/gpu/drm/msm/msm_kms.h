@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -26,6 +26,9 @@
 
 #define MAX_PLANE	4
 
+#define RGB_24BPP_TMDS_CHAR_RATE_RATIO		1
+#define YUV420_24BPP_TMDS_CHAR_RATE_RATIO	2
+
 /**
  * Device Private DRM Mode Flags
  * drm_mode->private_flags
@@ -40,6 +43,29 @@
 #define MSM_MODE_FLAG_SEAMLESS_VRR			(1<<3)
 /* Request to switch the bit clk */
 #define MSM_MODE_FLAG_SEAMLESS_DYN_CLK			(1<<4)
+
+/*
+ * We need setting some flags in bridge, and using them in encoder. Add them in
+ * private_flags would be better for use. DRM_MODE_FLAG_SUPPORTS_RGB/YUV are
+ * flags that indicating the SINK supported color formats read from EDID. While,
+ * these flags defined here indicate the best color/bit depth foramt we choosed
+ * that would be better for display. For example the best mode display like:
+ * RGB+RGB_DC,YUV+YUV_DC, RGB,YUV. And we could not set RGB and YUV format at
+ * the same time. And also RGB_DC only set when RGB format is set,the same for
+ * YUV_DC.
+ */
+/* Enable RGB444 30 bit deep color */
+#define MSM_MODE_FLAG_RGB444_DC_ENABLE		(1<<5)
+/* Enable YUV422 30 bit deep color */
+#define MSM_MODE_FLAG_YUV422_DC_ENABLE		(1<<6)
+/* Enable YUV420 30 bit deep color */
+#define MSM_MODE_FLAG_YUV420_DC_ENABLE		(1<<7)
+/* Choose RGB444 format to display */
+#define MSM_MODE_FLAG_COLOR_FORMAT_RGB444	(1<<8)
+/* Choose YUV422 format to display */
+#define MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422	(1<<9)
+/* Choose YUV420 format to display */
+#define MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420	(1<<10)
 
 /* As there are different display controller blocks depending on the
  * snapdragon version, the kms support is split out and the appropriate

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -162,4 +162,33 @@ bool ep_pcie_phy_is_ready(struct ep_pcie_dev_t *dev)
 		return false;
 	else
 		return true;
+}
+
+void ep_pcie_phy_update_pcs(struct ep_pcie_dev_t *dev)
+{
+	int i;
+	struct ep_pcie_phy_info_t *phy_init;
+
+	if (dev->phy_init_len && dev->phy_init) {
+		EP_PCIE_DBG(dev,
+			"PCIe V%d: PHY V%d: Update PCS settings\n",
+			dev->rev, dev->phy_rev);
+
+		phy_init = dev->phy_init;
+		for (i = 0; i < dev->phy_init_len; i++) {
+			if (phy_init->offset < PCIE20_PHY_PCS_START_OFFSET ||
+				phy_init->offset >= PCIE20_PHY_PCS_END_OFFSET) {
+				phy_init++;
+				continue;
+			}
+			ep_pcie_write_reg(dev->phy,
+				phy_init->offset,
+				phy_init->val);
+			if (phy_init->delay)
+				usleep_range(phy_init->delay,
+				phy_init->delay + 1);
+			phy_init++;
+		}
+		return;
+	}
 }

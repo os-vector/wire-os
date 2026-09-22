@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,6 +17,7 @@
 #include <linux/errno.h>
 #include <linux/debugfs.h>
 #include <linux/ipa_mhi.h>
+#include <linux/msm_ep_pcie.h>
 #include "mhi_hwio.h"
 #include "mhi_sm.h"
 #include <linux/interrupt.h>
@@ -597,15 +598,22 @@ exit:
 static int mhi_sm_wakeup_host(enum mhi_dev_event event)
 {
 	int res = 0;
+	enum ep_pcie_event pcie_event;
 
 	MHI_SM_FUNC_ENTRY();
 
 	if (mhi_sm_ctx->mhi_state == MHI_DEV_M3_STATE) {
 		/*
-		  * ep_pcie driver is responsible to send the right wakeup
-		  * event, assert WAKE#, according to Link state
-		  */
-		res = ep_pcie_wakeup_host(mhi_sm_ctx->mhi_dev->phandle);
+		 * Check and send D3_HOT to enable waking up the host
+		 * using inband PME.
+		 */
+		if (mhi_sm_ctx->d_state == MHI_SM_EP_PCIE_D3_HOT_STATE)
+			pcie_event = EP_PCIE_EVENT_PM_D3_HOT;
+		else
+			pcie_event = EP_PCIE_EVENT_PM_D3_COLD;
+
+		res = ep_pcie_wakeup_host(mhi_sm_ctx->mhi_dev->phandle,
+								pcie_event);
 		if (res) {
 			MHI_SM_ERR("Failed to wakeup MHI host, returned %d\n",
 				res);
@@ -921,7 +929,8 @@ int mhi_dev_sm_init(struct mhi_dev *mhi_dev)
 
 	/*init debugfs*/
 	mhi_sm_debugfs_init();
-	mhi_sm_ctx->mhi_sm_wq = create_singlethread_workqueue("mhi_sm_wq");
+	mhi_sm_ctx->mhi_sm_wq = alloc_workqueue(
+				"mhi_sm_wq", WQ_HIGHPRI | WQ_UNBOUND, 1);
 	if (!mhi_sm_ctx->mhi_sm_wq) {
 		MHI_SM_ERR("Failed to create singlethread_workqueue: sm_wq\n");
 		res = -ENOMEM;

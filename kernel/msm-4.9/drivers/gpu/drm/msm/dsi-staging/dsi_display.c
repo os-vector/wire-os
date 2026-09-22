@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -45,6 +45,9 @@
 
 static DEFINE_MUTEX(dsi_display_list_lock);
 static LIST_HEAD(dsi_display_list);
+
+static DEFINE_MUTEX(dsi_display_clk_mutex);
+
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
 static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY];
@@ -1194,6 +1197,9 @@ static ssize_t debugfs_esd_trigger_check(struct file *file,
 		return 0;
 
 	if (user_len > sizeof(u32))
+		return -EINVAL;
+
+	if (!user_len || !user_buf)
 		return -EINVAL;
 
 	buf = kzalloc(user_len, GFP_KERNEL);
@@ -4264,6 +4270,7 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 	int i;
 	struct dsi_display_ctrl *ctrl;
 	struct dsi_display_mode_priv_info *priv_info;
+	struct dsi_host_config *config;
 
 	priv_info = mode->priv_info;
 	if (!dsi_display_has_ext_bridge(display) && !priv_info) {
@@ -4272,9 +4279,9 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 		return -EINVAL;
 	}
 
-	rc = dsi_panel_get_host_cfg_for_mode(display->panel,
-					     mode,
-					     &display->config);
+	config = &display->config;
+
+	rc = dsi_panel_get_host_cfg_for_mode(display->panel, mode, config);
 	if (rc) {
 		pr_err("[%s] failed to get host config for mode, rc=%d\n",
 		       display->name, rc);
@@ -4306,8 +4313,16 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 
 	for (i = 0; i < display->ctrl_count; i++) {
 		ctrl = &display->ctrl[i];
-		rc = dsi_ctrl_update_host_config(ctrl->ctrl, &display->config,
-				mode->dsi_mode_flags, display->dsi_clk_handle);
+		/*
+		 * if bit clock is overridden then update the phy timings
+		 * and clock out control values first.
+		 */
+		if (config->bit_clk_rate_hz)
+			dsi_phy_update_phy_timings(ctrl->phy, config);
+
+		rc = dsi_ctrl_update_host_config(ctrl->ctrl, config,
+						 mode->dsi_mode_flags,
+						 display->dsi_clk_handle);
 		if (rc) {
 			pr_err("[%s] failed to update ctrl config, rc=%d\n",
 			       display->name, rc);
@@ -4518,6 +4533,43 @@ int dsi_display_splash_res_cleanup(struct  dsi_display *display)
 	return rc;
 }
 
+static int dsi_display_link_clk_force_update_ctrl(void *handle)
+{
+	int rc = 0;
+
+	if (!handle) {
+		pr_err("%s: Invalid arg\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&dsi_display_clk_mutex);
+
+	rc = dsi_display_link_clk_force_update(handle);
+
+	mutex_unlock(&dsi_display_clk_mutex);
+
+	return rc;
+}
+
+int dsi_display_clk_ctrl(void *handle,
+	enum dsi_clk_type clk_type, enum dsi_clk_state clk_state)
+{
+	int rc = 0;
+
+	if (!handle) {
+		pr_err("%s: Invalid arg\n", __func__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&dsi_display_clk_mutex);
+	rc = dsi_clk_req_state(handle, clk_type, clk_state);
+	if (rc)
+		pr_err("%s: failed set clk state, rc = %d\n", __func__, rc);
+	mutex_unlock(&dsi_display_clk_mutex);
+
+	return rc;
+}
+
 static int dsi_display_force_update_dsi_clk(struct dsi_display *display)
 {
 	int rc = 0;
@@ -4606,6 +4658,7 @@ static ssize_t sysfs_dynamic_dsi_clk_write(struct device *dev,
 
 	mutex_lock(&display->display_lock);
 
+	mutex_lock(&dsi_display_clk_mutex);
 	display->cached_clk_rate = clk_rate;
 	rc = dsi_display_update_dsi_bitrate(display, clk_rate);
 	if (!rc) {
@@ -4618,12 +4671,14 @@ static ssize_t sysfs_dynamic_dsi_clk_write(struct device *dev,
 		atomic_set(&display->clkrate_change_pending, 0);
 		display->cached_clk_rate = 0;
 
+		mutex_unlock(&dsi_display_clk_mutex);
 		mutex_unlock(&display->display_lock);
 
 		return rc;
 	}
 	atomic_set(&display->clkrate_change_pending, 1);
 
+	mutex_unlock(&dsi_display_clk_mutex);
 	mutex_unlock(&display->display_lock);
 
 	return count;
@@ -5461,13 +5516,13 @@ static void _dsi_display_populate_bit_clks(struct dsi_display *display,
 	cfg = &(display->panel->host_config);
 	bpp = dsi_pixel_format_to_bpp(cfg->dst_format);
 
-	if (cfg->data_lanes & DSI_LOGICAL_LANE_0)
+	if (cfg->data_lanes & DSI_DATA_LANE_0)
 		lanes++;
-	if (cfg->data_lanes & DSI_LOGICAL_LANE_1)
+	if (cfg->data_lanes & DSI_DATA_LANE_1)
 		lanes++;
-	if (cfg->data_lanes & DSI_LOGICAL_LANE_2)
+	if (cfg->data_lanes & DSI_DATA_LANE_2)
 		lanes++;
-	if (cfg->data_lanes & DSI_LOGICAL_LANE_3)
+	if (cfg->data_lanes & DSI_DATA_LANE_3)
 		lanes++;
 
 	dsi_display_get_mode_count_no_lock(display, &total_modes);

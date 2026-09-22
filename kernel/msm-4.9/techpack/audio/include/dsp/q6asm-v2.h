@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2017, 2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -62,6 +62,8 @@
 #define ENCDEC_IMMEDIATE_DECODE 0x0002
 #define ENCDEC_CFG_BLK          0x0003
 
+#define ENC_CFG_ID_NONE 0x0000
+
 #define CMD_PAUSE          0x0001
 #define CMD_FLUSH          0x0002
 #define CMD_EOS            0x0003
@@ -109,11 +111,14 @@
 #define ASM_LITTLE_ENDIAN 0
 #define ASM_BIG_ENDIAN 1
 
+#define ADSP_ASM_API_VERSION_V2   2
+
 /* PCM_MEDIA_FORMAT_Version */
 enum {
 	PCM_MEDIA_FORMAT_V2 = 0,
 	PCM_MEDIA_FORMAT_V3,
 	PCM_MEDIA_FORMAT_V4,
+	PCM_MEDIA_FORMAT_V5,
 };
 
 /* PCM format modes in DSP */
@@ -246,6 +251,11 @@ struct audio_client {
 	struct shared_io_config config;
 };
 
+struct q6asm_cal_info {
+	int topology_id;
+	int app_type;
+};
+
 void q6asm_audio_client_free(struct audio_client *ac);
 
 struct audio_client *q6asm_audio_client_alloc(app_cb cb, void *priv);
@@ -277,6 +287,10 @@ int q6asm_open_read_v3(struct audio_client *ac, uint32_t format,
 int q6asm_open_read_v4(struct audio_client *ac, uint32_t format,
 		       uint16_t bits_per_sample, bool ts_mode);
 
+int q6asm_open_read_v5(struct audio_client *ac, uint32_t format,
+			uint16_t bits_per_sample, bool ts_mode,
+			uint32_t enc_cfg_id);
+
 int q6asm_open_write(struct audio_client *ac, uint32_t format
 		/*, uint16_t bits_per_sample*/);
 
@@ -292,6 +306,9 @@ int q6asm_open_write_v3(struct audio_client *ac, uint32_t format,
 int q6asm_open_write_v4(struct audio_client *ac, uint32_t format,
 			uint16_t bits_per_sample);
 
+int q6asm_open_write_v5(struct audio_client *ac, uint32_t format,
+			uint16_t bits_per_sample);
+
 int q6asm_stream_open_write_v2(struct audio_client *ac, uint32_t format,
 			       uint16_t bits_per_sample, int32_t stream_id,
 			       bool is_gapless_mode);
@@ -301,6 +318,10 @@ int q6asm_stream_open_write_v3(struct audio_client *ac, uint32_t format,
 			       bool is_gapless_mode);
 
 int q6asm_stream_open_write_v4(struct audio_client *ac, uint32_t format,
+			       uint16_t bits_per_sample, int32_t stream_id,
+			       bool is_gapless_mode);
+
+int q6asm_stream_open_write_v5(struct audio_client *ac, uint32_t format,
 			       uint16_t bits_per_sample, int32_t stream_id,
 			       bool is_gapless_mode);
 
@@ -439,6 +460,13 @@ int q6asm_enc_cfg_blk_pcm_format_support_v4(struct audio_client *ac,
 					    uint16_t endianness,
 					    uint16_t mode);
 
+int q6asm_enc_cfg_blk_pcm_format_support_v5(struct audio_client *ac,
+					uint32_t rate, uint32_t channels,
+					uint16_t bits_per_sample,
+					uint16_t sample_word_size,
+					uint16_t endianness,
+					uint16_t mode);
+
 int q6asm_set_encdec_chan_map(struct audio_client *ac,
 		uint32_t num_channels);
 
@@ -499,6 +527,17 @@ int q6asm_media_format_block_pcm_format_support_v4(struct audio_client *ac,
 						   uint16_t endianness,
 						   uint16_t mode);
 
+int q6asm_media_format_block_pcm_format_support_v5(struct audio_client *ac,
+		   uint32_t rate,
+		   uint32_t channels,
+		   uint16_t bits_per_sample,
+		   int stream_id,
+		   bool use_default_chmap,
+		   char *channel_map,
+		   uint16_t sample_word_size,
+		   uint16_t endianness,
+		   uint16_t mode);
+
 int q6asm_media_format_block_multi_ch_pcm(struct audio_client *ac,
 			uint32_t rate, uint32_t channels,
 			bool use_default_chmap, char *channel_map);
@@ -526,6 +565,15 @@ int q6asm_media_format_block_multi_ch_pcm_v3(struct audio_client *ac,
 					     uint16_t sample_word_size);
 
 int q6asm_media_format_block_multi_ch_pcm_v4(struct audio_client *ac,
+					     uint32_t rate, uint32_t channels,
+					     bool use_default_chmap,
+					     char *channel_map,
+					     uint16_t bits_per_sample,
+					     uint16_t sample_word_size,
+					     uint16_t endianness,
+					     uint16_t mode);
+
+int q6asm_media_format_block_multi_ch_pcm_v5(struct audio_client *ac,
 					     uint32_t rate, uint32_t channels,
 					     bool use_default_chmap,
 					     char *channel_map,

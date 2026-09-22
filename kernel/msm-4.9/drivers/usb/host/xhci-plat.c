@@ -502,10 +502,34 @@ static int xhci_plat_runtime_resume(struct device *dev)
 	return ret;
 }
 
+static int xhci_plat_suspend(struct device *dev)
+{
+	struct usb_hcd	*hcd = dev_get_drvdata(dev);
+	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
+
+	if (!xhci || hcd_to_bus(hcd)->skip_resume)
+		return 0;
+
+	return xhci_suspend(xhci, true);
+}
+
+static int xhci_plat_resume(struct device *dev)
+{
+	struct usb_hcd	*hcd = dev_get_drvdata(dev);
+	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
+
+	if (!xhci || hcd_to_bus(hcd)->skip_resume)
+		return 0;
+
+	return xhci_resume(xhci, 0);
+}
+
 static const struct dev_pm_ops xhci_plat_pm_ops = {
 	.freeze		= xhci_plat_pm_freeze,
 	.restore	= xhci_plat_pm_restore,
 	.thaw		= xhci_plat_pm_restore,
+	.suspend 	= xhci_plat_suspend,
+	.resume 	= xhci_plat_resume,
 	SET_RUNTIME_PM_OPS(xhci_plat_runtime_suspend, xhci_plat_runtime_resume,
 			   xhci_plat_runtime_idle)
 };
@@ -524,6 +548,7 @@ MODULE_DEVICE_TABLE(acpi, usb_xhci_acpi_match);
 static struct platform_driver usb_xhci_driver = {
 	.probe	= xhci_plat_probe,
 	.remove	= xhci_plat_remove,
+	.shutdown = usb_hcd_platform_shutdown,
 	.driver	= {
 		.name = "xhci-hcd",
 		.pm = DEV_PM_OPS,

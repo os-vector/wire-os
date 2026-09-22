@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -14,7 +14,9 @@
 
 #define pr_fmt(fmt)	"[drm-dp] %s: " fmt, __func__
 
+#include "msm_kms.h"
 #include "dp_panel.h"
+#include <drm/drm_edid.h>
 
 #define DP_PANEL_DEFAULT_BPP 24
 #define DP_MAX_DS_PORT_COUNT 1
@@ -41,6 +43,17 @@ enum dp_panel_hdr_rgb_colorimetry {
 	DCI_P3,
 	CUSTOM_COLOR_PROFILE,
 	ITU_R_BT_2020_RGB,
+};
+
+enum dp_panel_hdr_yuv_colorimetry {
+	ITU_R_BT_601,
+	ITU_R_BT_709,
+	xvYCC_601,
+	xvYCC_709,
+	sYCC_601,
+	ADOBE_YCC_601,
+	ITU_R_BT_2020_YcCBcCRc,
+	ITU_R_BT_2020_YCBCR,
 };
 
 enum dp_panel_hdr_dynamic_range {
@@ -223,8 +236,24 @@ static int dp_panel_set_default_link_params(struct dp_panel *dp_panel)
 
 	return 0;
 }
+static int dp_panel_validate_edid(struct edid *edid, size_t edid_size)
+{
+	if (!edid || (edid_size < EDID_LENGTH))
+		return false;
 
-static int dp_panel_set_edid(struct dp_panel *dp_panel, u8 *edid)
+	if (EDID_LENGTH * (edid->extensions + 1) > edid_size) {
+		pr_err("edid size does not match allocated.\n");
+		return false;
+	}
+	if (!drm_edid_is_valid(edid)) {
+		pr_err("invalid edid.\n");
+		return false;
+	}
+	return true;
+}
+
+static int dp_panel_set_edid(struct dp_panel *dp_panel, u8 *edid,
+		size_t edid_size)
 {
 	struct dp_panel_private *panel;
 
@@ -235,7 +264,7 @@ static int dp_panel_set_edid(struct dp_panel *dp_panel, u8 *edid)
 
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
-	if (edid) {
+	if (edid && dp_panel_validate_edid((struct edid *)edid, edid_size)) {
 		dp_panel->edid_ctrl->edid = (struct edid *)edid;
 		panel->custom_edid = true;
 	} else {
@@ -446,6 +475,7 @@ static int dp_panel_get_modes(struct dp_panel *dp_panel,
 	struct drm_connector *connector, struct dp_display_mode *mode)
 {
 	struct dp_panel_private *panel;
+	int rc = 0;
 
 	if (!dp_panel) {
 		pr_err("invalid input\n");
@@ -458,12 +488,18 @@ static int dp_panel_get_modes(struct dp_panel *dp_panel,
 		dp_panel_set_test_mode(panel, mode);
 		return 1;
 	} else if (dp_panel->edid_ctrl->edid) {
-		return _sde_edid_update_modes(connector, dp_panel->edid_ctrl);
+		rc = _sde_edid_update_modes(connector, dp_panel->edid_ctrl);
 	} else { /* fail-safe mode */
 		memcpy(&mode->timing, &fail_safe,
 			sizeof(fail_safe));
 		return 1;
 	}
+
+	if (rc)
+		drm_dp_cec_set_edid(panel->aux->drm_aux,
+				dp_panel->edid_ctrl->edid);
+
+	return rc;
 }
 
 static void dp_panel_handle_sink_request(struct dp_panel *dp_panel)
@@ -537,6 +573,50 @@ static void dp_panel_tpg_config(struct dp_panel *dp_panel, bool enable)
 	panel->catalog->tpg_config(catalog, true);
 }
 
+static int dp_panel_setup_vsc_sdp(struct dp_panel *dp_panel)
+{
+	struct dp_catalog_panel *catalog;
+	struct dp_panel_private *panel;
+	struct dp_panel_info *pinfo;
+	int rc = 0;
+
+	if (!dp_panel) {
+		pr_err("invalid input\n");
+		rc = -EINVAL;
+		goto end;
+	}
+
+	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
+	catalog = panel->catalog;
+	pinfo = &panel->dp_panel.pinfo;
+
+	memset(&catalog->vsc_sdp_data, 0, sizeof(catalog->vsc_sdp_data));
+
+	if (pinfo->out_format & MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420) {
+		catalog->vsc_sdp_data.vsc_header_byte0 = 0x00;
+		catalog->vsc_sdp_data.vsc_header_byte1 = 0x07;
+		catalog->vsc_sdp_data.vsc_header_byte2 = 0x05;
+		catalog->vsc_sdp_data.vsc_header_byte3 = 0x13;
+
+		/* VSC SDP Payload for DB16 */
+		catalog->vsc_sdp_data.pixel_encoding = YCbCr420;
+		catalog->vsc_sdp_data.colorimetry = ITU_R_BT_709;
+
+		/* VSC SDP Payload for DB17 */
+		catalog->vsc_sdp_data.dynamic_range = CEA;
+
+		/* VSC SDP Payload for DB18 */
+		catalog->vsc_sdp_data.content_type = GRAPHICS;
+
+		catalog->vsc_sdp_data.bpc = pinfo->bpp / 3;
+
+		if (panel->catalog->config_vsc_sdp)
+			panel->catalog->config_vsc_sdp(catalog, true);
+	}
+end:
+	return rc;
+}
+
 static int dp_panel_timing_cfg(struct dp_panel *dp_panel)
 {
 	int rc = 0;
@@ -596,9 +676,35 @@ static int dp_panel_timing_cfg(struct dp_panel *dp_panel)
 	catalog->dp_active = data;
 
 	panel->catalog->timing_cfg(catalog);
+	dp_panel_setup_vsc_sdp(dp_panel);
 	panel->panel_on = true;
 end:
 	return rc;
+}
+
+static u32 dp_panel_get_pixel_clk(struct dp_panel *dp_panel)
+{
+	struct dp_panel_private *panel;
+	struct dp_panel_info *pinfo;
+	u32 pixel_clk_khz = 0;
+	u32 rate_ratio = RGB_24BPP_TMDS_CHAR_RATE_RATIO;
+
+	if (!dp_panel) {
+		pr_err("invalid input\n");
+		return 0;
+	}
+
+	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
+	pinfo = &panel->dp_panel.pinfo;
+
+	pixel_clk_khz = pinfo->pixel_clk_khz;
+
+	if (pinfo->out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420)
+		rate_ratio = YUV420_24BPP_TMDS_CHAR_RATE_RATIO;
+
+	pixel_clk_khz /= rate_ratio;
+
+	return pixel_clk_khz;
 }
 
 static int dp_panel_edid_register(struct dp_panel_private *panel)
@@ -617,6 +723,16 @@ static int dp_panel_edid_register(struct dp_panel_private *panel)
 static void dp_panel_edid_deregister(struct dp_panel_private *panel)
 {
 	sde_edid_deinit((void **)&panel->dp_panel.edid_ctrl);
+}
+
+static inline char *get_out_format(u32 out_format)
+{
+	if (out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420)
+		return "Y420";
+	else if (out_format == MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422)
+		return "Y422";
+	else
+		return "RGB";
 }
 
 static int dp_panel_init_panel_info(struct dp_panel *dp_panel)
@@ -648,6 +764,7 @@ static int dp_panel_init_panel_info(struct dp_panel *dp_panel)
 			pinfo->v_front_porch,
 			pinfo->v_sync_width);
 	pr_info("pixel clock (KHz)=(%d)\n", pinfo->pixel_clk_khz);
+	pr_info("%s\n", get_out_format(pinfo->out_format));
 	pr_info("bpp = %d\n", pinfo->bpp);
 	pr_info("active low (h|v)=(%d|%d)\n", pinfo->h_active_low,
 		pinfo->v_active_low);
@@ -669,6 +786,7 @@ static int dp_panel_deinit_panel_info(struct dp_panel *dp_panel)
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 	hdr = &panel->catalog->hdr_data;
 
+	drm_dp_cec_unset_edid(panel->aux->drm_aux);
 	if (!panel->custom_edid)
 		sde_free_edid((void **)&dp_panel->edid_ctrl);
 
@@ -705,6 +823,20 @@ end:
 	return min_link_rate_khz;
 }
 
+static bool dp_panel_vsc_sdp_supported(struct dp_panel *dp_panel)
+{
+	struct dp_panel_private *panel;
+
+	if (!dp_panel) {
+		pr_err("invalid input\n");
+		return false;
+	}
+
+	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
+
+	return panel->major >= 1 && panel->minor >= 3 && panel->vsc_supported;
+}
+
 static bool dp_panel_hdr_supported(struct dp_panel *dp_panel)
 {
 	struct dp_panel_private *panel;
@@ -726,6 +858,7 @@ static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
 	int rc = 0;
 	struct dp_panel_private *panel;
 	struct dp_catalog_hdr_data *hdr;
+	struct dp_panel_info *pinfo;
 
 	if (!dp_panel) {
 		pr_err("invalid input\n");
@@ -735,6 +868,7 @@ static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
 
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 	hdr = &panel->catalog->hdr_data;
+	pinfo = &panel->dp_panel.pinfo;
 
 	/* use cached meta data in case meta data not provided */
 	if (!hdr_meta) {
@@ -762,8 +896,16 @@ static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
 	hdr->vscext_header_byte3 = 0x13 << 2;
 
 	/* VSC SDP Payload for DB16 */
-	hdr->pixel_encoding = RGB;
-	hdr->colorimetry = ITU_R_BT_2020_RGB;
+	if (pinfo->out_format & MSM_MODE_FLAG_COLOR_FORMAT_RGB444) {
+		hdr->pixel_encoding = RGB;
+		hdr->colorimetry = ITU_R_BT_2020_RGB;
+	} else if (pinfo->out_format & MSM_MODE_FLAG_COLOR_FORMAT_YCBCR422) {
+		hdr->pixel_encoding = YCbCr422;
+		hdr->colorimetry = ITU_R_BT_2020_YCBCR;
+	} else if (pinfo->out_format & MSM_MODE_FLAG_COLOR_FORMAT_YCBCR420) {
+		hdr->pixel_encoding = YCbCr420;
+		hdr->colorimetry = ITU_R_BT_2020_YCBCR;
+	}
 
 	/* VSC SDP Payload for DB17 */
 	hdr->dynamic_range = CEA;
@@ -781,8 +923,11 @@ static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
 	else
 		memset(&hdr->hdr_meta, 0, sizeof(hdr->hdr_meta));
 cached:
-	if (panel->panel_on)
+	if (panel->panel_on) {
 		panel->catalog->config_hdr(panel->catalog, panel->hdr_state);
+		if (panel->hdr_state == HDR_DISABLED)
+			dp_panel_setup_vsc_sdp(dp_panel);
+	}
 end:
 	return rc;
 }
@@ -856,6 +1001,8 @@ struct dp_panel *dp_panel_get(struct dp_panel_in *in)
 	dp_panel->spd_config = dp_panel_spd_config;
 	dp_panel->setup_hdr = dp_panel_setup_hdr;
 	dp_panel->hdr_supported = dp_panel_hdr_supported;
+	dp_panel->vsc_sdp_supported = dp_panel_vsc_sdp_supported;
+	dp_panel->get_pixel_clk = dp_panel_get_pixel_clk;
 
 	dp_panel_edid_register(panel);
 

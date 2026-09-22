@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018, 2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -103,5 +103,6 @@
 	qcom,rpmh-master-stats@b211200 {
 		compatible = "qcom,rpmh-master-stats-v1";
 		reg = <0xb211200 0x60>;
+		qcom,use-alt-unit = <3>;
 	};
 };

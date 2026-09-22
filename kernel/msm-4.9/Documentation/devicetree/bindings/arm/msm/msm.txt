@@ -110,6 +110,12 @@ SoCs:
 - QRD1130
   compatible = "qcom,sxr1130-qrd"
 
+- SMVWR1130
+  compatible = "qcom,sxr1130-smrtvwr"
+
+- ARGLASS1130
+  compatible = "qcom,sxr1130-arglass"
+
 - MSM8952
   compatible = "qcom,msm8952"
 
@@ -146,8 +152,17 @@ SoCs:
 - SDA429
   compatible = "qcom,sda429"
 
+- SDM429W
+  compatible = "qcom,sdm429w"
+
+- SDA429W
+  compatible = "qcom,sda429w"
+
 - QM215
   compatible = "qcom, qm215"
+
+- QCM2150
+  compatible = "qcom, qcm2150"
 
 - MDM9640
   compatible = "qcom,mdm9640"
@@ -207,6 +222,12 @@ Generic board variants:
 
 - SVR device:
   compatible = "qcom,svr"
+
+- SMVWR device:
+  compatible = "qcom,xr-smrtvwr"
+
+- ARGlass device:
+  compatible = "qcom,xr-arglass"
 
 - HDK device:
   compatible = "qcom,hdk"
@@ -283,6 +304,7 @@ compatible = "qcom,msm8917-rumi"
 compatible = "qcom,msm8917-qrd"
 compatible = "qcom,msm8917-qrd-sku5"
 compatible = "qcom,msm8940-mtp"
+compatible = "qcom,msm8940-cdp"
 compatible = "qcom,msm8926-cdp"
 compatible = "qcom,msm8926-mtp"
 compatible = "qcom,msm8926-qrd"
@@ -329,6 +351,7 @@ compatible = "qcom,sdm845-mtp"
 compatible = "qcom,sdm845-mtp"
 compatible = "qcom,sdm845-qrd"
 compatible = "qcom,sdm845-qvr"
+compatible = "qcom,sdm845-vm"
 compatible = "qcom,sda845-cdp"
 compatible = "qcom,sda845-mtp"
 compatible = "qcom,sda845-qrd"
@@ -364,6 +387,7 @@ compatible = "qcom,msm8937-pmi8937-qrd-sku2"
 compatible = "qcom,sdm429-cdp"
 compatible = "qcom,sdm429-mtp"
 compatible = "qcom,sdm429-qrd"
+compatible = "qcom,sdm429w-qrd"
 compatible = "qcom,sda429-cdp"
 compatible = "qcom,sda429-mtp"
 compatible = "qcom,sdm439-cdp"
@@ -372,6 +396,7 @@ compatible = "qcom,sdm439-qrd"
 compatible = "qcom,sda439-cdp"
 compatible = "qcom,sda439-mtp"
 compatible = "qcom,qm215-qrd"
+compatible = "qcom,qcm2150-qrd"
 compatible = "qcom,msm8953-rumi"
 compatible = "qcom,msm8953-sim"
 compatible = "qcom,msm8953-cdp"
@@ -404,5 +429,6 @@ compatible = "qcom,sdxpoorwills-rumi"
 compatible = "qcom,sdxpoorwills-atp"
 compatible = "qcom,sdxpoorwills-mtp"
 compatible = "qcom,sdxpoorwills-cdp"
-compatible = "qcom,sdxpoorwills-ttp"
+compatible = "qcom,sa415m-ttp"
+compatible = "qcom,sa415m-ccard"
 compatible = "qcom,mdm9607-ttp"

@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -302,7 +302,26 @@ int create_pkt_cmd_sys_debug_config(
 		hfi->debug_mode = msm_vidc_fw_debug_mode;
 	return 0;
 }
+static int create_pkt_cmd_sys_feature_config_packet(
+			struct hfi_cmd_sys_set_property_packet *pkt)
+{
+	struct hfi_feature_config *hfi;
 
+	if (!pkt)
+		return -EINVAL;
+
+	pkt->size = sizeof(struct hfi_cmd_sys_set_property_packet) +
+		sizeof(struct hfi_feature_config) + sizeof(u32);
+	pkt->packet_type = HFI_CMD_SYS_SET_PROPERTY;
+	pkt->num_properties = 1;
+	pkt->rg_property_data[0] = HFI_PROPERTY_SYS_FEATURE_CONFIG;
+
+	hfi = (struct hfi_feature_config *) &pkt->rg_property_data[1];
+	hfi->enable_maxdec_resolution = 0;
+	hfi->enable_maxenc_resolution = 1;
+	hfi->reserved = 0;
+	return 0;
+}
 int create_pkt_cmd_sys_coverage_config(
 	struct hfi_cmd_sys_set_property_packet *pkt,
 	u32 mode)
@@ -1396,6 +1415,35 @@ int create_pkt_cmd_session_set_property(
 			sizeof(struct hfi_quantization_range);
 		break;
 	}
+	case HAL_CONFIG_VENC_FRAME_QP_RANGE:
+	{
+		struct hfi_quantization_range *hfi;
+		struct hal_quantization_range *hal_range =
+			(struct hal_quantization_range *) pdata;
+
+		pkt->rg_property_data[0] =
+			HFI_PROPERTY_CONFIG_VENC_FRAME_QP_RANGE;
+		hfi = (struct hfi_quantization_range *)
+				&pkt->rg_property_data[1];
+
+		/*
+		 * When creating the packet, pack the qp value as
+		 * 0xbbppii, where ii = qp range for I-frames,
+		 * pp = qp range for P-frames, etc.
+		 */
+		hfi->min_qp.qp_packed = hal_range->qpi_min |
+			hal_range->qpp_min << 8 |
+			hal_range->qpb_min << 16;
+		hfi->max_qp.qp_packed = hal_range->qpi_max |
+			hal_range->qpp_max << 8 |
+			hal_range->qpb_max << 16;
+		hfi->max_qp.layer_id = hal_range->layer_id;
+		hfi->min_qp.layer_id = hal_range->layer_id;
+
+		pkt->size += sizeof(u32) +
+			sizeof(struct hfi_quantization_range);
+		break;
+	}
 	case HAL_CONFIG_VENC_INTRA_PERIOD:
 	{
 		struct hfi_intra_period *hfi;
@@ -2056,6 +2104,7 @@ static struct hfi_packetization_ops hfi_default = {
 	.sys_release_resource = create_pkt_cmd_sys_release_resource,
 	.sys_ping = create_pkt_cmd_sys_ping,
 	.sys_image_version = create_pkt_cmd_sys_image_version,
+	.sys_feature_config = create_pkt_cmd_sys_feature_config_packet,
 	.ssr_cmd = create_pkt_ssr_cmd,
 	.session_init = create_pkt_cmd_sys_session_init,
 	.session_cmd = create_pkt_cmd_session_cmd,
