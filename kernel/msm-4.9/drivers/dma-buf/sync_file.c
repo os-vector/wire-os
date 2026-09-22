@@ -463,7 +463,8 @@ static long sync_file_ioctl_legacy_wait(struct sync_file *sync_file,
 	ret = fence_wait_timeout(sync_file->fence, true, timeout);
 	if (ret < 0)
 		return ret;
-	if (ret == 0)
+
+	if (ret == 0 && !fence_is_signaled(sync_file->fence))
 		return -ETIME;
 
 	return 0;

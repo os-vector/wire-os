@@ -14,7 +14,7 @@ echo 0 > /sys/kernel/debug/msm-bus-dbg/shell-client/ab
 echo active clk2 0 1 max 400000 > /sys/kernel/debug/rpm_send_msg/message # Max RAM freq in KHz = 500MHz
 echo 1 > /sys/kernel/debug/msm-bus-dbg/shell-client/update_request
 # GPU to 200 MHz (from 409 MHz)
-echo 200 > /sys/devices/soc/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_clock_mhz
+echo 200 > /sys/devices/platform/soc/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_clock_mhz
 #End clock speed limits
 
 # Move RT FIFO tasks off core 0 to reduce timer interrupt induced jitter.
