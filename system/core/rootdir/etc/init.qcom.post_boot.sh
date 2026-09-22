@@ -599,12 +599,12 @@ case "$target" in
                 # Apply governor settings for 8909
 
                 # disable thermal core_control to update scaling_min_freq
-                echo 0 > /sys/module/msm_thermal/core_control/enabled
+		echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
                 echo 1 > /sys/devices/system/cpu/cpu0/online
                 echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
                 echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
                 # enable thermal core_control now
-                echo 1 > /sys/module/msm_thermal/core_control/enabled
+                echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 
                 echo "25000" > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
                 echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
@@ -618,7 +618,7 @@ case "$target" in
                 echo 1 > /sys/devices/system/cpu/cpu1/online
                 echo 1 > /sys/devices/system/cpu/cpu2/online
                 echo 1 > /sys/devices/system/cpu/cpu3/online
-                echo N > /sys/module/lpm_levels/parameters/sleep_disabled
+                echo N > /sys/module/lpm_levels_legacy/parameters/sleep_disabled
 
                 for cpubw in /sys/class/devfreq/*qcom,cpubw*
                 do
@@ -636,8 +636,7 @@ case "$target" in
 esac
 
 # disable msm thermal driver
-echo 0 > /sys/module/msm_thermal/core_control/enabled
-echo N > /sys/module/msm_thermal/parameters/enabled
+echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 #sleep 0.1
 
 #echo 1267200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq

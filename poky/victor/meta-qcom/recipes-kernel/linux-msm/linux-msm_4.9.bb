@@ -66,6 +66,30 @@ do_shared_workdir:append () {
 
         # Generate kernel headers
         oe_runmake_call -C ${STAGING_KERNEL_DIR} ARCH=${ARCH} CC="${KERNEL_CC}" LD="${KERNEL_LD}" headers_install O=${STAGING_KERNEL_BUILDDIR}
+
+        for hdrdir in ${STAGING_KERNEL_BUILDDIR}/usr/techpack/*/include/linux \
+                      ${STAGING_KERNEL_BUILDDIR}/usr/techpack/*/include/sound; do
+            [ -d "$hdrdir" ] || continue
+            subdir=$(basename $hdrdir)
+            install -d ${STAGING_KERNEL_BUILDDIR}/usr/include/$subdir
+            for h in $hdrdir/*.h; do
+                [ -e "$h" ] || continue
+                install -m 0644 $h ${STAGING_KERNEL_BUILDDIR}/usr/include/$subdir/
+            done
+        done
+}
+
+KERNEL_APPENDED_DTB ?= ""
+
+do_compile:append() {
+    if [ -n "${KERNEL_APPENDED_DTB}" ]; then
+        zimg="${B}/${KERNEL_OUTPUT_DIR}/zImage"
+        dtb="${B}/${KERNEL_OUTPUT_DIR}/dts/${KERNEL_APPENDED_DTB}.dtb"
+
+        [ -f "$dtb" ] || bbfatal "KERNEL_APPENDED_DTB is '${KERNEL_APPENDED_DTB}' but $dtb was not built"
+
+        cat "$zimg" "$dtb" > "${B}/${KERNEL_OUTPUT_DIR}/zImage-dtb"
+    fi
 }
 
 do_install:append() {

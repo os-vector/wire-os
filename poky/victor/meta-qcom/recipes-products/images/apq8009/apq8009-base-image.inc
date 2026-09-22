@@ -167,7 +167,7 @@ do_makesystem() {
     ##       we are modifying a local shell variable here, that can only be dereferenced by using $KERNEL_CMD_PARAMS
     ##       c.f. https://stackoverflow.com/questions/48213497/how-do-i-update-a-datastore-variable-from-inside-a-bash-variable
     # Make bootimage
-    ${STAGING_BINDIR_NATIVE}/mkbootimg --kernel ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin \
+    ${STAGING_BINDIR_NATIVE}/mkbootimg --kernel ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE} \
         --ramdisk "$RAMDISK" \
         --cmdline "$KERNEL_CMD_PARAMS" \
         --pagesize ${PAGE_SIZE} \

@@ -84,9 +84,11 @@
 /* Qtimer Frequency */
 #define QTIMER_FREQ      19200000
 
+/*
 static DEFINE_RATELIMIT_STATE(errCnt,		\
 		NL_BDCAST_RATELIMIT_INTERVAL,	\
 		NL_BDCAST_RATELIMIT_BURST);
+*/
 
 struct log_msg {
 	struct list_head node;
@@ -1072,11 +1074,13 @@ static int send_filled_buffers_to_user(void)
 
 		ret = nl_srv_bcast(skb);
 		if (ret < 0) {
+			/*
 			if (__ratelimit(&errCnt))
 			{
 			    pr_info("%s: Send Failed %d drop_count = %u\n",
 				  __func__, ret, gwlan_logging.drop_count);
 			}
+			 */
 			gwlan_logging.drop_count++;
 			skb = NULL;
 			break;
