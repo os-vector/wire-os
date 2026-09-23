@@ -1,7 +1,7 @@
 VERSION = 4
 PATCHLEVEL = 9
 SUBLEVEL = 277
-EXTRAVERSION = -whinlatter
+EXTRAVERSION = -wrynose
 NAME = Roaring Lionus
 
 # *DOCUMENTATION*

@@ -13,6 +13,7 @@ CFLAGS += "-I${STAGING_INCDIR}/cutils"
 CFLAGS += " -fforward-propagate"
 CFLAGS += " -Wl,--verbose"
 CFLAGS += "-Wno-error -Wno-implicit-function-declaration -Wno-incompatible-pointer-types"
+CFLAGS:append = " -I${STAGING_INCDIR}/diag"
 
 do_compile:prepend() {
     rm -f ${WORKSPACE}/poky/build/tmp-glibc/work/apq8009_robot-oe-linux-gnueabi/configdb/git/recipe-sysroot/usr/lib/libc.so
@@ -130,6 +131,16 @@ EOF
     if [ -f configure.ac ]; then
         autoreconf -fiv
     fi
+}
+
+do_configure:append() {
+    find ${S} -name "Makefile" | xargs sed -i \
+        -e "s|-I/usr/include/glib-2.0|-I${STAGING_INCDIR}/glib-2.0|g" \
+        -e "s|-I/usr/lib/glib-2.0/include|-I${STAGING_LIBDIR}/glib-2.0/include|g" \
+        -e "s|-I/usr/include/diag|-I${STAGING_INCDIR}/diag|g" \
+        -e "s|-I/usr/include/dsutils|-I${STAGING_INCDIR}/dsutils|g" \
+        -e "s|-I/usr/include/configdb|-I${STAGING_INCDIR}/configdb|g" \
+        -e "s| -I/usr/include\b| -I${STAGING_INCDIR}|g"
 }
 
 EXTRA_OECONF = "--with-qxdm \

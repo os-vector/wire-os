@@ -6,6 +6,8 @@ include ${BASEMACHINE}/${BASEMACHINE}-robot-qti-image.inc
 
 inherit qimage
 
+INITRAMFS_IMAGE = ""
+
 require internal-image.inc
 # Set up for handling the generation of the /usr image
 # partition...

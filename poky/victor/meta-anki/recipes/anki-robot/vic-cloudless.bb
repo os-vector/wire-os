@@ -11,6 +11,7 @@ S = "${UNPACKDIR}"
 #UNPACKDIR = "${S}"
 
 inherit systemd
+inherit pkgconfig
 
 DEPENDS = "pkgconfig-native"
 

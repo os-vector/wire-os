@@ -12,7 +12,7 @@ IMAGE_LINGUAS = ""
 
 LICENSE = "MIT"
 
-IMAGE_FSTYPES = "${INITRAMFS_FSTYPES}"
+IMAGE_FSTYPES = "cpio.gz"
 inherit core-image qperf
 
 IMAGE_ROOTFS_SIZE = "8192"

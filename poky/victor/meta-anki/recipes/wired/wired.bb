@@ -10,6 +10,7 @@ S = "${UNPACKDIR}"
 #UNPACKDIR = "${S}"
 
 inherit systemd
+inherit pkgconfig
 
 do_install:append () {
    if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then

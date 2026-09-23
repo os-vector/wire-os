@@ -1,0 +1,18 @@
+[Unit]
+Description=Early boot self test
+SourcePath=/usr/bin/rampost-init.sh
+DefaultDependencies=no
+ConditionFileIsExecutable=/usr/bin/rampost-init.sh
+Wants=sys-kernel-debug.mount
+After=sys-kernel-debug.mount
+Before=vic-bootAnim.service sysinit.target shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/rampost-init.sh
+StandardOutput=journal
+
+[Install]
+WantedBy=sysinit.target

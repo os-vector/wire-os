@@ -67,7 +67,7 @@ DISTRO_FEATURES:append = " ro-rootfs"
 # Use systemd init manager.
 DISTRO_FEATURES:remove = "sysvinit"
 DISTRO_FEATURES:append = " systemd"
-DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
+DISTRO_FEATURES_OPTED_OUT += "sysvinit"
 VIRTUAL-RUNTIME_dev_manager = "udev"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 
