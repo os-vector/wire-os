@@ -126,6 +126,7 @@ static inline bool msm_is_daemon_present(void)
 }
 
 void msm_pm_qos_update_request(int val);
+void msm_pm_qos_release_request(void);
 int msm_post_event(struct v4l2_event *event, int timeout);
 int  msm_create_session(unsigned int session, struct video_device *vdev);
 int msm_destroy_session(unsigned int session_id);

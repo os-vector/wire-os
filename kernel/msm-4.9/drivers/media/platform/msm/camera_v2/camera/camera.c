@@ -701,6 +701,7 @@ static int camera_v4l2_open(struct file *filep)
 			if (rc < 0)
 				goto post_fail;
 		}
+		msm_pm_qos_release_request();
 	} else {
 		rc = msm_create_command_ack_q(pvdev->vdev->num,
 			find_first_zero_bit((const unsigned long *)&opn_idx,

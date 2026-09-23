@@ -253,6 +253,13 @@ void msm_pm_qos_update_request(int val)
 	}
 }
 
+void msm_pm_qos_release_request(void)
+{
+	if (atomic_read(&qos_add_request_done))
+		pm_qos_update_request(&msm_v4l2_pm_qos_request,
+			CAMERA_ENABLE_PC_LATENCY);
+}
+
 struct msm_session *msm_session_find(unsigned int session_id)
 {
 	struct msm_session *session;
