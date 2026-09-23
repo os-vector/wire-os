@@ -138,8 +138,12 @@ If you want to :P
 ## Differences compared to normal Vector FW
 
 -   New OS base
-    -   Yocto Whinlatter rather than Jethro
-        -   glibc 2.42 (latest as of 11-2025)
+    -   Yocto Wrynose rather than Jethro
+        -   glibc 2.43 (2026-era)
+	-   Current latest LTS release of Yocto
+-   Absolute latest downstream kernel from Qualcomm
+    -   Linux 4.9.277, LF.UM.8.7
+    -   Last updated by Qualcomm in September 2021
 -   `victor` software compiled with Clang 20.1.8 rather than 5.0.1
     -	The code is properly fixed so there are no compile warnings
 -   Rainbow eye color
@@ -185,14 +189,14 @@ If you want to :P
 ## Proprietary software notes
 
 -	This repo contains lots of proprietary Qualcomm code and prebuilt software.
--	After a stupid amount of work, I have most HAL programs compiling with Yocto's GCC 15. It wasn't terribly difficult since it's generally all autotools, but some jank is still involved, and it was still time-consuming.
--	The camera programs and *some* of the BLE programs are being copied in rather than compiled.
-	-	Why not compile camera programs? Because I would have to add 2GB to the repo and figure out how to use the weird Qualcomm-specific toolchain.
-	-	Why not compile those BLE programs? `ankibluetoothd` and `hci_qcomm_init` are able to compile under GCC 15, but there is some weird low-level issue which makes them unable to properly communicate with a BLE library. So, for now, I am just copying pre-compiled ones in. I will probably try to fix this at some point.
--   The kernel is still msm-3.18. Mainline might be possible. I was able to boot `msm8916-mainline` on a Vector and get some hardware peripherals working, but some fundamental ones (camera, Wi-Fi) will take quite a bit of work.
+-	After a stupid amount of work, I have most HAL programs compiling with Yocto's GCC 16. It wasn't terribly difficult since it's generally all autotools, but some jank is still involved, and it was still time-consuming.
+-	The camera programs and *some* of the BLE programs/libraries are being copied in rather than compiled.
+	-	Why not compile camera programs? Because I would have to add 2GB to the repo, and we'd have to link against blobs anyway.
+	-	Why not compile those BLE programs? `ankibluetoothd` and `hci_qcomm_init` are able to compile under GCC 16, but there is some weird low-level issue which makes them unable to properly communicate with a BLE library. So, for now, I am just copying pre-compiled ones in. I will probably try to fix this at some point.
+        -       If we have to rebuild either of them, [vicos-oelinux-nosign](https://github.com/kercre123/vicos-oelinux-nosign) is a thing we can use.
 
 ## How this upgrade was done
 
 -	Much work upgrading Yocto recipes.
--	All of the software is compiling with Yocto's GCC 15 or the Clang 20.1.8 vicos-sdk toolchain, with a couple of tiny exceptions.
+-	All of the software is compiling with Yocto's GCC 16 or the Clang 20.1.8 vicos-sdk toolchain, with a couple of tiny exceptions.
 -	Some recipes are still somewhat old - these include wpa_supplicant and connman (I had issues with SAE - he's able to recognize SAE networks, but his WLAN driver and kernel don't know how to actually connect to it, and I was unable to disable it in modern wpa_supplicant and connman)
