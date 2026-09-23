@@ -13,4 +13,3 @@ bb-files.txt
 *.o
 *.o.d
 *.o.cmd
-/filesystems
