@@ -30,7 +30,7 @@ esac
 
 [ $# -eq 1 ] || usage
 
-NAME=${1%.local}
+NAME="$1"
 
 case "$NAME" in
 ""|-*|*-|*[!A-Za-z0-9-]*)
