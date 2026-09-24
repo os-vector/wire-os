@@ -21,6 +21,7 @@ SRC_URI[bouncycastle.md5sum] = "a786faa25a56a3e46331f34b4364575c"
 SRC_URI[bouncycastle.sha256sum] = "909fb1e8ea06a9d6e918b3c5b0800a1f2408724a74e05cb310c019653d758e76"
 
 S_BC = "${WORKDIR}/bouncycastle"
+SRCREV_FORMAT = "bouncycastle_verity_security"
 
 
 #######################################

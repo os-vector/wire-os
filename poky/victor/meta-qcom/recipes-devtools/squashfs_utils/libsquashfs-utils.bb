@@ -8,8 +8,9 @@ ${LICENSE};md5=89aea4e17d99a7cacdbeed46a0096b10"
 
 PR = "r0"
 
-SRC_URI = "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=d73dc7f88ce6f3b9fa141615870e4e2db22a7c23;subpath=squashfs_utils"
-SRC_URI += "${CLO_LA_GIT}/platform/external/squashfs-tools;protocol=https;nobranch=1;rev=5b4709ba460869ed66f971115acfa88425a3faf8;subpath=squashfs-tools"
+SRC_URI = "${CLO_LA_GIT}/platform/system/extras;protocol=https;nobranch=1;rev=d73dc7f88ce6f3b9fa141615870e4e2db22a7c23;subpath=squashfs_utils;name=extras"
+SRC_URI += "${CLO_LA_GIT}/platform/external/squashfs-tools;protocol=https;nobranch=1;rev=5b4709ba460869ed66f971115acfa88425a3faf8;subpath=squashfs-tools;name=squashfs"
+SRCREV_FORMAT = "extras_squashfs"
 SRC_URI += "file://Add-autotool-make-files-for-libsquashfs_utils.patch"
 
 S = "${UNPACKDIR}/squashfs_utils"
