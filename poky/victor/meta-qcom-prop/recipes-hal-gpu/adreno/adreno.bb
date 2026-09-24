@@ -1,4 +1,4 @@
-inherit qcommon qlicense qprebuilt
+inherit qcommon qlicense qprebuilt sfpshim
 DESCRIPTION = "OpenCL for our silly Adreno"
 
 SRC_DIR = "${WORKSPACE}/adreno"

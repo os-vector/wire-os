@@ -1,4 +1,4 @@
-inherit qcommon qprebuilt systemd
+inherit qcommon qprebuilt systemd sfpshim
 
 DESCRIPTION = "Anki Bluetooth Daemon"
 LICENSE = "Anki-Inc.-Proprietary"

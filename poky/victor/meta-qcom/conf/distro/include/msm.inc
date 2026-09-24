@@ -8,7 +8,7 @@
 # DISTRO FEATURE SELECTION
 MICRO_GOLD = "ld-is-gold"
 
-USE_DEVFS = "0"
+USE_DEVFS = "1"
 
 # Use Debian naming scheme for library (.so) files
 INHERIT += "recipe_sanity"

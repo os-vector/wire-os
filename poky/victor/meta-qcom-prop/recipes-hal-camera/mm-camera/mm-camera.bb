@@ -1,4 +1,4 @@
-inherit qcommon qlicense qprebuilt
+inherit qcommon qlicense qprebuilt sfpshim
 DESCRIPTION = "mm-anki-camera and mm-qcamera-daemon"
 
 SRC_DIR = "${WORKSPACE}/camera/mm-camera"
@@ -24,3 +24,9 @@ FILES:${PN} += "usr/lib"
 # the dev package so that anything remaining can go in the release package
 # like the .so libs
 FILES:${PN}-dev = "${libdir}/*.la"
+
+RDEPENDS:${PN} += "sfpshim"
+
+do_prebuilt_install:append() {
+    rm -f ${D}${libdir}/libshimcsu.so
+}

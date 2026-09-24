@@ -1,4 +1,4 @@
-inherit qcommon qlicense qprebuilt systemd
+inherit qcommon qlicense qprebuilt systemd sfpshim
 
 SUMMARY = "adsprpc daemon"
 
