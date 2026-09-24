@@ -1,0 +1,14 @@
+[Unit]
+Description=publish alt hostname
+Requires=mount-data.service avahi-daemon.service
+Wants=network-online.target
+After=mount-data.service avahi-daemon.service network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/vhostname-publish
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

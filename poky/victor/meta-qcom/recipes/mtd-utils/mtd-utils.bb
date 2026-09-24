@@ -29,49 +29,13 @@ PACKAGECONFIG[selinux] = "--with-selinux,--without-selinux,libselinux libselinux
 
 EXTRA_OEMAKE = "'CC=${CC}' 'RANLIB=${RANLIB}' 'AR=${AR}' 'CFLAGS=${CFLAGS} ${@bb.utils.contains('PACKAGECONFIG', 'xattr', '', '-DWITHOUT_XATTR', d)} -I${S}/include -I${S}/ubi-utils/include -I${S}/tests/fs-tests/lib' 'BUILDDIR=${S}'"
 
-do_compile:append () {
-	oe_runmake tests
-}
-
-ubi_tests = " \
-	integ \
-	io_basic \
-	io_paral \
-	io_read \
-	io_update \
-	mkvol_bad \
-	mkvol_basic \
-	mkvol_paral \
-	rsvol \
-	volrefcnt \
-	"
-
-checkfs_tests = " \
-	checkfs \
-	makefiles \
-	"
-
 ALTERNATIVE_${PN} = "flash_eraseall"
 ALTERNATIVE_LINK_NAME[flash_eraseall] = "${sbindir}/flash_eraseall"
 # Use higher priority than busybox's flash_eraseall (created when built with CONFIG_FLASH_ERASEALL)
 ALTERNATIVE_PRIORITY[flash_eraseall] = "100"
 
-MTD_TEST_BIN_PATH = "${WORKSPACE}/filesystems/bin/target/mtd-utils"
 do_install () {
 	oe_runmake install DESTDIR=${D} SBINDIR=${sbindir} MANDIR=${mandir} INCLUDEDIR=${includedir}
-
-	mkdir -p ${MTD_TEST_BIN_PATH}/fstests/
-	find ${S}/../../build/tests/fs-tests/ -executable -type f -exec cp {} ${MTD_TEST_BIN_PATH}/fstests/ \;
-
-	mkdir -p ${MTD_TEST_BIN_PATH}/ubi-tests/
-	for test in ${ubi_tests}; do
-		cp ${S}/../../build/$test ${MTD_TEST_BIN_PATH}/ubi-tests/
-	done
-
-	mkdir -p ${MTD_TEST_BIN_PATH}/checkfs/
-	for test in ${checkfs_tests}; do
-		cp ${S}/../../build/$test ${MTD_TEST_BIN_PATH}/checkfs/
-	done
 }
 
 PACKAGES =+ "mtd-utils-jffs2 mtd-utils-ubifs mtd-utils-misc"
