@@ -77,6 +77,7 @@ IMAGE_ROOTFS_EXTRA_SPACE = "307200"
 addtask makesystem after do_rootfs
 #addtask makesystem
 do_image_ext4[depends] += "${PN}:do_makesystem"
+do_makesystem[fakeroot] = "1"
 
 do_makesystem() {
     echo "================ Creating system ================="
