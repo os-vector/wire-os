@@ -141,6 +141,7 @@ If you want to :P
     -   Yocto Wrynose rather than Jethro
         -   glibc 2.43 (2026-era)
 	-   Current latest LTS release of Yocto
+    -   hardfp calling convention rather than softfp
 -   Absolute latest downstream kernel from Qualcomm
     -   Linux 4.9.277, LF.UM.8.7
     -   Last updated by Qualcomm in September 2021

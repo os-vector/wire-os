@@ -14,8 +14,8 @@ PR = "r6"
 
 DEPENDS = "system-core"
 
-CFLAGS:append = "-I${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/libhardware/git/hardware/libhardware/include/"
-CXXFLAGS:append = "-I${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/libhardware/git/hardware/libhardware/include/"
+CFLAGS:append = "-I${WORKSPACE}/poky/build/tmp-glibc/work/armv7ahf-neon-vfpv4-oe-linux-gnueabi/libhardware/git/hardware/libhardware/include/"
+CXXFLAGS:append = "-I${WORKSPACE}/poky/build/tmp-glibc/work/armv7ahf-neon-vfpv4-oe-linux-gnueabi/libhardware/git/hardware/libhardware/include/"
 
 #do_compile:prepend() {
 # /home/kerigan/projects/wire-os/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/libhardware/git/recipe-sysroot/usr/include

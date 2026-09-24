@@ -1,4 +1,4 @@
-inherit qcommon qlicense qprebuilt
+inherit qcommon qlicense qprebuilt sfpshim
 
 DESCRIPTION = "QTI XML Library"
 HOMEPAGE = "http://support.cdmatech.com"

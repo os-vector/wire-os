@@ -1,4 +1,4 @@
-inherit autotools qcommon qlicense
+inherit autotools qcommon qlicense sfpshim
 
 DESCRIPTION = "Bluetooth BT Vendor Filters"
 PR = "r0"

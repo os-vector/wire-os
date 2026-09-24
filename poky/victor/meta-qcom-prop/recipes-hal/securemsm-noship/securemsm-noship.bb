@@ -1,4 +1,4 @@
-inherit qcommon qlicense qprebuilt
+inherit qcommon qlicense qprebuilt sfpshim
 DESCRIPTION = "securemsmnoship with QseecomAPI user space library to interact with qseecom driver"
 DEPENDS = "virtual/kernel glib-2.0 linux-libc-headers securemsm-initial time-services"
 

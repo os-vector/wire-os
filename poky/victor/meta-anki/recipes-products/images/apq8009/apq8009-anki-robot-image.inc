@@ -45,6 +45,7 @@ IMAGE_INSTALL += "fault-code"
 #IMAGE_INSTALL += "python3-six"
 IMAGE_INSTALL += "sqlite3"
 IMAGE_INSTALL += "bzip2"
+IMAGE_INSTALL += "libjpeg-turbo"
 
 #IMAGE_INSTALL += "python3-protobuf"
 #IMAGE_INSTALL += "paycheck"

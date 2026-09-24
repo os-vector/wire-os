@@ -17,8 +17,8 @@ PR = "r19"
 #LD = "${WORKSPACE}/old-toolchain/arm/bin/arm-linux-gnueabi-ld"
 
 do_configure:prepend () {
-     export CFLAGS="${CFLAGS} -I${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/system-core/git/recipe-sysroot/usr/include/libunwindandroid -Wno-error -Wno-implicit-function-declaration"
-     export CXXFLAGS="${CXXFLAGS} -I${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/system-core/git/recipe-sysroot/usr/include/libunwindandroid -Wno-error -Wno-implicit-function-declaration"
+     export CFLAGS="${CFLAGS} -I${WORKSPACE}/poky/build/tmp-glibc/work/armv7ahf-neon-vfpv4-oe-linux-gnueabi/system-core/git/recipe-sysroot/usr/include/libunwindandroid -Wno-error -Wno-implicit-function-declaration"
+     export CXXFLAGS="${CXXFLAGS} -I${WORKSPACE}/poky/build/tmp-glibc/work/armv7ahf-neon-vfpv4-oe-linux-gnueabi/system-core/git/recipe-sysroot/usr/include/libunwindandroid -Wno-error -Wno-implicit-function-declaration"
 }
 
 DEPENDS += "virtual/kernel openssl glib-2.0 libselinux ext4-utils libcutils libmincrypt libutils libbase libunwindandroid"
