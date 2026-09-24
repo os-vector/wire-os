@@ -218,6 +218,9 @@ function build-prod() {
   build-victor-robot-user-image ${@}
 }
 
+# cleared every time
+cleanList=(vic-cloud anki-version machine-robot-image extra-conf vic-engine vic-robot update-os update-engine wireutils wcnss mm-camera initscript-anki rebooter adreno adsprpc vic-anim vic-switchboard vic-gateway-cert victor wired)
+
 function clean-oskr() {
   unset_bb_env
   export MACHINE=apq8009-robot
@@ -226,6 +229,7 @@ function clean-oskr() {
   export PRODUCT=robot
   export OSKR=1
   wire-clean
+  cdbitbake ${@} -c cleanall ${cleanList[@]}
 }
 
 function clean-dev() {
@@ -235,6 +239,7 @@ function clean-dev() {
   export VARIANT=perf
   export PRODUCT=robot
   wire-clean
+  cdbitbake ${@} -c cleanall ${cleanList[@]}
 }
 
 function clean-devcloudless() {
@@ -245,6 +250,7 @@ function clean-devcloudless() {
   export PRODUCT=robot
   export CLOUDLESS=1
   wire-clean
+  cdbitbake ${@} -c cleanall ${cleanList[@]} vic-cloudless
 }
 
 function clean-prod() {
@@ -254,6 +260,7 @@ function clean-prod() {
   export VARIANT=perf
   export PRODUCT=robot
   wire-clean
+  cdbitbake ${@} -c cleanall ${cleanList[@]}
 }
 
 function wire-clean() {
