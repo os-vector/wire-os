@@ -10,6 +10,11 @@ FILESPATH =+ "${WORKSPACE}:"
 SRC_URI = "file://qcom-opensource/wlan/prima/firmware_bin \
            file://set_wcnss_mode"
 SRC_URI += "file://wcnss_wlan.service"
+SRC_URI += "file://android_compat/device/qcom/${SOC_FAMILY}/WCNSS_qcom_cfg.ini \
+            file://android_compat/device/qcom/${SOC_FAMILY}/WCNSS_qcom_wlan_nv.bin \
+            file://android_compat/device/qcom/${SOC_FAMILY}/WCNSS_wlan_dictionary.dat \
+            file://android_compat/device/qcom/${SOC_FAMILY}/WCNSS_cfg.dat"
+WCNSS_CFG_DIR = "${UNPACKDIR}/android_compat/device/qcom/${SOC_FAMILY}"
 
 S = "${UNPACKDIR}/qcom-opensource/wlan/prima/firmware_bin"
 #UNPACKDIR = "${S}"
@@ -38,25 +43,10 @@ do_install() {
 	fi
 
     mkdir -p ${D}/lib/firmware/wlan/prima
-    cp -pP ${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/prima
-}
-do_install:append() {
-   install -d ${D}/lib/firmware/wlan/prima
-   if [ -e "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_qcom_wlan_nv.bin" ];then
-       cp -rf "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_qcom_wlan_nv.bin" ${D}/lib/firmware/wlan/prima
-   fi
-
-   if [ -e "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_wlan_dictionary.dat" ]; then
-       cp -rf "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_wlan_dictionary.dat" ${D}/lib/firmware/wlan/prima
-   elif [ -e "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}_32/WCNSS_wlan_dictionary.dat" ]; then
-       cp -rf "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}_32/WCNSS_wlan_dictionary.dat" ${D}/lib/firmware/wlan/prima
-   fi
-
-   if [ -e "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_cfg.dat" ]; then
-       cp -rf "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}/WCNSS_cfg.dat" ${D}/lib/firmware/wlan/prima
-   elif [ -e "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}_32/WCNSS_cfg.dat" ]; then
-       cp -rf "${WORKSPACE}/android_compat/device/qcom/${SOC_FAMILY}_32/WCNSS_cfg.dat" ${D}/lib/firmware/wlan/prima
-   fi
+    cp -pP ${WCNSS_CFG_DIR}/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/prima
+    cp -rf ${WCNSS_CFG_DIR}/WCNSS_qcom_wlan_nv.bin ${D}/lib/firmware/wlan/prima
+    cp -rf ${WCNSS_CFG_DIR}/WCNSS_wlan_dictionary.dat ${D}/lib/firmware/wlan/prima
+    cp -rf ${WCNSS_CFG_DIR}/WCNSS_cfg.dat ${D}/lib/firmware/wlan/prima
 }
 INITSCRIPT_NAME = "set_wcnss_mode"
 INITSCRIPT_PARAMS = "start 60 2 3 4 5 . stop 20 0 1 6 ."

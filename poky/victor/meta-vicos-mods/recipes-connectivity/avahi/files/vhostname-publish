@@ -1,0 +1,25 @@
+#!/bin/bash
+
+NAME_FILE=/data/etc/vhostname
+HOSTS=/run/avahi/hosts
+
+publish() {
+	NAME=$(cat "$NAME_FILE" 2>/dev/null)
+	IP=$(ip -4 -o addr show wlan0 2>/dev/null | awk '{split($4,a,"/"); print a[1]; exit}')
+
+	ENTRY=
+	if [ -n "$NAME" ] && [ -n "$IP" ]; then
+		ENTRY="$IP $NAME.local"
+	fi
+
+	[ -f "$HOSTS" ] && [ "$ENTRY" = "$(cat "$HOSTS")" ] && return
+
+	mkdir -p "$(dirname "$HOSTS")"
+	echo "$ENTRY" > "$HOSTS.tmp" && mv "$HOSTS.tmp" "$HOSTS"
+	avahi-daemon -r
+}
+
+publish
+ip -4 monitor address | while read -r _; do
+	publish
+done
