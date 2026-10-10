@@ -54,6 +54,46 @@
 	status = "disabled";
 };
 
+&sdhc_2 {
+	status = "disabled";
+};
+
+&usb_detect {
+	status = "disabled";
+};
+
+&mdss_dsi {
+	status = "disabled";
+};
+
+&pm8916_vib {
+	status = "disabled";
+};
+
+&pm8916_coincell {
+	status = "disabled";
+};
+
+&pm8916_l4 {
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+	qcom,init-voltage = <1800000>;
+};
+
+&soc {
+	gen-vkeys {
+		status = "disabled";
+	};
+
+	gpio_keys {
+		status = "disabled";
+	};
+
+	mem_dump {
+		status = "disabled";
+	};
+};
+
 &usb_otg {
 	status = "okay";
 	/delete-property/ extcon;
@@ -367,13 +407,7 @@
 };
 
 &i2c_3 {
-	qcom,camera@0 {
-		status = "disabled";
-	};
-
-	qcom,camera@1 {
-		status = "disabled";
-	};
+	status = "disabled";
 };
 
 &msm_gpio {

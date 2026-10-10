@@ -3193,11 +3193,11 @@ static ssize_t msm_otg_mode_write(struct file *file, const char __user *ubuf,
 		goto out;
 	}
 
-	if (!strcmp(buf, "host")) {
+	if (sysfs_streq(buf, "host")) {
 		req_mode = USB_HOST;
-	} else if (!strcmp(buf, "peripheral")) {
+	} else if (sysfs_streq(buf, "peripheral")) {
 		req_mode = USB_PERIPHERAL;
-	} else if (!strcmp(buf, "none")) {
+	} else if (sysfs_streq(buf, "none")) {
 		req_mode = USB_NONE;
 	} else {
 		status = -EINVAL;
@@ -3231,9 +3231,12 @@ static ssize_t msm_otg_mode_write(struct file *file, const char __user *ubuf,
 	case USB_HOST:
 		switch (phy->otg->state) {
 		case OTG_STATE_B_IDLE:
+			clear_bit(ID, &motg->inputs);
+			break;
 		case OTG_STATE_B_PERIPHERAL:
 		case OTG_STATE_B_SUSPEND:
 			clear_bit(ID, &motg->inputs);
+			clear_bit(B_SESS_VLD, &motg->inputs);
 			break;
 		default:
 			goto out;
