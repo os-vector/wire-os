@@ -599,12 +599,12 @@ case "$target" in
                 # Apply governor settings for 8909
 
                 # disable thermal core_control to update scaling_min_freq
-		echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
+		#echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
                 echo 1 > /sys/devices/system/cpu/cpu0/online
                 echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
                 echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
                 # enable thermal core_control now
-                echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
+                #echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 
                 echo "25000" > /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
                 echo 90 > /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
@@ -636,7 +636,7 @@ case "$target" in
 esac
 
 # disable msm thermal driver
-echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
+#echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 #sleep 0.1
 
 #echo 1267200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
