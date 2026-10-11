@@ -22,6 +22,7 @@
 #include <linux/errno.h>
 #include <linux/err.h>
 #include <linux/dma-mapping.h>
+#include <linux/mm.h>
 #include <linux/msm_ion.h>
 #include <linux/of.h>
 
@@ -185,6 +186,19 @@ static int ion_cma_mmap(struct ion_heap *mapper, struct ion_buffer *buffer,
 {
 	struct device *dev = buffer->heap->priv;
 	struct ion_cma_buffer_info *info = buffer->priv_virt;
+
+	if (info->is_cached && buffer->heap->id == ION_ADSP_HEAP_ID) {
+		unsigned long nr_pages = PAGE_ALIGN(buffer->size) >> PAGE_SHIFT;
+
+		if (vma->vm_pgoff >= nr_pages ||
+		    vma_pages(vma) > nr_pages - vma->vm_pgoff)
+			return -ENXIO;
+		return remap_pfn_range(vma, vma->vm_start,
+				       dma_to_pfn(dev, info->handle) +
+				       vma->vm_pgoff,
+				       vma->vm_end - vma->vm_start,
+				       vma->vm_page_prot);
+	}
 
 	if (info->is_cached)
 		return dma_mmap_attrs(dev, vma, info->cpu_addr,
