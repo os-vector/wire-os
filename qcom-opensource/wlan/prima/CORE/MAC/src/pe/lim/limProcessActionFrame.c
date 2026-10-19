@@ -111,6 +111,7 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId)
     {
         limLog(pMac, LOGE,
            FL("Avoid Switch Channel req during pre auth"));
+        limRestorePreChannelSwitchState(pMac, psessionEntry);
         return;
     }
 
@@ -163,6 +164,7 @@ void limStopTxAndSwitchChannel(tpAniSirGlobal pMac, tANI_U8 sessionId)
     if (tx_timer_activate(&pMac->lim.limTimers.gLimChannelSwitchTimer) != TX_SUCCESS)
     {
         limLog(pMac, LOGP, FL("tx_timer_activate failed"));
+        limRestorePreChannelSwitchState(pMac, psessionEntry);
     }
     return;
 }

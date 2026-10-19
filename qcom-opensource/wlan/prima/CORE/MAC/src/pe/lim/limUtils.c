@@ -2632,6 +2632,7 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
     if(!limIsSystemInActiveState(pMac))
     {
         PELOGW(limLog(pMac, LOGW, FL("Device is not in active state, cannot switch channel"));)
+        limRestorePreChannelSwitchState(pMac, psessionEntry);
         return;
     }
          
@@ -2651,6 +2652,7 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
     {
         limLog(pMac, LOGE,
            FL("Avoid Switch Channel req during pre auth"));
+        limRestorePreChannelSwitchState(pMac, psessionEntry);
         return;
     }
     /* If link is already suspended mean some off
@@ -2665,6 +2667,7 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
        limLog(pMac, LOGE, FL("Link is already suspended for "
                "some other reason. Return here for sessionId:%d"),
                pMac->lim.limTimers.gLimChannelSwitchTimer.sessionId);
+       limRestorePreChannelSwitchState(pMac, psessionEntry);
        return;
     }
 

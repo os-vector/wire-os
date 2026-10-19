@@ -169,6 +169,7 @@ defMsgDecision(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
            processed immediately and sets gLimAddtsSent to FALSE.
          */
         (limMsg->type != SIR_LIM_ADDTS_RSP_TIMEOUT) &&
+        (limMsg->type != SIR_LIM_CHANNEL_SWITCH_TIMEOUT) &&
         (limMsg->type != WDA_LOST_LINK_PARAMS_IND) &&
         /* Allow processing of RX frames while awaiting reception of
            ADD TS response over the air. This logic particularly handles the
