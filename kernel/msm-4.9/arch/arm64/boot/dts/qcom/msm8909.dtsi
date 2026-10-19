@@ -214,7 +214,7 @@
 			compatible = "shared-dma-pool";
 			reusable;
 			alignment = <0 0x400000>;
-			size = <0 0x1800000>;
+			size = <0 0x2000000>;
 		};
 
 		cont_splash_mem: splash_region@83000000 {

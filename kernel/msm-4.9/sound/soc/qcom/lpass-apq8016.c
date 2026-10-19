@@ -180,13 +180,6 @@ static int apq8016_lpass_init(struct platform_device *pdev)
 		return PTR_ERR(drvdata->pcnoc_mport_clk);
 	}
 
-	ret = clk_prepare_enable(drvdata->pcnoc_mport_clk);
-	if (ret) {
-		dev_err(&pdev->dev, "%s() Error enabling pcnoc-mport-clk: %d\n",
-				__func__, ret);
-		return ret;
-	}
-
 	drvdata->pcnoc_sway_clk = devm_clk_get(dev, "pcnoc-sway-clk");
 	if (IS_ERR(drvdata->pcnoc_sway_clk)) {
 		dev_err(&pdev->dev, "%s() error getting pcnoc-sway-clk: %ld\n",
@@ -208,7 +201,6 @@ static int apq8016_lpass_exit(struct platform_device *pdev)
 {
 	struct lpass_data *drvdata = platform_get_drvdata(pdev);
 
-	clk_disable_unprepare(drvdata->pcnoc_mport_clk);
 	clk_disable_unprepare(drvdata->pcnoc_sway_clk);
 
 	return 0;

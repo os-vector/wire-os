@@ -37,6 +37,9 @@
 #define clk_blsp1_qup5_spi_apps_clk_src		0x9752f35f
 #define clk_blsp1_qup6_i2c_apps_clk_src		0x28806803
 #define clk_blsp1_qup6_spi_apps_clk_src		0x44a1edc4
+#define clk_ultaudio_ahbfabric_clk_src		0xc0be32a2
+#define clk_ultaudio_lpaif_pri_i2s_clk_src	0xd3ee5cb1
+#define clk_codec_digcodec_clk_src		0xcb1bc814
 #define clk_blsp1_uart1_apps_clk_src		0xf8146114
 #define clk_blsp1_uart2_apps_clk_src		0xfc9c2f73
 #define clk_byte0_clk_src			0x75cc885b
@@ -119,6 +122,12 @@
 #define clk_gcc_camss_jpeg0_clk			0x1ed3f032
 #define clk_gcc_camss_jpeg_ahb_clk		0x3bfa7603
 #define clk_gcc_camss_jpeg_axi_clk		0x3e278896
+#define clk_gcc_ultaudio_ahbfabric_ixfabric_clk	0x6fa6946c
+#define clk_gcc_ultaudio_ahbfabric_ixfabric_lpm_clk	0x48355172
+#define clk_gcc_ultaudio_pcnoc_mport_clk	0x146e4272
+#define clk_gcc_ultaudio_pcnoc_sway_clk		0xc286bd00
+#define clk_gcc_ultaudio_lpaif_pri_i2s_clk	0x6519c659
+#define clk_gcc_codec_digcodec_clk		0xde1425df
 #define clk_gcc_camss_mclk0_clk			0x80902deb
 #define clk_gcc_camss_mclk1_clk			0x5002d85f
 #define clk_gcc_camss_micro_ahb_clk		0xfbbee8cf

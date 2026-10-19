@@ -50,12 +50,32 @@ static int lpass_cpu_daiops_startup(struct snd_pcm_substream *substream,
 	struct lpass_data *drvdata = snd_soc_dai_get_drvdata(dai);
 	int ret;
 
+	ret = clk_set_rate(drvdata->ahbix_clk,
+			   clk_round_rate(drvdata->ahbix_clk,
+					  LPASS_AHBIX_CLOCK_FREQUENCY));
+	if (ret) {
+		dev_err(dai->dev, "%s() error setting rate on ahbix_clk: %d\n",
+				__func__, ret);
+		return ret;
+	}
+
+	if (drvdata->pcnoc_mport_clk) {
+		ret = clk_prepare_enable(drvdata->pcnoc_mport_clk);
+		if (ret) {
+			dev_err(dai->dev, "%s() error enabling pcnoc-mport-clk: %d\n",
+					__func__, ret);
+			return ret;
+		}
+	}
+
 	if (!IS_ERR(drvdata->mi2s_osr_clk[dai->driver->id])) {
 		ret = clk_prepare_enable(
 				drvdata->mi2s_osr_clk[dai->driver->id]);
 		if (ret) {
 			dev_err(dai->dev, "%s() error in enabling mi2s osr clk: %d\n",
 					__func__, ret);
+			if (drvdata->pcnoc_mport_clk)
+				clk_disable_unprepare(drvdata->pcnoc_mport_clk);
 			return ret;
 		}
 	}
@@ -67,6 +87,8 @@ static int lpass_cpu_daiops_startup(struct snd_pcm_substream *substream,
 		if (!IS_ERR(drvdata->mi2s_osr_clk[dai->driver->id]))
 			clk_disable_unprepare(
 				drvdata->mi2s_osr_clk[dai->driver->id]);
+		if (drvdata->pcnoc_mport_clk)
+			clk_disable_unprepare(drvdata->pcnoc_mport_clk);
 		return ret;
 	}
 
@@ -82,6 +104,9 @@ static void lpass_cpu_daiops_shutdown(struct snd_pcm_substream *substream,
 
 	if (!IS_ERR(drvdata->mi2s_osr_clk[dai->driver->id]))
 		clk_disable_unprepare(drvdata->mi2s_osr_clk[dai->driver->id]);
+
+	if (drvdata->pcnoc_mport_clk)
+		clk_disable_unprepare(drvdata->pcnoc_mport_clk);
 }
 
 static int lpass_cpu_daiops_hw_params(struct snd_pcm_substream *substream,
@@ -533,7 +558,9 @@ int asoc_qcom_lpass_cpu_platform_probe(struct platform_device *pdev)
 		return PTR_ERR(drvdata->ahbix_clk);
 	}
 
-	ret = clk_set_rate(drvdata->ahbix_clk, LPASS_AHBIX_CLOCK_FREQUENCY);
+	ret = clk_set_rate(drvdata->ahbix_clk,
+			   clk_round_rate(drvdata->ahbix_clk,
+					  LPASS_AHBIX_CLOCK_FREQUENCY));
 	if (ret) {
 		dev_err(&pdev->dev, "%s() error setting rate on ahbix_clk: %d\n",
 				__func__, ret);

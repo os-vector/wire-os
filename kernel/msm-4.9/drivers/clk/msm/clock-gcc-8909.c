@@ -197,6 +197,15 @@ static void __iomem *virt_bases[N_BASES];
 #define CAMSS_GP0_CBCR					0x54018
 #define CAMSS_GP1_CMD_RCGR				0x55000
 #define CAMSS_GP1_CBCR					0x55018
+#define ULTAUDIO_PCNOC_MPORT_CBCR			0x1C000
+#define ULTAUDIO_PCNOC_SWAY_CBCR			0x1C004
+#define ULTAUDIO_AHBFABRIC_CMD_RCGR			0x1C010
+#define ULTAUDIO_AHBFABRIC_IXFABRIC_LPM_CBCR		0x1C024
+#define ULTAUDIO_AHBFABRIC_IXFABRIC_CBCR		0x1C028
+#define ULTAUDIO_LPAIF_PRI_I2S_CMD_RCGR			0x1C054
+#define ULTAUDIO_LPAIF_PRI_I2S_CBCR			0x1C068
+#define CODEC_DIGCODEC_CMD_RCGR				0x1C09C
+#define CODEC_DIGCODEC_CBCR				0x1C0B0
 #define CAMSS_AHB_CBCR					0x5A014
 #define CAMSS_TOP_AHB_CBCR				0x56004
 #define VFE0_CMD_RCGR					0x58000
@@ -892,6 +901,88 @@ static struct rcg_clk mclk1_clk_src = {
 		.ops = &clk_ops_rcg_mnd,
 		VDD_DIG_FMAX_MAP1(LOWER, 66670000),
 		CLK_INIT(mclk1_clk_src.c),
+	},
+};
+
+static struct clk_freq_tbl ftbl_gcc_ultaudio_ahb_clk[] = {
+	F(   3200000,	xo,	6,	0,	0),
+	F(   6400000,	xo,	3,	0,	0),
+	F(   9600000,	xo,	2,	0,	0),
+	F(  19200000,	xo,	1,	0,	0),
+	F_END
+};
+
+static struct rcg_clk ultaudio_ahbfabric_clk_src = {
+	.cmd_rcgr_reg = ULTAUDIO_AHBFABRIC_CMD_RCGR,
+	.set_rate = set_rate_hid,
+	.freq_tbl = ftbl_gcc_ultaudio_ahb_clk,
+	.current_freq = &rcg_dummy_freq,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "ultaudio_ahbfabric_clk_src",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.ops = &clk_ops_rcg,
+		VDD_DIG_FMAX_MAP1(LOWER, 19200000),
+		CLK_INIT(ultaudio_ahbfabric_clk_src.c),
+	},
+};
+
+static struct clk_freq_tbl ftbl_gcc_ultaudio_lpaif_i2s_clk[] = {
+	F(    128000,	xo,	10,	1,	15),
+	F(    256000,	xo,	5,	1,	15),
+	F(    384000,	xo,	5,	1,	10),
+	F(    512000,	xo,	5,	2,	15),
+	F(    576000,	xo,	5,	3,	20),
+	F(    768000,	xo,	5,	1,	5),
+	F(    800000,	xo,	5,	5,	24),
+	F(   1024000,	xo,	5,	4,	15),
+	F(   1152000,	xo,	1,	3,	50),
+	F(   1536000,	xo,	1,	2,	25),
+	F(   1600000,	xo,	12,	0,	0),
+	F(   1728000,	xo,	5,	9,	20),
+	F(   2048000,	xo,	5,	8,	15),
+	F(   2304000,	xo,	5,	3,	5),
+	F(   2400000,	xo,	8,	0,	0),
+	F(   3072000,	xo,	5,	4,	5),
+	F(   4800000,	xo,	4,	0,	0),
+	F(   9600000,	xo,	2,	0,	0),
+	F_END
+};
+
+static struct rcg_clk ultaudio_lpaif_pri_i2s_clk_src = {
+	.cmd_rcgr_reg = ULTAUDIO_LPAIF_PRI_I2S_CMD_RCGR,
+	.set_rate = set_rate_mnd,
+	.freq_tbl = ftbl_gcc_ultaudio_lpaif_i2s_clk,
+	.current_freq = &rcg_dummy_freq,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "ultaudio_lpaif_pri_i2s_clk_src",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.ops = &clk_ops_rcg_mnd,
+		VDD_DIG_FMAX_MAP1(LOWER, 9600000),
+		CLK_INIT(ultaudio_lpaif_pri_i2s_clk_src.c),
+	},
+};
+
+static struct clk_freq_tbl ftbl_gcc_codec_clk[] = {
+	F(   9600000,	xo,	2,	0,	0),
+	F(  12288000,	xo,	1,	16,	25),
+	F(  19200000,	xo,	1,	0,	0),
+	F_END
+};
+
+static struct rcg_clk codec_digcodec_clk_src = {
+	.cmd_rcgr_reg = CODEC_DIGCODEC_CMD_RCGR,
+	.set_rate = set_rate_mnd,
+	.freq_tbl = ftbl_gcc_codec_clk,
+	.current_freq = &rcg_dummy_freq,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "codec_digcodec_clk_src",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.ops = &clk_ops_rcg_mnd,
+		VDD_DIG_FMAX_MAP1(LOWER, 19200000),
+		CLK_INIT(codec_digcodec_clk_src.c),
 	},
 };
 
@@ -1603,6 +1694,79 @@ static struct branch_clk gcc_camss_mclk1_clk = {
 		.parent = &mclk1_clk_src.c,
 		.ops = &clk_ops_branch,
 		CLK_INIT(gcc_camss_mclk1_clk.c),
+	},
+};
+
+static struct branch_clk gcc_ultaudio_pcnoc_mport_clk = {
+	.cbcr_reg = ULTAUDIO_PCNOC_MPORT_CBCR,
+	.has_sibling = 1,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_ultaudio_pcnoc_mport_clk",
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_ultaudio_pcnoc_mport_clk.c),
+	},
+};
+
+static struct branch_clk gcc_ultaudio_pcnoc_sway_clk = {
+	.cbcr_reg = ULTAUDIO_PCNOC_SWAY_CBCR,
+	.has_sibling = 1,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_ultaudio_pcnoc_sway_clk",
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_ultaudio_pcnoc_sway_clk.c),
+	},
+};
+
+static struct branch_clk gcc_ultaudio_ahbfabric_ixfabric_clk = {
+	.cbcr_reg = ULTAUDIO_AHBFABRIC_IXFABRIC_CBCR,
+	.has_sibling = 0,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_ultaudio_ahbfabric_ixfabric_clk",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.parent = &ultaudio_ahbfabric_clk_src.c,
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_ultaudio_ahbfabric_ixfabric_clk.c),
+	},
+};
+
+static struct branch_clk gcc_ultaudio_ahbfabric_ixfabric_lpm_clk = {
+	.cbcr_reg = ULTAUDIO_AHBFABRIC_IXFABRIC_LPM_CBCR,
+	.has_sibling = 1,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_ultaudio_ahbfabric_ixfabric_lpm_clk",
+		.parent = &ultaudio_ahbfabric_clk_src.c,
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_ultaudio_ahbfabric_ixfabric_lpm_clk.c),
+	},
+};
+
+static struct branch_clk gcc_ultaudio_lpaif_pri_i2s_clk = {
+	.cbcr_reg = ULTAUDIO_LPAIF_PRI_I2S_CBCR,
+	.has_sibling = 0,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_ultaudio_lpaif_pri_i2s_clk",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.parent = &ultaudio_lpaif_pri_i2s_clk_src.c,
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_ultaudio_lpaif_pri_i2s_clk.c),
+	},
+};
+
+static struct branch_clk gcc_codec_digcodec_clk = {
+	.cbcr_reg = CODEC_DIGCODEC_CBCR,
+	.has_sibling = 0,
+	.base = &virt_bases[GCC_BASE],
+	.c = {
+		.dbg_name = "gcc_codec_digcodec_clk",
+		.flags = CLKFLAG_NO_RATE_CACHE,
+		.parent = &codec_digcodec_clk_src.c,
+		.ops = &clk_ops_branch,
+		CLK_INIT(gcc_codec_digcodec_clk.c),
 	},
 };
 
@@ -2455,6 +2619,9 @@ static struct clk_lookup msm_clocks_lookup[] = {
 	CLK_LIST(camss_gp1_clk_src),
 	CLK_LIST(mclk0_clk_src),
 	CLK_LIST(mclk1_clk_src),
+	CLK_LIST(ultaudio_ahbfabric_clk_src),
+	CLK_LIST(ultaudio_lpaif_pri_i2s_clk_src),
+	CLK_LIST(codec_digcodec_clk_src),
 	CLK_LIST(csi0phytimer_clk_src),
 	CLK_LIST(gp1_clk_src),
 	CLK_LIST(gp2_clk_src),
@@ -2511,6 +2678,12 @@ static struct clk_lookup msm_clocks_lookup[] = {
 	CLK_LIST(gcc_camss_ispif_ahb_clk),
 	CLK_LIST(gcc_camss_mclk0_clk),
 	CLK_LIST(gcc_camss_mclk1_clk),
+	CLK_LIST(gcc_ultaudio_pcnoc_mport_clk),
+	CLK_LIST(gcc_ultaudio_pcnoc_sway_clk),
+	CLK_LIST(gcc_ultaudio_ahbfabric_ixfabric_clk),
+	CLK_LIST(gcc_ultaudio_ahbfabric_ixfabric_lpm_clk),
+	CLK_LIST(gcc_ultaudio_lpaif_pri_i2s_clk),
+	CLK_LIST(gcc_codec_digcodec_clk),
 	CLK_LIST(gcc_camss_csi0phytimer_clk),
 	CLK_LIST(gcc_camss_ahb_clk),
 	CLK_LIST(gcc_camss_top_ahb_clk),

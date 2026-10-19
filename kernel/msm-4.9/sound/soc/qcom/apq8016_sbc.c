@@ -34,8 +34,9 @@ struct apq8016_sbc_data {
 #define MIC_CTRL_QUA_WS_SLAVE_SEL_10	BIT(17)
 #define MIC_CTRL_TLMM_SCLK_EN		BIT(1)
 #define	SPKR_CTL_PRI_WS_SLAVE_SEL_11	(BIT(17) | BIT(16))
+#define DEFAULT_MCLK_RATE		9600000
 
-static int apq8016_sbc_dai_init(struct snd_soc_pcm_runtime *rtd)
+static int apq8016_sbc_set_iomux(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_card *card = rtd->card;
@@ -69,6 +70,37 @@ static int apq8016_sbc_dai_init(struct snd_soc_pcm_runtime *rtd)
 	}
 
 	return rval;
+}
+
+static int apq8016_sbc_startup(struct snd_pcm_substream *substream)
+{
+	return apq8016_sbc_set_iomux(substream->private_data);
+}
+
+static struct snd_soc_ops apq8016_sbc_ops = {
+	.startup = apq8016_sbc_startup,
+};
+
+static int apq8016_sbc_dai_init(struct snd_soc_pcm_runtime *rtd)
+{
+	struct snd_soc_card *card = rtd->card;
+	int i, rval;
+
+	rval = apq8016_sbc_set_iomux(rtd);
+	if (rval)
+		return rval;
+
+	for (i = 0; i < rtd->num_codecs; i++) {
+		rval = snd_soc_codec_set_sysclk(rtd->codec_dais[i]->codec, 0, 0,
+						DEFAULT_MCLK_RATE,
+						SND_SOC_CLOCK_IN);
+		if (rval != 0 && rval != -ENOTSUPP) {
+			dev_warn(card->dev, "Failed to set mclk: %d\n", rval);
+			return rval;
+		}
+	}
+
+	return 0;
 }
 
 static struct apq8016_sbc_data *apq8016_sbc_parse_of(struct snd_soc_card *card)
@@ -125,21 +157,14 @@ static struct apq8016_sbc_data *apq8016_sbc_parse_of(struct snd_soc_card *card)
 			goto error;
 		}
 
-		link->codec_of_node = of_parse_phandle(codec, "sound-dai", 0);
-		if (!link->codec_of_node) {
-			dev_err(card->dev, "error getting codec phandle\n");
-			ret = -EINVAL;
-			goto error;
-		}
-
 		ret = snd_soc_of_get_dai_name(cpu, &link->cpu_dai_name);
 		if (ret) {
 			dev_err(card->dev, "error getting cpu dai name\n");
 			goto error;
 		}
 
-		ret = snd_soc_of_get_dai_name(codec, &link->codec_dai_name);
-		if (ret) {
+		ret = snd_soc_of_get_dai_link_codecs(dev, codec, link);
+		if (ret < 0) {
 			dev_err(card->dev, "error getting codec dai name\n");
 			goto error;
 		}
@@ -153,6 +178,7 @@ static struct apq8016_sbc_data *apq8016_sbc_parse_of(struct snd_soc_card *card)
 
 		link->stream_name = link->name;
 		link->init = apq8016_sbc_dai_init;
+		link->ops = &apq8016_sbc_ops;
 		link++;
 
 		of_node_put(cpu);

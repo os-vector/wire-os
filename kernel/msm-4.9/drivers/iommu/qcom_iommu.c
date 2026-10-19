@@ -141,6 +141,9 @@ struct qcom_iommu_domain {
 	 * it there was a use-after-free.
 	 */
 	struct iommu_fwspec	*fwspec;
+	u32			 cb_num;
+	u64			 ttbr0;
+	u32			 contextidr;
 };
 
 static struct qcom_iommu_domain *to_qcom_iommu_domain(struct iommu_domain *dom)
@@ -356,7 +359,6 @@ static int qcom_iommu_init_domain(struct iommu_domain *domain,
 	struct io_pgtable_ops *pgtbl_ops;
 	struct io_pgtable_cfg pgtbl_cfg;
 	int i, ret = 0;
-	u32 reg;
 
 	mutex_lock(&qcom_domain->init_mutex);
 	if (qcom_domain->iommu) {
@@ -427,6 +429,11 @@ static int qcom_iommu_init_domain(struct iommu_domain *domain,
 		}
 
 		qcom_iommu_program_ctx(ctx, &pgtbl_cfg);
+
+		qcom_domain->cb_num = ctx->asid;
+		qcom_domain->ttbr0 = pgtbl_cfg.arm_lpae_s1_cfg.ttbr[0] |
+			((u64)ctx->asid << TTBRn_ASID_SHIFT);
+		qcom_domain->contextidr = 0;
 
 		ctx->domain = domain;
 	}
@@ -671,6 +678,45 @@ static int qcom_iommu_of_xlate(struct device *dev,
 	return iommu_fwspec_add_ids(dev, &asid, 1);
 }
 
+static int qcom_iommu_domain_get_attr(struct iommu_domain *domain,
+				      enum iommu_attr attr, void *data)
+{
+	struct qcom_iommu_domain *qcom_domain = to_qcom_iommu_domain(domain);
+
+	if (!qcom_domain->iommu)
+		return -ENODEV;
+
+	switch (attr) {
+	case DOMAIN_ATTR_CONTEXT_BANK:
+		*((unsigned int *)data) = qcom_domain->cb_num;
+		break;
+	case DOMAIN_ATTR_TTBR0:
+		*((u64 *)data) = qcom_domain->ttbr0;
+		break;
+	case DOMAIN_ATTR_CONTEXTIDR:
+		*((u32 *)data) = qcom_domain->contextidr;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int qcom_iommu_domain_set_attr(struct iommu_domain *domain,
+				      enum iommu_attr attr, void *data)
+{
+	switch (attr) {
+	case DOMAIN_ATTR_CB_STALL_DISABLE:
+	case DOMAIN_ATTR_ATOMIC:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static const struct iommu_ops qcom_iommu_ops = {
 	.capable	= qcom_iommu_capable,
 	.domain_alloc	= qcom_iommu_domain_alloc,
@@ -681,6 +727,8 @@ static const struct iommu_ops qcom_iommu_ops = {
 	.unmap		= qcom_iommu_unmap,
 	.map_sg		= default_iommu_map_sg,
 	.iova_to_phys	= qcom_iommu_iova_to_phys,
+	.domain_get_attr = qcom_iommu_domain_get_attr,
+	.domain_set_attr = qcom_iommu_domain_set_attr,
 	.add_device	= qcom_iommu_add_device,
 	.remove_device	= qcom_iommu_remove_device,
 	.device_group	= generic_device_group,

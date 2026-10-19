@@ -1,4 +1,5 @@
 #include "apq8009-robot-pronto-refboard.dts"
+#include <dt-bindings/sound/apq8016-lpass.h>
 
 / {
 	model = "Anki Vector (APQ8009 Robot)";
@@ -10,6 +11,15 @@
 };
 &apps_iommu {
 	status = "disabled";
+};
+
+&kgsl_msm_iommu {
+	qcom,global_pt;
+};
+
+&gfx3d_user {
+	iommus = <&gpu_iommu_cb 1>;
+	/delete-property/ qcom,gpu-offset;
 };
 
 &msm_cam_smmu_cb1 {
@@ -122,6 +132,20 @@
 &peripheral_mem {
 	status = "okay";
 	reg = <0x0 0x8a400000 0x0 0x0700000>;
+};
+
+/delete-node/ &adsp_heap;
+/delete-node/ &adsp_mem;
+
+&soc {
+	/delete-node/ qcom,mdsprpc-mem;
+	/delete-node/ qcom,msm-adsprpc-mem;
+};
+
+/delete-node/ &modem_adsp_mem;
+
+&soc {
+	/delete-node/ qcom,mss@4080000;
 };
 
 &i2c_5 {
@@ -404,6 +428,27 @@
 			interrupts = <0 104 4>;
 		};
 	};
+
+	gpu_iommu_cb: iommu@1f08000 {
+		compatible = "qcom,msm-iommu-v1";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#iommu-cells = <1>;
+		ranges = <0 0x1f08000 0x8000>;
+		qcom,iommu-secure-id = <18>;
+		qcom,enable-static-cb;
+		clocks = <&clock_gcc clk_gcc_smmu_cfg_clk>,
+			 <&clock_gcc clk_gcc_gfx_tcu_clk>,
+			 <&clock_gcc clk_gcc_gtcu_ahb_clk>,
+			 <&clock_gcc clk_gcc_gfx_tbu_clk>;
+
+		/* gfx3d_user = CB1, 0x1f09000 */
+		iommu-ctx@1000 {
+			compatible = "qcom,msm-iommu-v1-ns";
+			reg = <0x1000 0x1000>;
+			interrupts = <0 241 4>;
+		};
+	};
 };
 
 &i2c_3 {
@@ -527,6 +572,85 @@
 				 <&clock_gcc clk_gcc_camss_mclk0_clk>;
 			clock-names = "cam_src_clk", "cam_clk";
 			qcom,clock-rates = <24000000 0>;
+		};
+	};
+};
+
+&audio_codec_mtp {
+	status = "disabled";
+};
+
+&pmic_analog_codec {
+	status = "disabled";
+};
+
+&cdc_pri_mi2s_gpios {
+	status = "disabled";
+};
+
+&spmi_bus {
+	pm8916@1 {
+		vector_wcd_codec: audio-codec@f000 {
+			compatible = "qcom,pm8916-wcd-analog-codec";
+			reg = <0xf000 0x200>;
+			vdd-cdc-io-supply = <&pm8916_l5>;
+			vdd-cdc-tx-rx-cx-supply = <&pm8916_l5>;
+			vdd-micbias-supply = <&pm8916_l13>;
+			#sound-dai-cells = <1>;
+		};
+	};
+};
+
+&soc {
+	vector_lpass: lpass@7708000 {
+		compatible = "qcom,lpass-cpu-apq8016";
+		clocks = <&clock_gcc clk_gcc_ultaudio_ahbfabric_ixfabric_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_pcnoc_mport_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_pcnoc_sway_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_lpaif_pri_i2s_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_lpaif_pri_i2s_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_lpaif_pri_i2s_clk>,
+			 <&clock_gcc clk_gcc_ultaudio_lpaif_pri_i2s_clk>;
+		clock-names = "ahbix-clk",
+			      "pcnoc-mport-clk",
+			      "pcnoc-sway-clk",
+			      "mi2s-bit-clk0",
+			      "mi2s-bit-clk1",
+			      "mi2s-bit-clk2",
+			      "mi2s-bit-clk3";
+		#sound-dai-cells = <1>;
+		interrupts = <0 160 4>;
+		interrupt-names = "lpass-irq-lpaif";
+		reg = <0x07708000 0x10000>;
+		reg-names = "lpass-lpaif";
+	};
+
+	vector_lpass_codec: lpass-codec@771c000 {
+		compatible = "qcom,msm8916-wcd-digital-codec";
+		reg = <0x0771c000 0x400>;
+		clocks = <&clock_gcc clk_gcc_ultaudio_ahbfabric_ixfabric_clk>,
+			 <&clock_gcc clk_gcc_codec_digcodec_clk>;
+		clock-names = "ahbix-clk", "mclk";
+		#sound-dai-cells = <1>;
+	};
+
+	vector_sound: lpass-sound@7702000 {
+		compatible = "qcom,apq8016-sbc-sndcard";
+		reg = <0x07702000 0x4>, <0x07702004 0x4>;
+		reg-names = "mic-iomux", "spkr-iomux";
+		qcom,model = "vector-lpass";
+		pinctrl-names = "default";
+		pinctrl-0 = <&cdc_pdm_lines_act>;
+
+		internal-codec-playback-dai-link@0 {
+			link-name = "Speaker";
+			cpu {
+				sound-dai = <&vector_lpass MI2S_PRIMARY>;
+			};
+			codec {
+				sound-dai = <&vector_lpass_codec 0>,
+					    <&vector_wcd_codec 0>;
+			};
 		};
 	};
 };
