@@ -134,3 +134,11 @@ EOF
 
 INSANE_SKIP:${PN} += "ldflags"
 INSANE_SKIP:${PN} += "rpaths"
+
+do_install:append () {
+    find ${D} -type f | while read f; do
+        if chrpath -l "$f" >/dev/null 2>&1; then
+            chrpath -d "$f"
+        fi
+    done
+}

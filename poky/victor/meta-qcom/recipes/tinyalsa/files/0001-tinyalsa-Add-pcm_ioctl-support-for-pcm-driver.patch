@@ -3,6 +3,7 @@ From: Ramu Gottipati <ramug@codeaurora.org>
 Date: Fri, 7 Sep 2018 11:06:10 +0530
 Subject: [PATCH] tinyalsa: Add pcm_ioctl support for pcm driver
 
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/include/tinyalsa/pcm.h |  2 ++
  git/src/pcm.c              | 14 ++++++++++++++

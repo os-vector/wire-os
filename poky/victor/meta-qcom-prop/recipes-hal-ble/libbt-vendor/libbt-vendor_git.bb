@@ -160,6 +160,11 @@ FILES:${PN} += "/misc/bluetooth/*"
 do_install:append () {
     install -d ${D}/misc/bluetooth
     install -m 755 ${S}/init.msm.bt.sh ${D}/misc/bluetooth/
+    find ${D} -type f | while read f; do
+        if chrpath -l "$f" >/dev/null 2>&1; then
+            chrpath -d "$f"
+        fi
+    done
 }
 
 INSANE_SKIP:${PN} += "rpaths"

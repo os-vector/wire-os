@@ -5,6 +5,8 @@ Subject: [PATCH] Disable NTP by default
 
 By default, we do NOT want connman to perform NTP operations. We have
 a separate NTP client to do that.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  src/clock.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

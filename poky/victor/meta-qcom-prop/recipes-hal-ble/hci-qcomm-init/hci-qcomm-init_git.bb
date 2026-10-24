@@ -156,6 +156,11 @@ do_install:append () {
     install -d ${D}/usr/bin
     rm -f ${D}/usr/bin/hci_qcomm_init
     install -m 755 ${S}/hci_qcomm_init_49 ${D}/usr/bin/hci_qcomm_init
+    find ${D} -type f | while read f; do
+        if chrpath -l "$f" >/dev/null 2>&1; then
+            chrpath -d "$f"
+        fi
+    done
 }
 
 INSANE_SKIP:${PN} += "rpaths"

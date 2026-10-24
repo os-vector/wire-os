@@ -3,6 +3,7 @@ From: Anurag Chouhan <achouhan@codeaurora.org>
 Date: Thu, 18 Apr 2019 15:53:42 +0530
 Subject: [PATCH] tinyhostless
 
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/utils/tinyhostless.c | 298 +++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 298 insertions(+)

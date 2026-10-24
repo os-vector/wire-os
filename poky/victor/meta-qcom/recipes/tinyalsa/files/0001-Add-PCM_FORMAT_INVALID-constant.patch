@@ -3,6 +3,7 @@ From: Manish Dewangan <manish@codeaurora.org>
 Date: Mon, 17 Oct 2016 14:28:05 +0530
 Subject: [PATCH] new:wq
 
+Upstream-Status: Inappropriate [embedded specific]
 ---
  tinyalsa-git/include/tinyalsa/pcm.h | 1 +
  1 file changed, 1 insertion(+)

@@ -1,5 +1,5 @@
 DESCRIPTION = "blkdiscard utility forked from https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git/tree/sys-utils/blkdiscard.c"
-LICENSE = "GPLv2+"
+LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://${COREBASE}/../victor/meta-qcom/recipes-extended/blkdiscard/files/blkdiscard.c;beginline=7;endline=18;md5=909275dfe35bdbdd8d9ddc0484cf03a9"
 
 SRC_URI = "file://blkdiscard.c"

@@ -5,6 +5,8 @@ Subject: [PATCH] Add conf settings for WiFi tuning params
 
 We need an easy way to tune AutoScan, BackgroundScan and Favorite retries.
 This change exposes those params through entries in the main.conf file.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  include/setting.h |  2 ++
  plugins/wifi.c    | 24 +++++++++++++++++----
