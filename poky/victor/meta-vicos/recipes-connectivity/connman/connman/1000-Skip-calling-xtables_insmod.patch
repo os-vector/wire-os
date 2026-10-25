@@ -4,6 +4,8 @@ Date: Wed, 22 Aug 2018 02:41:59 -0700
 Subject: [PATCH] Skip calling xtables_insmod
 
 It always fails on our system and is crashing in connman-1.36
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  src/iptables.c | 4 ++++
  1 file changed, 4 insertions(+)

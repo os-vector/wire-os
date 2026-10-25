@@ -5,6 +5,8 @@ Subject: [PATCH] pcm: add support to set silence_size
 
 Tinyalsa always set silence_size to zero. Add support to set this
 pcm software parameter as required.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/include/tinyalsa/pcm.h | 1 +
  git/src/pcm.c              | 1 +

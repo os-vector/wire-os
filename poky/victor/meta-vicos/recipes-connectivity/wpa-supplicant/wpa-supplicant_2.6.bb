@@ -55,13 +55,6 @@ CONFFILES:${PN} += "${sysconfdir}/wpa_supplicant.conf"
 #CXX = "${WORKSPACE}/old-toolchain/arm/bin/arm-linux-gnueabi-g++ --sysroot=${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/${PN}/${PV}/recipe-sysroot"
 #LD = "${WORKSPACE}/old-toolchain/arm/bin/arm-linux-gnueabi-ld --sysroot=${WORKSPACE}/poky/build/tmp-glibc/work/armv7a-neon-vfpv4-oe-linux-gnueabi/${PN}/${PV}/recipe-sysroot"
 
-do_configure:prepend () {
-    export CFLAGS="$(echo $CFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
-    export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
-    export LDFLAGS="$(echo $LDFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
-}
-
-
 # this is really bad
 #do_compile:prepend() {
 #    ln -sf ${STAGING_LIBDIR}/libnl-3.so ${STAGING_LIBDIR}/libnl.so
@@ -95,9 +88,6 @@ export BINDIR = "${sbindir}"
 
 do_compile () {
 	unset CFLAGS CPPFLAGS CXXFLAGS
-        export EXTRA_CFLAGS="$(echo $EXTRA_CFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
-        export CXXFLAGS="$(echo $CXXFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
-        export LDFLAGS="$(echo $LDFLAGS | sed 's/-fcanon-prefix-map=[^ ]*//g' | sed 's/-fcanon-prefix-map//g' | sed 's/-fmacro-prefix-map=[^ ]*//g' | sed 's/-fdebug-prefix-map=[^ ]*//g' | sed 's/-ffile-prefix-map=[^ ]*//g')"
 	sed -e "s:CFLAGS\ =.*:& \$(EXTRA_CFLAGS):g" -i ${S}/src/lib.rules
 	oe_runmake -C wpa_supplicant
 }

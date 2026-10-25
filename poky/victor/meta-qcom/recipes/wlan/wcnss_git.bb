@@ -43,7 +43,7 @@ do_install() {
 	fi
 
     mkdir -p ${D}/lib/firmware/wlan/prima
-    cp -pP ${WCNSS_CFG_DIR}/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/prima
+    cp -P ${WCNSS_CFG_DIR}/WCNSS_qcom_cfg.ini ${D}/lib/firmware/wlan/prima
     cp -rf ${WCNSS_CFG_DIR}/WCNSS_qcom_wlan_nv.bin ${D}/lib/firmware/wlan/prima
     cp -rf ${WCNSS_CFG_DIR}/WCNSS_wlan_dictionary.dat ${D}/lib/firmware/wlan/prima
     cp -rf ${WCNSS_CFG_DIR}/WCNSS_cfg.dat ${D}/lib/firmware/wlan/prima

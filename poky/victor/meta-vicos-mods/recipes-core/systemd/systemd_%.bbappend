@@ -1,5 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
+PACKAGECONFIG:remove = "networkd resolved nss-resolve timesyncd"
+
 SRC_URI += "file://ion.rules \
 	    file://qseecom.rules \
 	    file://gpio.rules \
@@ -16,7 +18,11 @@ do_install:append() {
 	install -m 0644 ${UNPACKDIR}/gpio.rules ${D}/etc/udev/rules.d/gpio.rules
 	install -m 0644 ${UNPACKDIR}/smd23.rules ${D}/etc/udev/rules.d/smd23.rules
 
-	sed -i "s|/usr/lib/systemd/systemd-networkd-wait-online|/usr/lib/systemd/systemd-networkd-wait-online -i wlan0|g" ${D}/usr/lib/systemd/system/systemd-networkd-wait-online.service
+	#sed -i "s|/usr/lib/systemd/systemd-networkd-wait-online|/usr/lib/systemd/systemd-networkd-wait-online -i wlan0|g" ${D}/usr/lib/systemd/system/systemd-networkd-wait-online.service
+
+	sed -i '\|resolv.conf|d' ${D}${exec_prefix}/lib/tmpfiles.d/etc.conf
+	sed -i '\|/run/systemd/resolve|d' ${D}${exec_prefix}/lib/tmpfiles.d/systemd.conf
+	rm -f ${D}${sysconfdir}/resolv-conf.systemd
 }
 
 FILES:${PN} += "/etc/udev/rules.d"

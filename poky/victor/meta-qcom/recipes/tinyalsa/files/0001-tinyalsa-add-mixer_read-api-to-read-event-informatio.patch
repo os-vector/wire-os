@@ -4,6 +4,8 @@ Date: Thu, 27 Apr 2017 22:09:11 -0700
 Subject: [PATCH] tinyalsa: add mixer_read() api to read event information
 
 Add mixer_read() API to get the event information.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/src/mixer.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)

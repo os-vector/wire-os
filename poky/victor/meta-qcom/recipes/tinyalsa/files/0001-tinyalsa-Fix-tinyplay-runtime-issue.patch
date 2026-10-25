@@ -9,6 +9,8 @@ Subject: [PATCH] tinyalsa: Fix tinyplay runtime issue
   pcm_writei.
 
 Change-Id: I615caf4a62376cd6d9b8abbd9fcfc29166e1c6c2
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/utils/tinyplay.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

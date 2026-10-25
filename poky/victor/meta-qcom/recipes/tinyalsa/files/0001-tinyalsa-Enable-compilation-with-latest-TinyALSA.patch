@@ -6,6 +6,8 @@ Subject: [PATCH] tinyalsa: Enable compilation with latest TinyALSA
 Remove deprecated flag for pcm_read & pcm_write
 functions which are still functional. Remove const
 definitions which conflict with old definitions.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/include/tinyalsa/mixer.h | 24 ++++++++++++------------
  git/include/tinyalsa/pcm.h   | 20 +++++---------------

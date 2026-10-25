@@ -5,6 +5,8 @@ Subject: [PATCH] audio: Add new pcm functions
 
 Add pcm_get_poll_fd, pcm_mmap_get_hw_ptr function
 definition for audio.
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  src/pcm.c | 34 ++++++++++++++++++++++++++++++++++
  1 file changed, 34 insertions(+)

@@ -4,6 +4,8 @@ Date: Tue, 28 Jun 2016 13:10:27 +0530
 Subject: [PATCH] tinyalsa: Added avail_min member
 
 Added Avail_min member in pcm_config structure
+
+Upstream-Status: Inappropriate [embedded specific]
 ---
  git/include/tinyalsa/pcm.h | 1 +
  1 file changed, 1 insertion(+)
