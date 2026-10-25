@@ -16,7 +16,7 @@ INHERIT += "recipe_sanity"
 # TOOLCHAIN
 #PREFERRED_VERSION_autoconf = "2.68"
 ARM_INSTRUCTION_SET       ?= "arm"
-FULL_OPTIMIZATION          = "-O2 -fomit-frame-pointer -fno-tree-vectorize -fno-strict-aliasing"
+FULL_OPTIMIZATION          = "-O2 -fno-strict-aliasing"
 FULL_OPTIMIZATION          += " -Wno-error=maybe-uninitialized "
 
 # These flags are taken from android build tree and can be used by recipes if needed.

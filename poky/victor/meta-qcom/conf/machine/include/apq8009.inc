@@ -7,7 +7,7 @@ include conf/machine/include/soc-family.inc
 # Pull in security flags
 #require ${COREBASE}/../victor/meta-qcom/conf/distro/include/security_flags.inc
 
-DEFAULTTUNE ?= "armv7ahf-neon-vfpv4"
+DEFAULTTUNE ?= "cortexa7hf-neon-vfpv4"
 
 include conf/machine/include/arm/armv7a/tune-cortexa7.inc
 
