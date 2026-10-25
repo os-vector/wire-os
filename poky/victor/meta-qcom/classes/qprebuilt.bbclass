@@ -32,17 +32,19 @@ do_prebuilt_install() {
     if [ -f ${prebuiltdir}/${MACHINE}/${PN}/${PN}-binaries.tar ]; then
         echo "Installing from ${prebuiltdir}"
         mkdir -p ${D}
-        tar -xjvf ${prebuiltdir}/${MACHINE}/${PN}/${PN}-binaries.tar -C ${D}
+        tar --no-same-owner -xjvf ${prebuiltdir}/${MACHINE}/${PN}/${PN}-binaries.tar -C ${D}
     else
         for path in ${WORKSPACE}/prebuilt_FEAT-BIN-*; do
             [ -f ${path}/${MACHINE}/${PN}/${PN}-binaries.tar ] || continue
             echo "Installing from ${path}"
             mkdir -p ${D}
-            tar -xjvf ${path}/${MACHINE}/${PN}/${PN}-binaries.tar -C ${D}
+            tar --no-same-owner -xjvf ${path}/${MACHINE}/${PN}/${PN}-binaries.tar -C ${D}
         done
     fi
 }
 do_prebuilt_install[dirs] = "${TMPDIR}/prebuilt/${MACHINE}"
+do_prebuilt_install[cleandirs] = "${D}"
+do_prebuilt_install[fakeroot] = "1"
 
 EXPORT_FUNCTIONS do_prebuilt do_prebuilt_install
 

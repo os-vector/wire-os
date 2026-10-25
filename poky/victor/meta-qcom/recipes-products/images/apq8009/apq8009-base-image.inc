@@ -27,7 +27,7 @@ IMAGE_INSTALL += "libnl"
 IMAGE_INSTALL += "libcutils"
 IMAGE_INSTALL += "liblog"
 
-IMAGE_INSTALL += "libxml2"
+#IMAGE_INSTALL += "libxml2"
 
 IMAGE_INSTALL += "start-scripts-find-partitions"
 IMAGE_INSTALL += "start-scripts-firmware-links"

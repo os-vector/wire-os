@@ -13,6 +13,7 @@ remove_unused_hwdata () {
 	rm -rf ${IMAGE_ROOTFS}${datadir}/keymaps
 	rm -rf ${IMAGE_ROOTFS}${datadir}/consolefonts
 	rm -rf ${IMAGE_ROOTFS}${datadir}/mime
+	rm -rf ${IMAGE_ROOTFS}${datadir}/alsa/ucm2
 }
 
 remove_unused_qcom () {
@@ -49,4 +50,5 @@ read_only_robot_rootfs_hook () {
 		echo 'SYSCONFDIR=/data/ssh' > ${IMAGE_ROOTFS}/etc/default/ssh
 	fi
 	echo "ro.anki.product.name=${ANKI_PRODUCT_NAME}" >> ${IMAGE_ROOTFS}/build.prop
+	sed -i "s|^\(root:.*\):/bin/sh$|\1:/usr/bin/bash|" ${IMAGE_ROOTFS}${sysconfdir}/passwd
 }
