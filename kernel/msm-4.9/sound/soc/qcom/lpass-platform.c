@@ -31,7 +31,10 @@ struct lpass_pcm_data {
 };
 
 #define LPASS_PLATFORM_BUFFER_SIZE	(16 * 1024)
-#define LPASS_PLATFORM_PERIODS		2
+#define LPASS_PLATFORM_PERIODS_MIN	2
+#define LPASS_PLATFORM_PERIODS_MAX	16
+#define LPASS_PLATFORM_PERIOD_BYTES_MIN	512
+#define LPASS_PLATFORM_DMA_BURST_BYTES	16
 
 static struct snd_pcm_hardware lpass_platform_pcm_hardware = {
 	.info			=	SNDRV_PCM_INFO_MMAP |
@@ -49,11 +52,10 @@ static struct snd_pcm_hardware lpass_platform_pcm_hardware = {
 	.channels_max		=	8,
 	.buffer_bytes_max	=	LPASS_PLATFORM_BUFFER_SIZE,
 	.period_bytes_max	=	LPASS_PLATFORM_BUFFER_SIZE /
-						LPASS_PLATFORM_PERIODS,
-	.period_bytes_min	=	LPASS_PLATFORM_BUFFER_SIZE /
-						LPASS_PLATFORM_PERIODS,
-	.periods_min		=	LPASS_PLATFORM_PERIODS,
-	.periods_max		=	LPASS_PLATFORM_PERIODS,
+						LPASS_PLATFORM_PERIODS_MIN,
+	.period_bytes_min	=	LPASS_PLATFORM_PERIOD_BYTES_MIN,
+	.periods_min		=	LPASS_PLATFORM_PERIODS_MIN,
+	.periods_max		=	LPASS_PLATFORM_PERIODS_MAX,
 	.fifo_size		=	0,
 };
 
@@ -106,6 +108,15 @@ static int lpass_platform_pcmops_open(struct snd_pcm_substream *substream)
 
 	ret = snd_pcm_hw_constraint_integer(runtime,
 			SNDRV_PCM_HW_PARAM_PERIODS);
+	if (ret < 0) {
+		dev_err(soc_runtime->dev, "%s() setting constraints failed: %d\n",
+				__func__, ret);
+		return -EINVAL;
+	}
+
+	ret = snd_pcm_hw_constraint_step(runtime, 0,
+			SNDRV_PCM_HW_PARAM_PERIOD_BYTES,
+			LPASS_PLATFORM_DMA_BURST_BYTES);
 	if (ret < 0) {
 		dev_err(soc_runtime->dev, "%s() setting constraints failed: %d\n",
 				__func__, ret);
