@@ -214,8 +214,7 @@ function buildMsg() {
 	echo
 }
 
-YOCTO_CLEAN_COMMAND="echo -e \"\e[1;32mCleaning some recipes...\e[0m\" && echo && clean-${BOT_TYPE} ${UI_FLAG}"
-YOCTO_BUILD_COMMAND="echo && echo -e \"\e[1;32mBuilding the OS...\e[0m\" && echo && build-${BOT_TYPE} ${UI_FLAG}"
+YOCTO_BUILD_COMMAND="echo -e \"\e[1;32mBuilding the OS...\e[0m\" && echo && build-${BOT_TYPE} ${UI_FLAG}"
 
 echo "Building a $BOT_TYPE OTA"
 export BOOT_IMAGE_SIGNING_PASSWORD="${BOOT_PASSWORD}"
@@ -260,7 +259,7 @@ function run_with_docker() {
 
 FINAL_BUILD_INVOCATION="cd $(pwd)/poky && \
     source build/conf/set_bb_env.sh && \
-    export ANKI_BUILD_VERSION=$BUILD_INCREMENT && \
+    echo ${BUILD_INCREMENT} > ${DIRPATH}/poky/build/anki-build-version && \
     export AUTO_UPDATE=${AUTO_UPDATE} && \
     ${YOCTO_BUILD_COMMAND} && \
     cd ${DIRPATH}/ota && \

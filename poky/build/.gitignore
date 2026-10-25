@@ -6,3 +6,4 @@ tmp-glibc/
 os-version-rev
 bitbake-cookerdaemon.log
 workspace/
+anki-build-version

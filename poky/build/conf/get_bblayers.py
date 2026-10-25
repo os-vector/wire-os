@@ -1,5 +1,4 @@
 import os, sys, re
-from operator import itemgetter
 
 def getLayerPriority(layerConfPath):
     try:
@@ -34,7 +33,7 @@ def findLayersRecursively(basePath):
             layerPath = os.path.abspath(os.path.join(root, "..")) if os.path.basename(root) == "conf" else os.path.abspath(root)
             layerList.append((layerPath, getLayerPriority(os.path.join(root, "layer.conf"))))
 
-    return sorted(set(layerList), key=itemgetter(1), reverse=True)
+    return sorted(set(layerList), key=lambda layer: (-layer[1], layer[0]))
 
 
 def generatePathString(pathList):
@@ -45,7 +44,7 @@ if __name__ == "__main__":
     print("# This configuration file is dynamically generated every time")
     print("# set_bb_env.sh is sourced to set up a workspace.  DO NOT EDIT.")
     print("#--------------------------------------------------------------")
-    print("LCONF_VERSION = \"6\"")
+    print("LCONF_VERSION = \"7\"")
     print()
     print("export WORKSPACE := \"${@os.path.abspath(os.path.join(os.path.dirname(d.getVar('FILE', d)),'../../..'))}\"")
     print()

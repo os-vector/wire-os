@@ -11,12 +11,13 @@ SRC_URI += "file://VICTOR_COMPAT_VERSION"
 S = "${UNPACKDIR}"
 #UNPACKDIR = "${S}"
 
+do_install[file-checksums] += "${TOPDIR}/anki-build-version:True"
+
 do_install:append () {
     install -d ${D}/etc
     install -m 0444 ${S}/ANKI_VERSION ${D}/etc/os-version-base
 
-    # ANKI_BUILD_VERSION will be set by TeamCity for CI builds, default to 0 for developer builds
-    : ${ANKI_BUILD_VERSION:=0}
+    ANKI_BUILD_VERSION=$(cat ${TOPDIR}/anki-build-version 2>/dev/null || echo 0)
     echo "${ANKI_BUILD_VERSION}" > ${D}/etc/os-version-code
     chmod 0444 ${D}/etc/os-version-code
 

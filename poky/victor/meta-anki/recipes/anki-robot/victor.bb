@@ -15,7 +15,6 @@ inherit pkgconfig
 EXTERNALSRC = "${WORKSPACE}/anki/victor"
 
 export SSH_AUTH_SOCK
-export ANKI_BUILD_VERSION
 
 # Prevent yocto from splitting out debug files for this recipe
 INHIBIT_PACKAGE_DEBUG_SPLIT = '1'
@@ -230,8 +229,6 @@ do_compile () {
     fi
   fi
 }
-
-do_compile[nostamp] = "1"
 
 do_install () {
   run_victor ${S}/project/victor/scripts/install.sh ${BUILDSRC} ${D}
