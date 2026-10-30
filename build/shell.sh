@@ -19,4 +19,7 @@ docker run -it --rm \
     -v $(pwd)/anki-deps:${HOME}/.anki \
     -v $(pwd):$(pwd) \
     -v $(pwd)/build/cache:${HOME}/.ccache \
+    -v $(pwd)/build/gocache:/home/$USER/go \
+    -v $(pwd)/build/usercache:/home/$USER/.cache \
+    --network host \
     vic-yocto-builder-7 bash
