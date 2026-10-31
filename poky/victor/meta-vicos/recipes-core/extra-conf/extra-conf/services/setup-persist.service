@@ -9,4 +9,4 @@ RemainAfterExit=yes
 ExecStart=/etc/initscripts/setup-persist start
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target
