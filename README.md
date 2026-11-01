@@ -147,7 +147,7 @@ If you want to :P
 -   Absolute latest downstream kernel from Qualcomm
     -   Linux 4.9.277, LF.UM.8.7
     -   Last updated by Qualcomm in September 2021
--   `victor` software compiled with Clang 20.1.8 rather than 5.0.1
+-   `victor` software compiled with Clang 23.1.4 rather than 5.0.1
     -	The code is properly fixed so there are no compile warnings
 -   Rainbow eye color
     -   Can be activated in :8888/demo.html
@@ -156,19 +156,23 @@ If you want to :P
         -   He will somewhat randomly do loosepixel and binaryeyes
     -   Better camera gamma correction
         -   He handles too-bright situations much better now
+-   The Vector 2.0 debayer does its own black level normalization and gamma correction, making the final image much more usable in low light
+-   Debayering is faster (therefore uses less CPU than before)
+-   We now use sjpeg for the JPEG camera stream
+    -    Both Vector 1.0 and 2.0 are capable of a ~15FPS stream at the default 533 MHz. It was ~6-8 before.
 -   Picovoice Porcupine (1.5) wakeword engine
     -   Custom wake words in :8080 webserver!
 -   YuNet + MobileFaceNet facial detection+recognition
     -   Replacing the proprietary Okao libraries
--   `htop` and `rsync` are embedded
+-   `btop`, `strace`, `rsync`, `gdbserver`, a bunch of dev tools like those are included
 -   No more Python - update-engine was rewritten in C++
 -   General bug fixes - for instance, now he won't read the EMR partition upon every single screen draw (DDL bug)
 -   :8080 webserver for configuring things I don't want to integrate into a normal app
 -   New Anki boot animation, new pre-boot-anim splash screen, rainbow backpack light animations
 -   TensorFlow Lite has been updated to v2.19.0 (a modern 2025 release)
 	-  Gives us XNNPACK and an OpenCL delegate
+-   The GPU is now being used to accelerate the facial detection+recognition models (it previously wasn't being used at all)
 -   OpenCV has been updated to 4.12.0 (latest as of 11-2025)
-  	-  Much better SDK streaming performance
 -   [Face overlays](https://www.reddit.com/r/AnkiVector/comments/1lteb3m/_/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)
         -  How to activate: [wire-os-victor PR #17](https://github.com/os-vector/wire-os-victor/pull/17)
 -   Global SSH key: ([ssh_root_key](https://raw.githubusercontent.com/kercre123/unlocking-vector/refs/heads/main/ssh_root_key))
@@ -192,14 +196,14 @@ If you want to :P
 ## Proprietary software notes
 
 -	This repo contains lots of proprietary Qualcomm code and prebuilt software.
--	After a stupid amount of work, I have most HAL programs compiling with Yocto's GCC 16. It wasn't terribly difficult since it's generally all autotools, but some jank is still involved, and it was still time-consuming.
+-	After a stupid amount of work, I have most HAL programs compiling with Yocto's GCC 15. It wasn't terribly difficult since it's generally all autotools, but some jank is still involved, and it was still time-consuming.
 -	The camera programs and *some* of the BLE programs/libraries are being copied in rather than compiled.
 	-	Why not compile camera programs? Because I would have to add 2GB to the repo, and we'd have to link against blobs anyway.
-	-	Why not compile those BLE programs? `ankibluetoothd` and `hci_qcomm_init` are able to compile under GCC 16, but there is some weird low-level issue which makes them unable to properly communicate with a BLE library. So, for now, I am just copying pre-compiled ones in. I will probably try to fix this at some point.
+	-	Why not compile those BLE programs? `ankibluetoothd` and `hci_qcomm_init` are able to compile under GCC 15, but there is some weird low-level issue which makes them unable to properly communicate with a BLE library. So, for now, I am just copying pre-compiled ones in. I will probably try to fix this at some point.
         -       If we have to rebuild either of them, [vicos-oelinux-nosign](https://github.com/kercre123/vicos-oelinux-nosign) is a thing we can use.
 
 ## How this upgrade was done
 
 -	Much work upgrading Yocto recipes.
--	All of the software is compiling with Yocto's GCC 16 or the Clang 20.1.8 vicos-sdk toolchain, with a couple of tiny exceptions.
+-	All of the software is compiling with Yocto's GCC 15 or the Clang 23.1.4 vicos-sdk toolchain, with a couple of tiny exceptions.
 -	Some recipes are still somewhat old - these include wpa_supplicant and connman (I had issues with SAE - he's able to recognize SAE networks, but his WLAN driver and kernel don't know how to actually connect to it, and I was unable to disable it in modern wpa_supplicant and connman)
