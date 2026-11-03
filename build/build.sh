@@ -248,7 +248,9 @@ if [[ "${NO_DOCKER}" != "1" ]]; then
 fi
 
 function run_with_docker() {
-    docker run -it --rm \
+    local tty_flags=()
+    [[ -t 0 && -t 1 ]] && tty_flags=(-it)
+    docker run "${tty_flags[@]}" --rm \
     -v $(pwd)/anki-deps:/home/$USER/.anki \
     -v $(pwd):$(pwd) \
     -v $(pwd)/build/cache:/home/$USER/.ccache \
