@@ -16,6 +16,7 @@ case "$1" in
         touch /persist/.made
         sync
     fi
+    echo "This partition is also used in recoveryfs on unlock-prodded bots, keep some space free here" > /persist/readthis.txt
     ;;
 
   stop )

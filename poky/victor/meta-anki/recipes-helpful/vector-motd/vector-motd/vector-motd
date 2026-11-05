@@ -39,4 +39,5 @@ printf '%sAlt Hostname:%s %s\n'       "$L3" "$RESET" "$VHOST"
 printf '%sMemory:%s %s used\n'             "$L4" "$RESET" "$MEM"
 printf '%sStorage (/):%s %s used\n'        "$L5" "$RESET" "$(usage /)"
 printf '%sStorage (/data):%s %s used\n'    "$L6" "$RESET" "$(usage /data)"
+printf '%sStorage (/persist):%s %s used\n'    "$L6" "$RESET" "$(usage /persist)"
 printf '\n'
